@@ -184,9 +184,9 @@ class _HomePageState extends State<HomePage>
                     width: 1.5,
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'A',
+                    _userName[0].toUpperCase(),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
