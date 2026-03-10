@@ -1,10 +1,12 @@
 # lifter
 
-A new Flutter project.
+A Flutter app for climbers to track lifting sessions around the WeiHeng C06 scale.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+```bash
+flutter run
+```
 
 A few resources to get you started if this is your first Flutter project:
 
