@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/ble/ble_service.dart';
+import 'package:lifter/providers/user_provider.dart';
+import 'package:lifter/screens/username_screen.dart';
 
 import 'pages/main_shell.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const FitApp());
+  runApp(const ProviderScope(child: FitApp()));
 }
 
-class FitApp extends StatefulWidget {
+class FitApp extends ConsumerStatefulWidget {
   const FitApp({super.key});
 
   @override
-  State<FitApp> createState() => _FitAppState();
+  ConsumerState<FitApp> createState() => _FitAppState();
 }
 
-class _FitAppState extends State<FitApp> {
-  // Created once here so every screen in the app shares the same instance.
+class _FitAppState extends ConsumerState<FitApp> {
   final _bleService = BleService();
 
   @override
@@ -33,6 +36,8 @@ class _FitAppState extends State<FitApp> {
 
   @override
   Widget build(BuildContext context) {
+    final usernameAsync = ref.watch(usernameProvider);
+
     return MaterialApp(
       title: 'lifter',
       debugShowCheckedModeBanner: false,
@@ -43,9 +48,17 @@ class _FitAppState extends State<FitApp> {
           surface: Color(0xFF0A0A0F),
         ),
       ),
-      home: MainShell(bleService: _bleService),
+      home: usernameAsync.when(
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => const Scaffold(
+          body: Center(child: Text('Something went wrong')),
+        ),
+        data: (username) => username == null
+            ? const UsernameScreen()
+            : MainShell(bleService: _bleService),
+      ),
     );
   }
 }
-
-
