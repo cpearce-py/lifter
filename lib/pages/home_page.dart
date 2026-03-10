@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/ble/ble_service.dart';
 import 'package:lifter/ble/widgets.dart';
+import 'package:lifter/providers/user_provider.dart';
 
 
 // ─── Data models ──────────────────────────────────────────────────────────────
@@ -37,21 +39,20 @@ class _WorkoutRow {
 
 
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, required this.bleService});
 
   final BleService bleService;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
+class _HomePageState extends ConsumerState<HomePage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   // ── Dummy data — swap with real data source later ──────────────────────────
-  static const _userName = 'Corin';
   static const _monthName = 'March';
 
   static const _stats = [
@@ -131,6 +132,8 @@ class _HomePageState extends State<HomePage>
   // ── Header ─────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
+    final username = ref.watch(usernameProvider).asData?.value ?? "No way we get here";
+
     return SliverToBoxAdapter(
       child: _FadeSlide(
         animation: _controller,
@@ -161,7 +164,7 @@ class _HomePageState extends State<HomePage>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _userName,
+                      username,
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w900,
@@ -186,7 +189,7 @@ class _HomePageState extends State<HomePage>
                 ),
                 child: Center(
                   child: Text(
-                    _userName[0].toUpperCase(),
+                    username[0].toUpperCase(),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
