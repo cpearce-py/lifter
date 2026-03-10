@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lifter/ble/ble_service.dart';
 import 'package:lifter/ble/widgets.dart';
 import 'package:lifter/providers/user_provider.dart';
@@ -51,9 +52,6 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-
-  // ── Dummy data — swap with real data source later ──────────────────────────
-  static const _monthName = 'March';
 
   static const _stats = [
     _StatData(
@@ -110,6 +108,8 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    String month = DateFormat("MMMM").format(DateTime.now());
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: CustomScrollView(
@@ -117,7 +117,7 @@ class _HomePageState extends ConsumerState<HomePage>
         slivers: [
           _buildHeader(),
           _buildBleBanner(),
-          _buildSectionLabel('$_monthName at a glance'),
+          _buildSectionLabel('$month at a glance'),
           _buildStatsGrid(),
           _buildSectionLabel('Recent workouts'),
           _buildRecentWorkouts(),
