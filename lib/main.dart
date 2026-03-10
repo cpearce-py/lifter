@@ -34,7 +34,7 @@ class _FitAppState extends State<FitApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FitForge',
+      title: 'lifter',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0A0A0F),
