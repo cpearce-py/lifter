@@ -1,14 +1,39 @@
-// Users:
-//  - username
-//  - MPA (Max Pull Amount) = what your max strength is, workouts are based around this.
+import 'package:flutter/material.dart';
 
-// Workout sessions 
-// Type: Repeater
-//  - Reps, Work (in seconds), Rest (in seconds)
-// Live Data:
-//  - display live readings from devices
-// Critical Force:
-//  - setting up MPA - determine sustainable maximum with repeated pulls
-// Peak Load:
-//  - record peak amount for left and right (one strong ass pull)
-// 
+enum OptionType { toggle, stepper, segmented }
+
+class WorkoutType {
+  const WorkoutType({
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.accentColor,
+    required this.options,
+  });
+
+  final String name;
+  final String description;
+  final IconData icon;
+  final Color accentColor;
+  final List<WorkoutOption> options;
+}
+
+class WorkoutOption {
+  const WorkoutOption({
+    required this.label,
+    required this.type,
+    this.choices,
+    this.min,
+    this.max,
+    this.step,
+    this.unit,
+  });
+
+  final String label;
+  final OptionType type;
+  final List<String>? choices;  // for segmented
+  final num? min;               // for stepper
+  final num? max;               // for stepper
+  final num? step;              // for stepper
+  final String? unit;           // for stepper
+}

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lifter/ble/ble_service.dart';
-
+import '../ble/ble_service.dart';
 import 'home_page.dart';
+import 'workout_page.dart';
+import 'graph_page.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 
@@ -16,15 +17,23 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
+  // Shared notifier — any page can write to this to switch the active tab.
+  final _tabNotifier = ValueNotifier<int>(0);
   int _currentIndex = 0;
 
-  // Single source of truth — build up with our real pages as we go.
-  // _destinations is built in build() so it can access widget.bleService.
   late final List<_NavDestination> _destinations;
 
   @override
   void initState() {
     super.initState();
+
+    _tabNotifier.addListener(() {
+      if (_tabNotifier.value != _currentIndex) {
+        HapticFeedback.selectionClick();
+        setState(() => _currentIndex = _tabNotifier.value);
+      }
+    });
+
     _destinations = [
       _NavDestination(
         label: 'Home',
@@ -36,13 +45,13 @@ class _MainShellState extends State<MainShell> {
         label: 'Workout',
         icon: Icons.fitness_center_outlined,
         activeIcon: Icons.fitness_center_rounded,
-        page: const _PagePlaceholder(label: 'Workout', icon: Icons.fitness_center_rounded),
+        page: WorkoutPage(tabNotifier: _tabNotifier),
       ),
       _NavDestination(
         label: 'Graph',
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart_rounded,
-        page: const _PagePlaceholder(label: 'Graph', icon: Icons.bar_chart_rounded),
+        page: GraphPage(bleService: widget.bleService),
       ),
       _NavDestination(
         label: 'Profile',
@@ -53,10 +62,14 @@ class _MainShellState extends State<MainShell> {
     ];
   }
 
+  @override
+  void dispose() {
+    _tabNotifier.dispose();
+    super.dispose();
+  }
+
   void _onTap(int index) {
-    if (index == _currentIndex) return;
-    HapticFeedback.selectionClick();
-    setState(() => _currentIndex = index);
+    _tabNotifier.value = index;
   }
 
   @override
