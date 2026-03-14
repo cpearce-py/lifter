@@ -233,3 +233,53 @@ class SegmentedControl extends StatelessWidget {
     );
   }
 }
+
+// ─── FadeSlide ────────────────────────────────────────────────────────────────
+// Wraps a child in a staggered fade + upward slide entrance animation.
+//
+// Usage:
+//   FadeSlide(
+//     animation: _controller,
+//     intervalStart: 0.1,
+//     intervalEnd: 0.5,
+//     child: MyWidget(),
+//   )
+ 
+class FadeSlide extends StatelessWidget {
+  const FadeSlide({
+    super.key,
+    required this.animation,
+    required this.intervalStart,
+    required this.intervalEnd,
+    required this.child,
+  });
+ 
+  final AnimationController animation;
+  final double intervalStart;
+  final double intervalEnd;
+  final Widget child;
+ 
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Interval(
+        intervalStart.clamp(0.0, 1.0),
+        intervalEnd.clamp(0.0, 1.0),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+ 
+    return AnimatedBuilder(
+      animation: curved,
+      builder: (context, child) => Opacity(
+        opacity: curved.value,
+        child: Transform.translate(
+          offset: Offset(0, 20 * (1 - curved.value)),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
