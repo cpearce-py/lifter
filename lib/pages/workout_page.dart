@@ -136,7 +136,7 @@ class _WorkoutPageState extends State<WorkoutPage>
         slivers: [
           // ── Header ────────────────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: _FadeSlide(
+            child: FadeSlide(
               animation: _controller,
               intervalStart: 0.0,
               intervalEnd: 0.5,
@@ -183,7 +183,7 @@ class _WorkoutPageState extends State<WorkoutPage>
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final workout = _workouts[index];
-                  return _FadeSlide(
+                  return FadeSlide(
                     animation: _controller,
                     intervalStart: 0.1 + index * 0.08,
                     intervalEnd: 0.5 + index * 0.08,
@@ -474,7 +474,7 @@ class _WorkoutDetailPageState extends State<_WorkoutDetailPage>
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final opt = w.options[index];
-                  return _FadeSlide(
+                  return FadeSlide(
                     animation: _controller,
                     intervalStart: 0.1 + index * 0.08,
                     intervalEnd: 0.5 + index * 0.08,
@@ -497,7 +497,7 @@ class _WorkoutDetailPageState extends State<_WorkoutDetailPage>
 
           // ── Start button ───────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: _FadeSlide(
+            child: FadeSlide(
               animation: _controller,
               intervalStart: 0.5,
               intervalEnd: 1.0,
@@ -616,47 +616,6 @@ class _OptionRow extends StatelessWidget {
           },
         ],
       ),
-    );
-  }
-}
-
-
-// ─── Fade + Slide entrance animation helper ───────────────────────────────────
-
-class _FadeSlide extends StatelessWidget {
-  const _FadeSlide({
-    required this.animation,
-    required this.intervalStart,
-    required this.intervalEnd,
-    required this.child,
-  });
-
-  final AnimationController animation;
-  final double intervalStart;
-  final double intervalEnd;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Interval(
-        intervalStart.clamp(0.0, 1.0),
-        intervalEnd.clamp(0.0, 1.0),
-        curve: Curves.easeOutCubic,
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: curved,
-      builder: (context, child) => Opacity(
-        opacity: curved.value,
-        child: Transform.translate(
-          offset: Offset(0, 20 * (1 - curved.value)),
-          child: child,
-        ),
-      ),
-      child: child,
     );
   }
 }
