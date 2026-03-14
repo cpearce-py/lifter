@@ -4,6 +4,7 @@ import '../ble/ble_service.dart';
 import 'home_page.dart';
 import 'workout_page.dart';
 import 'graph_page.dart';
+import 'package:lifter/models/workout_state.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
-        page: const _PagePlaceholder(label: 'Profile', icon: Icons.person_rounded),
+        page: MyWorkoutPage(),
       ),
     ];
   }
