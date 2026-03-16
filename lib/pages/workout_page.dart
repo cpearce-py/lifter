@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/workout_session.dart';
-import '../widgets/tools.dart';
 
-// ─── WorkoutPage ──────────────────────────────────────────────────────────────
+import 'package:lifter/pages/sessions/peak_load_session.dart';
+import 'package:lifter/pages/sessions/repeater_session.dart';
+import 'package:lifter/providers/workout_provider.dart';
+import 'package:lifter/models/workout_session.dart';
+import 'package:lifter/widgets/tools.dart';
 
 class WorkoutPage extends StatefulWidget {
   const WorkoutPage({super.key, required this.tabNotifier});
@@ -18,7 +20,7 @@ class _WorkoutPageState extends State<WorkoutPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
-  static const _workouts = [
+  static final _workouts = [
     WorkoutType(
       name: 'Live Data',
       description: 'Real-time feed from your sensor',
@@ -31,6 +33,9 @@ class _WorkoutPageState extends State<WorkoutPage>
         WorkoutOption(label: 'Show peak line',  type: OptionType.toggle),
         WorkoutOption(label: 'Auto-zero on start', type: OptionType.toggle),
       ],
+      sessionBuilder: (values) {
+        return const SizedBox.shrink();
+      }
     ),
     WorkoutType(
       name: 'Repeaters',
@@ -45,7 +50,17 @@ class _WorkoutPageState extends State<WorkoutPage>
         WorkoutOption(label: 'Set rest',   type: OptionType.stepper, min: 30, max: 300, step: 30, unit: 's'),
         WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
       ],
-    ),
+      sessionBuilder: (values) {
+        final workoutState = WorkoutState(
+          sets:           (values[0] as num).toInt(),
+          reps:           (values[1] as num).toInt(),
+          workSeconds:    (values[2] as num).toInt(),
+          restSeconds:    (values[3] as num).toInt(),
+          setRestSeconds: (values[4] as num).toInt(),
+        );
+        return RepeatersSessionPage();
+      }
+      ),
     WorkoutType(
       name: 'Peak Load',
       description: 'Measure your maximum single effort',
@@ -58,6 +73,12 @@ class _WorkoutPageState extends State<WorkoutPage>
         WorkoutOption(label: 'Beep countdown',    type: OptionType.toggle),
         WorkoutOption(label: 'Auto-detect peak',  type: OptionType.toggle),
       ],
+      sessionBuilder: (values) => PeakLoadSessionPage(
+        attempts:       (values[0] as num).toInt(),
+        restSeconds:    (values[1] as num).toInt(),
+        holdSeconds:    (values[2] as num).toInt(),
+        beepCountdown:  values[3] as bool,
+      ),
     ),
     WorkoutType(
       name: 'Critical Force',
@@ -71,6 +92,10 @@ class _WorkoutPageState extends State<WorkoutPage>
         WorkoutOption(label: 'Show CF line', type: OptionType.toggle),
         WorkoutOption(label: 'Save result',  type: OptionType.toggle),
       ],
+      sessionBuilder: (values) {
+        // TODO: return CriticalForceSessionPage(...)
+        return const SizedBox.shrink();
+      }
     ),
     WorkoutType(
       name: 'Trainings',
@@ -84,6 +109,10 @@ class _WorkoutPageState extends State<WorkoutPage>
         WorkoutOption(label: 'Rest alerts', type: OptionType.toggle),
         WorkoutOption(label: 'Voice cues',  type: OptionType.toggle),
       ],
+      sessionBuilder: (values) {
+        // TODO: return CriticalForceSessionPage(...)
+        return const SizedBox.shrink();
+      }
     ),
   ];
 
@@ -515,7 +544,13 @@ class _WorkoutDetailPageState extends State<_WorkoutDetailPage>
                       Navigator.pop(context);
                       widget.tabNotifier.value = 2;
                     } else {
-                      // TODO: start other workout types with _values
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              widget.workout.sessionBuilder(_values),
+                        ),
+                      );
                     }
                   },
                   child: Container(

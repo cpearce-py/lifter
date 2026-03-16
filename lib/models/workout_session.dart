@@ -9,6 +9,7 @@ class WorkoutType {
     required this.icon,
     required this.accentColor,
     required this.options,
+    required this.sessionBuilder,
   });
 
   final String name;
@@ -16,6 +17,8 @@ class WorkoutType {
   final IconData icon;
   final Color accentColor;
   final List<WorkoutOption> options;
+
+  final Widget Function(Map<int, dynamic> values) sessionBuilder;
 }
 
 class WorkoutOption {
