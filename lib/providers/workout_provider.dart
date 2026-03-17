@@ -100,6 +100,7 @@ class StateMachine extends Notifier<WorkoutState> {
   static const _transitions = {
     (Phase.idle,    Event.start):  Phase.working,
     (Phase.paused,  Event.start):  Phase.working,
+    (Phase.resting, Event.skip): Phase.working,
     (Phase.working, Event.pause):  Phase.paused,
     (Phase.working, Event.cancel): Phase.cancelled,
     (Phase.working, Event.finish): Phase.done,
@@ -107,6 +108,7 @@ class StateMachine extends Notifier<WorkoutState> {
     (Phase.paused,  Event.cancel): Phase.cancelled,
     (Phase.paused,  Event.reset):  Phase.idle,
     (Phase.paused,  Event.finish): Phase.done,
+    (Phase.setResting, Event.skip): Phase.working,
   };
 
   // Called by the UI when the user is ready to begin
@@ -131,6 +133,11 @@ class StateMachine extends Notifier<WorkoutState> {
 
     debugPrint("Next phase: ${nextPhase.toString()}");
     debugPrint("Time left: ${_secondsForPhase(nextPhase)}");
+
+    if (event == Event.skip) {
+      _advancePhase();
+      return;
+    }
 
     state = _transitionTo(nextPhase);
 
@@ -255,6 +262,7 @@ Event? primaryButtonEvent(Phase phase) => switch (phase) {
   Phase.paused => Event.start,
   Phase.working => Event.pause,
   Phase.resting => Event.skip,
+  Phase.setResting => Event.skip,
   _ => null,
 };
 
