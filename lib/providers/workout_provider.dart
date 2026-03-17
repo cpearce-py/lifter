@@ -36,6 +36,7 @@ class WorkoutState {
   final int currentSet;
   final int currentRep;
   final int secondsRemaining;
+  final int currentPhaseDuration;
 
   const WorkoutState({
     this.sets = 1,
@@ -47,7 +48,15 @@ class WorkoutState {
     this.currentSet = 1,
     this.currentRep = 1,
     this.secondsRemaining = 0,
+    this.currentPhaseDuration = 0,
   });
+
+  int get elapsedSeconds => currentPhaseDuration - secondsRemaining;
+
+  double get phaseProgress {
+    if (currentPhaseDuration == 0) return 0;
+    return elapsedSeconds / currentPhaseDuration;
+  }
 
   WorkoutState copyWith({
     int? sets,
@@ -59,6 +68,7 @@ class WorkoutState {
     int? currentSet,
     int? currentRep,
     int? secondsRemaining,
+    int? currentPhaseDuration,
   }) {
     return WorkoutState(
       sets: sets ?? this.sets,
@@ -70,9 +80,11 @@ class WorkoutState {
       currentSet: currentSet ?? this.currentSet,
       currentRep: currentRep ?? this.currentRep,
       secondsRemaining: secondsRemaining ?? this.secondsRemaining,
+      currentPhaseDuration: currentPhaseDuration ?? this.currentPhaseDuration,
     );
   }
 }
+
 
 class StateMachine extends Notifier<WorkoutState> {
   Timer? _countdownTimer;
@@ -90,8 +102,9 @@ class StateMachine extends Notifier<WorkoutState> {
     (Phase.paused,  Event.start):  Phase.working,
     (Phase.working, Event.pause):  Phase.paused,
     (Phase.working, Event.cancel): Phase.cancelled,
-    (Phase.paused,  Event.cancel): Phase.cancelled,
+    (Phase.working, Event.finish): Phase.done,
     (Phase.working, Event.reset):  Phase.idle,
+    (Phase.paused,  Event.cancel): Phase.cancelled,
     (Phase.paused,  Event.reset):  Phase.idle,
     (Phase.paused,  Event.finish): Phase.done,
   };
@@ -102,22 +115,24 @@ class StateMachine extends Notifier<WorkoutState> {
     graphController.reset(resetPeak: true);
     _initialState = ws;
     state = ws;
+    debugPrint("Setup with: ${ws.toString()}");
   }
 
   void reset() {
     _cancelTimers();
     graphController.reset(resetPeak: true);
     state = _initialState;
+    debugPrint("Reset statemachine");
   }
 
   void send(Event event) {
     final nextPhase = _transitions[(state.phase, event)];
     if (nextPhase == null || nextPhase == state.phase) return;
 
-    state = state.copyWith(
-      phase: nextPhase,
-      secondsRemaining: _secondsForPhase(nextPhase),
-    );
+    debugPrint("Next phase: ${nextPhase.toString()}");
+    debugPrint("Time left: ${_secondsForPhase(nextPhase)}");
+
+    state = _transitionTo(nextPhase);
 
     if (nextPhase == Phase.working || nextPhase == Phase.resting) {
       _startTimers();
@@ -127,34 +142,28 @@ class StateMachine extends Notifier<WorkoutState> {
   }
 
   void _advancePhase() {
+    debugPrint("Advancing a step");
     final isLastRep = state.currentRep >= state.reps;
     final isLastSet = state.currentSet >= state.sets;
 
     if (state.phase == Phase.working) {
-      graphController.reset(resetPeak: false);
+      // graphController.reset(resetPeak: false);
       if (isLastRep && isLastSet) {
         send(Event.finish);
       } else if (isLastRep) {
-        state = state.copyWith(
-          phase: Phase.setResting,
-          secondsRemaining: state.setRestSeconds,
+        state = _transitionTo(Phase.setResting).copyWith(
           currentSet: state.currentSet + 1,
           currentRep: 1,
         );
         _startTimers();
       } else {
-        state = state.copyWith(
-          phase: Phase.resting,
-          secondsRemaining: state.restSeconds,
+        state = _transitionTo(Phase.resting).copyWith(
           currentRep: state.currentRep + 1,
         );
         _startTimers();
       }
     } else if (state.phase == Phase.resting || state.phase == Phase.setResting) {
-      state = state.copyWith(
-        phase: Phase.working,
-        secondsRemaining: state.workSeconds,
-      );
+      state = _transitionTo(Phase.working);
       _startTimers();
     }
   }
@@ -165,6 +174,15 @@ class StateMachine extends Notifier<WorkoutState> {
     final wobble = sin(_phase * 4.7) * 8;
     final noise = (Random().nextDouble() - 0.5) * 6;
     return (base + wobble + noise).clamp(0, 100);
+  }
+
+  WorkoutState _transitionTo(Phase phase) {
+      final duration = _secondsForPhase(phase);
+      return state.copyWith(
+        phase: phase,
+        secondsRemaining: duration,
+        currentPhaseDuration: duration,
+      );
   }
 
   int _secondsForPhase(Phase phase) => switch (phase) {
@@ -222,7 +240,7 @@ final graphControllerProvider = Provider<LiveGraphController>((ref) {
   return ref.watch(workoutNotifierProvider.notifier).graphController;
 });
 
-String getPrimaryLabelForState(Phase phase) => switch (phase) {
+String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
   Phase.idle => "Start",
   Phase.paused => "Resume",
   Phase.cancelled => "Cancelled", 
@@ -238,4 +256,14 @@ Event? primaryButtonEvent(Phase phase) => switch (phase) {
   Phase.working => Event.pause,
   Phase.resting => Event.skip,
   _ => null,
+};
+
+String secondaryLabelForPhase(Phase phase) => switch (phase) {
+  Phase.working    => 'HANG',
+  Phase.resting    => 'REST',
+  Phase.setResting => 'SET REST',
+  Phase.paused     => 'PAUSED',
+  Phase.idle       => 'READY',
+  Phase.done       => 'DONE ✓',
+  _ => "",
 };

@@ -18,7 +18,7 @@ class WorkoutType {
   final Color accentColor;
   final List<WorkoutOption> options;
 
-  final Widget Function(Map<int, dynamic> values) sessionBuilder;
+  final Widget Function(Map<int, dynamic>) sessionBuilder;
 }
 
 class WorkoutOption {

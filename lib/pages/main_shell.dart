@@ -4,7 +4,7 @@ import '../ble/ble_service.dart';
 import 'home_page.dart';
 import 'workout_page.dart';
 import 'graph_page.dart';
-import 'package:lifter/pages/sessions/test_page.dart';
+import 'package:lifter/pages/sessions/repeater_session.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
-        page: MyRepeaterPage(),
+        page: RepeaterWorkoutPage(),
       ),
     ];
   }

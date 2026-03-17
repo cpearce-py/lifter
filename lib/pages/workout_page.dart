@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/pages/sessions/peak_load_session.dart';
 import 'package:lifter/pages/sessions/repeater_session.dart';
@@ -7,16 +8,16 @@ import 'package:lifter/providers/workout_provider.dart';
 import 'package:lifter/models/workout_session.dart';
 import 'package:lifter/widgets/tools.dart';
 
-class WorkoutPage extends StatefulWidget {
+class WorkoutPage extends ConsumerStatefulWidget {
   const WorkoutPage({super.key, required this.tabNotifier});
 
   final ValueNotifier<int> tabNotifier;
 
   @override
-  State<WorkoutPage> createState() => _WorkoutPageState();
+  ConsumerState<WorkoutPage> createState() => _WorkoutPageState();
 }
 
-class _WorkoutPageState extends State<WorkoutPage>
+class _WorkoutPageState extends ConsumerState<WorkoutPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -47,18 +48,11 @@ class _WorkoutPageState extends State<WorkoutPage>
         WorkoutOption(label: 'Reps',       type: OptionType.stepper, min: 1, max: 20, step: 1, unit: ''),
         WorkoutOption(label: 'Work time',  type: OptionType.stepper, min: 3, max: 60, step: 1, unit: 's'),
         WorkoutOption(label: 'Rest time',  type: OptionType.stepper, min: 3, max: 120, step: 3, unit: 's'),
-        WorkoutOption(label: 'Set rest',   type: OptionType.stepper, min: 30, max: 300, step: 30, unit: 's'),
+        WorkoutOption(label: 'Set rest',   type: OptionType.stepper, min: 10, max: 300, step: 30, unit: 's'),
         WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
       ],
       sessionBuilder: (values) {
-        final workoutState = WorkoutState(
-          sets:           (values[0] as num).toInt(),
-          reps:           (values[1] as num).toInt(),
-          workSeconds:    (values[2] as num).toInt(),
-          restSeconds:    (values[3] as num).toInt(),
-          setRestSeconds: (values[4] as num).toInt(),
-        );
-        return RepeatersSessionPage();
+        return RepeaterWorkoutPage();
       }
       ),
     WorkoutType(
@@ -353,7 +347,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
 
 // ─── Workout Detail Page ──────────────────────────────────────────────────────
 
-class _WorkoutDetailPage extends StatefulWidget {
+class _WorkoutDetailPage extends ConsumerStatefulWidget {
   const _WorkoutDetailPage({
     required this.workout,
     required this.tabNotifier,
@@ -363,10 +357,10 @@ class _WorkoutDetailPage extends StatefulWidget {
   final ValueNotifier<int> tabNotifier;
 
   @override
-  State<_WorkoutDetailPage> createState() => _WorkoutDetailPageState();
+  ConsumerState<_WorkoutDetailPage> createState() => _WorkoutDetailPageState();
 }
 
-class _WorkoutDetailPageState extends State<_WorkoutDetailPage>
+class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -544,11 +538,20 @@ class _WorkoutDetailPageState extends State<_WorkoutDetailPage>
                       Navigator.pop(context);
                       widget.tabNotifier.value = 2;
                     } else {
+                      final workoutState = WorkoutState(
+                        sets:           (_values[0] as num).toInt(),
+                        reps:           (_values[1] as num).toInt(),
+                        workSeconds:    (_values[2] as num).toInt(),
+                        restSeconds:    (_values[3] as num).toInt(),
+                        setRestSeconds: (_values[4] as num).toInt(),
+                      );
+                      ref.read(workoutNotifierProvider.notifier).initialize(workoutState);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              widget.workout.sessionBuilder(_values),
+                          builder: (_) {
+                            return widget.workout.sessionBuilder(_values);
+                          }
                         ),
                       );
                     }

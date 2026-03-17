@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/providers/workout_provider.dart';
 import 'package:lifter/widgets/graph.dart';
 
-class MyRepeaterPage extends ConsumerWidget {
+class RepeaterWorkoutPage extends ConsumerWidget {
   static const _accentColor    = Color(0xFFE8FF47);
   static const _restColor      = Color(0xFF47C8FF);
   static const _setRestColor   = Color(0xFFB47FFF);
@@ -15,7 +15,7 @@ class MyRepeaterPage extends ConsumerWidget {
     Phase.setResting: _setRestColor,
   };
 
-  const MyRepeaterPage({super.key});
+  const RepeaterWorkoutPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,11 +61,11 @@ class GraphArea extends ConsumerWidget {
           ),
           // Overlay sits on top (top-right corner by default)
           // if (overlay != null)
-          //   Positioned(
-          //     top: 12,
-          //     right: 12,
-          //     child: overlay!,
-          //   ),
+          Positioned(
+            top: 12,
+            right: 12,
+            child: _RepCounterOverlay(accentColor: _accentColor),
+          ),
         ],
       ),
     );
@@ -208,7 +208,7 @@ class StartStopButton extends ConsumerWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  getPrimaryLabelForState(workoutPhase),
+                  getPrimaryLabelForPhase(workoutPhase),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -243,6 +243,119 @@ class HeaderLabel extends ConsumerWidget {
           letterSpacing: -0.5,
           color: Color(0xFFF0F0F0),
         ),
+      ),
+    );
+  }
+}
+
+
+// ─── Rep Counter Overlay ──────────────────────────────────────────────────────
+ 
+class _RepCounterOverlay extends ConsumerWidget {
+  const _RepCounterOverlay({
+    required this.accentColor,
+  });
+ 
+  final Color accentColor;
+ 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+
+    final workoutState = ref.watch(workoutNotifierProvider);
+    final progress = workoutState.phaseProgress;
+ 
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A0F).withOpacity(0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Set indicator
+          Column(
+            children: [
+              Text(
+                'SET ${workoutState.currentSet}/${workoutState.sets}',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: accentColor.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 6),
+               
+              // Rep dots
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(workoutState.reps, (i) {
+                  final done   = i < workoutState.currentRep - 1;
+                  final active = i == workoutState.currentRep - 1;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: active ? 10 : 7,
+                      height: active ? 10 : 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: (done || active)
+                            ? accentColor
+                            : accentColor.withOpacity(0.15),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+ 
+          // Circular countdown
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 4,
+                  backgroundColor: Colors.white.withOpacity(0.07),
+                  valueColor: AlwaysStoppedAnimation(accentColor),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      workoutState.phase == Phase.idle || workoutState.phase == Phase.done
+                          ? '–'
+                          : '${workoutState.secondsRemaining}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: accentColor,
+                        height: 1,
+                      ),
+                    ),
+                    // Text(
+                    //   workoutState.phase.name,
+                    //   style: TextStyle(
+                    //     fontSize: 7,
+                    //     fontWeight: FontWeight.w700,
+                    //     letterSpacing: 0.8,
+                    //     color: accentColor.withOpacity(0.6),
+                    //   ),
+                    // ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
