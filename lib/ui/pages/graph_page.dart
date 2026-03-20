@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:lifter/ble/ble_service.dart';
+import 'package:lifter/features/bluetooth/ble_service.dart';
 
 // ─── GraphPage ────────────────────────────────────────────────────────────────
 // Shows a live-updating force/load graph.

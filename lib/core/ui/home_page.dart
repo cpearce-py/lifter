@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:lifter/ble/ble_service.dart';
-import 'package:lifter/ble/widgets.dart';
-import 'package:lifter/providers/user_provider.dart';
+import 'package:lifter/features/bluetooth/ble_service.dart';
+import 'package:lifter/features/bluetooth/widgets.dart';
+import 'package:lifter/core/providers/user_provider.dart';
 
 
 // ─── Data models ──────────────────────────────────────────────────────────────

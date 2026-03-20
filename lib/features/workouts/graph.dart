@@ -239,5 +239,8 @@ class _GraphPainter extends CustomPainter {
   bool shouldRepaint(_GraphPainter old) =>
       old.data != data ||
       old.peakValue != peakValue ||
-      old.isRecording != isRecording;
+      old.isRecording != isRecording ||
+      old.yMax != yMax ||
+      old.maxPoints != maxPoints ||
+      old.accentColor != accentColor;
 }

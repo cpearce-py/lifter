@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lifter/pages/sessions/peak_load_session.dart';
-import 'package:lifter/pages/sessions/repeater_session.dart';
-import 'package:lifter/providers/workout_provider.dart';
-import 'package:lifter/models/workout_session.dart';
-import 'package:lifter/widgets/tools.dart';
+import 'package:lifter/ui/pages/sessions/peak_load_session.dart';
+import 'package:lifter/features/workouts/sessions/repeater_session.dart';
+import 'package:lifter/features/workouts/workout_provider.dart';
+import 'package:lifter/core/models/workout_session.dart';
+import 'package:lifter/core/ui/widgets/controls.dart';
 
 class WorkoutPage extends ConsumerStatefulWidget {
   const WorkoutPage({super.key, required this.tabNotifier});

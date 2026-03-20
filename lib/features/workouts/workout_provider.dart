@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/widgets/graph.dart';
+import 'package:lifter/features/workouts/graph.dart';
 
 // events that can be sent to state machine
 enum Event { 

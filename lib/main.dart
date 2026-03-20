@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/ble/ble_service.dart';
-import 'package:lifter/providers/user_provider.dart';
-import 'package:lifter/screens/username_screen.dart';
-
-import 'pages/main_shell.dart';
+import 'package:lifter/features/bluetooth/ble_service.dart';
+import 'package:lifter/core/providers/user_provider.dart';
+import 'package:lifter/core/ui/screens/username_screen.dart';
+import 'package:lifter/core/ui/main_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

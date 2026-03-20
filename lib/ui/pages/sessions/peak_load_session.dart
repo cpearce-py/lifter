@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../widgets/graph.dart';
+import '../../../features/workouts/graph.dart';
 import 'base_session.dart';
 
 // ─── PeakLoadSessionPage ──────────────────────────────────────────────────────

@@ -1,31 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/providers/workout_provider.dart';
-import 'package:lifter/widgets/graph.dart';
+import 'package:lifter/features/workouts/workout_provider.dart';
+import 'package:lifter/features/workouts/graph.dart';
 
 class RepeaterWorkoutPage extends ConsumerWidget {
   static const _accentColor    = Color(0xFFE8FF47);
   static const _restColor      = Color(0xFF47C8FF);
   static const _setRestColor   = Color(0xFFB47FFF);
+  static const _pauseColour   = Color.fromARGB(255, 255, 127, 127);
+  static const _finishedColour   = Color.fromARGB(255, 129, 255, 127);
 
   static const _accentForPhase = {
     Phase.working: _accentColor,
+    Phase.idle: _accentColor,
     Phase.resting: _restColor,
     Phase.setResting: _setRestColor,
+    Phase.paused: _pauseColour,
+    Phase.done: _finishedColour,
+    Phase.cancelled: _pauseColour,
   };
 
   const RepeaterWorkoutPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final phase = ref.watch(workoutNotifierProvider.select((s) => s.phase));
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: Column(
         children: [
           WorkoutHeader(),
-          Expanded(child: GraphArea(accentColor: _accentColor,)),
-          WorkoutControlsSection(accentColor: _accentColor),
+          Expanded(child: GraphArea(accentColor: _accentForPhase[phase]!)),
+          WorkoutControlsSection(accentColor: _accentForPhase[phase]!),
         ],
       )
     );
@@ -234,6 +241,7 @@ class HeaderLabel extends ConsumerWidget {
     final workoutPhase = ref.watch(
       workoutNotifierProvider.select((s) => s.phase)
     );
+    debugPrint("[HeaderLabel] - Rebuilding");
     return Expanded(
       child: Text(
         workoutPhase.name,
@@ -260,7 +268,6 @@ class _RepCounterOverlay extends ConsumerWidget {
  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final workoutState = ref.watch(workoutNotifierProvider);
     final progress = workoutState.phaseProgress;
  

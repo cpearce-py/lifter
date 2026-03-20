@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../ble/ble_service.dart';
 import 'home_page.dart';
-import 'workout_page.dart';
-import 'graph_page.dart';
-import 'package:lifter/pages/sessions/repeater_session.dart';
+import 'package:lifter/features/bluetooth/ble_service.dart';
+import 'package:lifter/features/workouts/workout_page.dart';
+import 'package:lifter/ui/pages/graph_page.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 

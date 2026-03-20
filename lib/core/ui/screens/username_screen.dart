@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/user_provider.dart';
+import 'package:lifter/core/providers/user_provider.dart';
 
 class UsernameScreen extends ConsumerStatefulWidget {
   const UsernameScreen({super.key});

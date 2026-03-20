@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lifter/providers/workout_provider.dart';
-import 'package:lifter/widgets/graph.dart';
+import 'package:lifter/features/workouts/workout_provider.dart';
+import 'package:lifter/features/workouts/graph.dart';
 
 // ─── BaseSessionPage ──────────────────────────────────────────────────────────
 // The shared scaffold for every workout session.
