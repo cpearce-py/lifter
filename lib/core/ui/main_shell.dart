@@ -58,7 +58,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
-        page: RepeaterWorkoutPage(),
+        page: _PagePlaceholder(label: "Profile", icon: Icons.abc),
       ),
     ];
   }

@@ -28,7 +28,6 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
       icon: Icons.sensors_rounded,
       accentColor: Color(0xFF47C8FF),
       options: [
-        WorkoutOption(label: 'Display mode',    type: OptionType.segmented, choices: ['Force', 'Weight', 'Both']),
         WorkoutOption(label: 'Units',           type: OptionType.segmented, choices: ['kg', 'lb', 'N']),
         WorkoutOption(label: 'Graph duration',  type: OptionType.stepper,   min: 10, max: 120, step: 10, unit: 's'),
         WorkoutOption(label: 'Show peak line',  type: OptionType.toggle),
@@ -48,7 +47,7 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
         WorkoutOption(label: 'Reps',       type: OptionType.stepper, min: 1, max: 20, step: 1, unit: ''),
         WorkoutOption(label: 'Work time',  type: OptionType.stepper, min: 3, max: 60, step: 1, unit: 's'),
         WorkoutOption(label: 'Rest time',  type: OptionType.stepper, min: 3, max: 120, step: 3, unit: 's'),
-        WorkoutOption(label: 'Set rest',   type: OptionType.stepper, min: 10, max: 300, step: 30, unit: 's'),
+        WorkoutOption(label: 'Set rest',   type: OptionType.stepper, min: 10, max: 300, step: 10, unit: 's'),
         WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
       ],
       sessionBuilder: (values) {
