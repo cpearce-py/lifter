@@ -45,7 +45,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Workout',
         icon: Icons.fitness_center_outlined,
         activeIcon: Icons.fitness_center_rounded,
-        page: WorkoutPage(tabNotifier: _tabNotifier),
+        page: WorkoutNavigator(),
       ),
       _NavDestination(
         label: 'Graph',
@@ -76,8 +76,6 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
-      // Keep extendBody true so page content can slide behind the nav bar
-      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: [for (final d in _destinations) d.page],
@@ -87,6 +85,17 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _currentIndex,
         onTap: _onTap,
       ),
+    );
+  }
+}
+
+class WorkoutNavigator extends StatelessWidget {
+  const WorkoutNavigator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      onGenerateRoute: (settings) => MaterialPageRoute(builder: (_) => const WorkoutPage()),
     );
   }
 }
