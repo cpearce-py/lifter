@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/features/workouts/notes/save_page.dart';
 import 'package:lifter/features/workouts/workout_provider.dart';
 import 'package:lifter/features/workouts/graph.dart';
 
@@ -25,6 +26,21 @@ class RepeaterWorkoutPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    ref.listen<WorkoutState>(
+      workoutNotifierProvider, 
+      (previous, next) {
+        if (previous?.phase != Phase.done && next.phase == Phase.done) {
+          Future.delayed(const Duration(seconds: 2), () {
+            if (context.mounted) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SaveWorkoutPage()),
+              );
+            }
+          });
+        }
+      });
+
     final phase = ref.watch(workoutNotifierProvider.select((s) => s.phase));
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
@@ -67,7 +83,6 @@ class GraphArea extends ConsumerWidget {
             ),
           ),
           // Overlay sits on top (top-right corner by default)
-          // if (overlay != null)
           Positioned(
             top: 12,
             right: 12,
@@ -104,7 +119,6 @@ class WorkoutControlsSection extends ConsumerWidget {
               if (workoutPhase != Phase.idle) {
                 HapticFeedback.lightImpact();
                 notifier.reset();
-                debugPrint("Reset statemachine");
               }
            },
             child: Container(
@@ -180,7 +194,6 @@ class StartStopButton extends ConsumerWidget {
           final event = primaryButtonEvent(workoutPhase);
           if (event != null){
           notifier.send(event);
-          debugPrint("Sent event: $event");
           }
         },
         child: AnimatedContainer(
@@ -241,7 +254,6 @@ class HeaderLabel extends ConsumerWidget {
     final workoutPhase = ref.watch(
       workoutNotifierProvider.select((s) => s.phase)
     );
-    debugPrint("[HeaderLabel] - Rebuilding");
     return Expanded(
       child: Text(
         workoutPhase.name,

@@ -9,9 +9,7 @@ import 'package:lifter/core/models/workout_session.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 
 class WorkoutPage extends ConsumerStatefulWidget {
-  const WorkoutPage({super.key, required this.tabNotifier});
-
-  final ValueNotifier<int> tabNotifier;
+  const WorkoutPage({super.key});
 
   @override
   ConsumerState<WorkoutPage> createState() => _WorkoutPageState();
@@ -131,7 +129,6 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
       PageRouteBuilder(
         pageBuilder: (_, animation, __) => _WorkoutDetailPage(
           workout: workout,
-          tabNotifier: widget.tabNotifier,
         ),
         transitionsBuilder: (_, animation, __, child) {
           return SlideTransition(
@@ -349,11 +346,9 @@ class _WorkoutCardState extends State<_WorkoutCard>
 class _WorkoutDetailPage extends ConsumerStatefulWidget {
   const _WorkoutDetailPage({
     required this.workout,
-    required this.tabNotifier,
   });
 
   final WorkoutType workout;
-  final ValueNotifier<int> tabNotifier;
 
   @override
   ConsumerState<_WorkoutDetailPage> createState() => _WorkoutDetailPageState();
@@ -533,27 +528,22 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                 child: GestureDetector(
                   onTap: () {
                     HapticFeedback.mediumImpact();
-                    if (widget.workout.name == 'Live Data') {
-                      Navigator.pop(context);
-                      widget.tabNotifier.value = 2;
-                    } else {
-                      final workoutState = WorkoutState(
-                        sets:           (_values[0] as num).toInt(),
-                        reps:           (_values[1] as num).toInt(),
-                        workSeconds:    (_values[2] as num).toInt(),
-                        restSeconds:    (_values[3] as num).toInt(),
-                        setRestSeconds: (_values[4] as num).toInt(),
-                      );
-                      ref.read(workoutNotifierProvider.notifier).initialize(workoutState);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) {
-                            return widget.workout.sessionBuilder(_values);
-                          }
-                        ),
-                      );
-                    }
+                    final workoutState = WorkoutState(
+                      sets:           (_values[0] as num).toInt(),
+                      reps:           (_values[1] as num).toInt(),
+                      workSeconds:    (_values[2] as num).toInt(),
+                      restSeconds:    (_values[3] as num).toInt(),
+                      setRestSeconds: (_values[4] as num).toInt(),
+                    );
+                    ref.read(workoutNotifierProvider.notifier).initialize(workoutState);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) {
+                          return widget.workout.sessionBuilder(_values);
+                        }
+                      ),
+                    );
                   },
                   child: Container(
                     height: 58,

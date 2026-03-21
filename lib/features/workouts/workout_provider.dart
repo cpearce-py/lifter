@@ -117,22 +117,17 @@ class StateMachine extends Notifier<WorkoutState> {
     graphController.reset(resetPeak: true);
     _initialState = ws;
     state = ws;
-    debugPrint("Setup with: ${ws.toString()}");
   }
 
   void reset() {
     _cancelTimers();
     graphController.reset(resetPeak: true);
     state = _initialState;
-    debugPrint("Reset statemachine");
   }
 
   void send(Event event) {
     final nextPhase = _transitions[(state.phase, event)];
     if (nextPhase == null || nextPhase == state.phase) return;
-
-    debugPrint("Next phase: ${nextPhase.toString()}");
-    debugPrint("Time left: ${_secondsForPhase(nextPhase)}");
 
     if (event == Event.skip) {
       _advancePhase();
@@ -149,7 +144,6 @@ class StateMachine extends Notifier<WorkoutState> {
   }
 
   void _advancePhase() {
-    debugPrint("Advancing a step");
     final isLastRep = state.currentRep >= state.reps;
     final isLastSet = state.currentSet >= state.sets;
 
