@@ -8,6 +8,7 @@ import 'package:lifter/features/workouts/graph.dart';
 enum Event { 
   start, 
   pause, 
+  resume,
   skip,
   cancel, 
   reset, 
@@ -90,6 +91,7 @@ class StateMachine extends Notifier<WorkoutState> {
   Timer? _countdownTimer;
   Timer? _sampleTimer;
   WorkoutState _initialState = const WorkoutState();
+  Phase _resumePhase = Phase.working;
 
   final graphController = LiveGraphController(maxPoints: 200, yMax: 100.0);
   // TODO: should come from bluetooth
@@ -99,7 +101,7 @@ class StateMachine extends Notifier<WorkoutState> {
 
   static const _transitions = {
     (Phase.idle,    Event.start):  Phase.working,
-    (Phase.paused,  Event.start):  Phase.working,
+    (Phase.paused,  Event.resume):  Phase.working,
     (Phase.resting, Event.skip): Phase.working,
     (Phase.working, Event.pause):  Phase.paused,
     (Phase.working, Event.cancel): Phase.cancelled,
@@ -134,9 +136,22 @@ class StateMachine extends Notifier<WorkoutState> {
       return;
     }
 
+    if (event == Event.pause) {
+      _resumePhase = state.phase;
+      state = state.copyWith(phase: Phase.paused);
+      _cancelTimers();
+      return;
+    }
+
+    if (event == Event.resume) {
+      state = state.copyWith(phase: _resumePhase);
+      _startTimers();
+      return;
+    }
+
     state = _transitionTo(nextPhase);
 
-    if (nextPhase == Phase.working || nextPhase == Phase.resting) {
+    if (nextPhase == Phase.working || nextPhase == Phase.resting || nextPhase == Phase.setResting) {
       _startTimers();
     } else {
       _cancelTimers();
@@ -217,7 +232,7 @@ class StateMachine extends Notifier<WorkoutState> {
 
   void _onCountdownTick(Timer t) {
     if (state.secondsRemaining > 1) {
-      state = state.copyWith(secondsRemaining: state.secondsRemaining - 1);;
+      state = state.copyWith(secondsRemaining: state.secondsRemaining - 1);
     } else {
       _advancePhase();
     }
@@ -226,7 +241,7 @@ class StateMachine extends Notifier<WorkoutState> {
   @override
   WorkoutState build() {
     ref.onDispose(() {
-      _cancelTimers; // clean up timer if provider is destroyed
+      _cancelTimers(); // clean up timer if provider is destroyed
       graphController.dispose();
     });
     return const WorkoutState();
@@ -253,7 +268,7 @@ String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
 
 Event? primaryButtonEvent(Phase phase) => switch (phase) {
   Phase.idle => Event.start,
-  Phase.paused => Event.start,
+  Phase.paused => Event.resume,
   Phase.working => Event.pause,
   Phase.resting => Event.skip,
   Phase.setResting => Event.skip,
