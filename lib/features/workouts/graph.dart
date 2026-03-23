@@ -16,7 +16,7 @@ class LiveGraphController extends ChangeNotifier {
   /// How much time is visible across the full width of the graph.
   final Duration windowDuration;
 
-  final Queue<(DateTime, double)> _samples = Queue();
+  final Queue<(int, double)> _samples = Queue();
 
   double _peakValue = 0;
   double get peakValue => _peakValue;
@@ -27,7 +27,7 @@ class LiveGraphController extends ChangeNotifier {
   /// Just write into the buffer. No notify, no rebuild.
   void addSample(double value) {
     if (value > _peakValue) _peakValue = value;
-    _samples.addLast((DateTime.now(), value));
+    _samples.addLast((DateTime.now().millisecondsSinceEpoch, value));
     _pruneOld();
   }
 
@@ -38,14 +38,15 @@ class LiveGraphController extends ChangeNotifier {
   }
 
   void _pruneOld() {
-    final cutoff = DateTime.now().subtract(windowDuration);
-    while (_samples.isNotEmpty && _samples.first.$1.isBefore(cutoff)) {
+    final cutoff = DateTime.now().millisecondsSinceEpoch -
+      windowDuration.inMilliseconds;
+    while (_samples.isNotEmpty && _samples.first.$1 < cutoff) {
       _samples.removeFirst();
     }
   }
 
   /// Snapshot for the painter — called on each tick, not on each sample.
-  List<(DateTime, double)> get snapshot => _samples.toList(growable: false);
+  List<(int, double)> get snapshot => _samples.toList(growable: false);
 }
 
 // ─── LiveGraph ────────────────────────────────────────────────────────────────
@@ -121,7 +122,7 @@ class _LiveGraphState extends State<LiveGraph>
         child: CustomPaint(
           painter: _GraphPainter(
             snapshot: widget.controller.snapshot,
-            now: DateTime.now(),
+            now: DateTime.now().millisecondsSinceEpoch,
             windowDuration: widget.controller.windowDuration,
             yMax: widget.controller.yMax,
             accentColor: widget.accentColor,
@@ -148,8 +149,8 @@ class _GraphPainter extends CustomPainter {
     required this.isRecording,
   });
 
-  final List<(DateTime, double)> snapshot;
-  final DateTime now;
+  final List<(int, double)> snapshot;
+  final int now;
   final Duration windowDuration;
   final double yMax;
   final Color accentColor;
@@ -159,9 +160,9 @@ class _GraphPainter extends CustomPainter {
   /// Maps a sample timestamp to an X coordinate.
   /// Samples at exactly `now` are at the right edge.
   /// Samples `windowDuration` ago are at the left edge.
-  double _timeToX(DateTime t, double left, double width) {
-    final ageSecs = now.difference(t).inMicroseconds / 1e6;
-    final windowSecs = windowDuration.inMicroseconds / 1e6;
+  double _timeToX(int tMs, double left, double width, int nowMs) {
+    final ageSecs = (nowMs - tMs) / 1000.0;
+    final windowSecs = windowDuration.inMilliseconds / 1000.0;
     return left + width * (1 - ageSecs / windowSecs);
   }
 
@@ -229,7 +230,7 @@ class _GraphPainter extends CustomPainter {
 
     for (int i = 0; i < snapshot.length; i++) {
       final (t, value) = snapshot[i];
-      final x = _timeToX(t, hPad, chartW);
+      final x = _timeToX(t, hPad, chartW, now);
       final y = vPad + chartH * (1 - (value / yMax).clamp(0, 1));
 
       if (i == 0) {
