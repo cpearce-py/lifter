@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/scale_provider.dart';
+import 'package:lifter/features/bluetooth/ble_service.dart';
 import 'package:lifter/features/workouts/graph.dart';
 
 // events that can be sent to state machine
@@ -89,15 +90,11 @@ class WorkoutState {
 
 class StateMachine extends Notifier<WorkoutState> {
   Timer? _countdownTimer;
-  Timer? _sampleTimer;
+  StreamSubscription<WeightReading>? _scaleSub;
   WorkoutState _initialState = const WorkoutState();
   Phase _resumePhase = Phase.working;
 
-  final graphController = LiveGraphController(maxPoints: 200, yMax: 100.0);
-  // TODO: should come from bluetooth
-  static const _sampleHz = 20; 
-  // mock data
-  double _phase = 0;
+  final graphController = LiveGraphController(maxPoints: 200, yMax: 150.0);
 
   static const _transitions = {
     (Phase.idle,    Event.start):  Phase.working,
@@ -184,14 +181,6 @@ class StateMachine extends Notifier<WorkoutState> {
     }
   }
 
-  double _readSenor() {
-    _phase += 2 * pi / _sampleHz;
-    final base = sin(_phase) * 30 + 50;
-    final wobble = sin(_phase * 4.7) * 8;
-    final noise = (Random().nextDouble() - 0.5) * 6;
-    return (base + wobble + noise).clamp(0, 100);
-  }
-
   WorkoutState _transitionTo(Phase phase) {
       final duration = _secondsForPhase(phase);
       return state.copyWith(
@@ -211,23 +200,11 @@ class StateMachine extends Notifier<WorkoutState> {
   void _cancelTimers() {
     _countdownTimer?.cancel();
     _countdownTimer = null;
-    _sampleTimer?.cancel();
-    _sampleTimer = null;
   }
 
   void _startTimers() {
     _cancelTimers();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), _onCountdownTick);
-    _sampleTimer = Timer.periodic(
-      Duration(milliseconds: 1000 ~/ _sampleHz),
-      _onSampleTick,
-    );
-  }
-
-  void _onSampleTick(Timer t) {
-    if (state.phase == Phase.working) {
-      graphController.addSample(_readSenor());
-    }
   }
 
   void _onCountdownTick(Timer t) {
@@ -240,8 +217,18 @@ class StateMachine extends Notifier<WorkoutState> {
 
   @override
   WorkoutState build() {
+    _scaleSub = ref
+      .read(weiHengServiceProvider)
+      .weightStream
+      .listen((reading) {
+        if (state.phase == Phase.working) {
+          graphController.addSample(reading.weightKg);
+          }
+        });
+
     ref.onDispose(() {
       _cancelTimers(); // clean up timer if provider is destroyed
+      _scaleSub?.cancel();
       graphController.dispose();
     });
     return const WorkoutState();

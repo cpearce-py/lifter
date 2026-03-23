@@ -1,84 +1,104 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-// ─── BleService ───────────────────────────────────────────────────────────────
-// Owns all Bluetooth state and exposes it as a ChangeNotifier so any widget
-// in the tree can listen and rebuild when the connection changes.
-//
-// Usage:
-//   final ble = BleService();          // create once at the top of your app
-//   ListenableBuilder(listenable: ble, builder: (context, _) { ... })
-//
-// Wire up real BLE by replacing the three stub methods:
-//   startScan(), _connectToDevice(), _disconnectFromDevice()
+class WeightReading {
+  final double weightKg;  // weight in kg (divide raw by 100)
+  final bool isStable;
+  final WeightUnit unit;
 
-enum BleState { disconnected, scanning, connected }
+  WeightReading({
+    required this.weightKg,
+    required this.isStable,
+    required this.unit,
+  });
+}
 
-class BleService extends ChangeNotifier {
-  BleState _state = BleState.disconnected;
-  String? _connectedDeviceName;
+enum WeightUnit { kg, lb, jin, unknown }
 
-  // ── Public read-only state ─────────────────────────────────────────────────
+class WeiHengC06Service {
+  // From manufacturer source: ManufacturerId = 256
+  static const int _manufacturerId = 256;
+  // Offsets within manufacturer-specific data
+  static const int _weightOffset = 10;
+  static const int _statusOffset = 14;
 
-  BleState get state => _state;
-  String? get connectedDeviceName => _connectedDeviceName;
-  bool get isConnected => _state == BleState.connected;
-  bool get isScanning => _state == BleState.scanning;
+  final _weightController = StreamController<WeightReading>.broadcast();
+  Stream<WeightReading> get weightStream => _weightController.stream;
 
-  // ── Simulated nearby devices ───────────────────────────────────────────────
-  // Replace with a stream from your BLE package (e.g. flutter_blue_plus).
-  List<String> _scannedDevices = [];
-  List<String> get scannedDevices => List.unmodifiable(_scannedDevices);
+  StreamSubscription? _scanSubscription;
 
-  static const _mockDevices = ['Weiheng Scale', 'Weiheng Pro', 'Weiheng Lite'];
+  Future<void> startListening() async {
+    final state = await FlutterBluePlus.adapterState
+      .where((s) => 
+        s == BluetoothAdapterState.on ||
+        s == BluetoothAdapterState.unauthorized ||
+        s == BluetoothAdapterState.unavailable)
+      .first;
 
-  // ── Actions ────────────────────────────────────────────────────────────────
+    if (state != BluetoothAdapterState.on) {
+      debugPrint('[WeiHengC06Service] Bluetooth unavailable');
+      return;
+    }
 
-  /// Start scanning for nearby devices.
-  /// Replace the body with a real BLE scan (e.g. FlutterBluePlus.startScan).
-  Future<void> startScan() async {
-    if (_state == BleState.scanning) return;
-    _scannedDevices = [];
-    _state = BleState.scanning;
-    notifyListeners();
+    FlutterBluePlus.startScan(
+      continuousUpdates: true,
+      removeIfGone: const Duration(seconds: 5),
+    );
 
-    // ── Stub: simulates a 1.5 s scan then returns mock results ────────────
-    await Future.delayed(const Duration(milliseconds: 1500));
-    _scannedDevices = _mockDevices;
-    // ── End stub ───────────────────────────────────────────────────────────
-
-    _state = BleState.disconnected;
-    notifyListeners();
+    FlutterBluePlus.onScanResults.listen((results) {
+      for (final result in results) {
+        _processResult(result);
+      }
+    });
   }
 
-  /// Connect to a device by name.
-  /// Replace with real BLE connection logic.
-  Future<void> connect(String deviceName) async {
-    await _connectToDevice(deviceName);
-    _connectedDeviceName = deviceName;
-    _state = BleState.connected;
-    notifyListeners();
+  void stopListening() {
+    FlutterBluePlus.stopScan();
+    _scanSubscription?.cancel();
+    _scanSubscription = null;
   }
 
-  /// Disconnect from the current device.
-  Future<void> disconnect() async {
-    await _disconnectFromDevice();
-    _connectedDeviceName = null;
-    _state = BleState.disconnected;
-    notifyListeners();
+  void _processResult(ScanResult result) {
+    final mfrData = result.advertisementData.manufacturerData[_manufacturerId];
+    if (mfrData == null || mfrData.length <= _statusOffset) return;
+
+    final reading = _decode(mfrData);
+    if (reading != null) {
+      _weightController.add(reading);
+    }
   }
 
-  // ── Private BLE stubs (swap these for real implementation) ────────────────
+  WeightReading? _decode(List<int> bytes) {
+    if (bytes.length < _statusOffset + 1) return null;
 
-  Future<void> _connectToDevice(String name) async {
-    // TODO: replace with real BLE connect, e.g.:
-    //   final device = scannedDevices.firstWhere((d) => d.name == name);
-    //   await device.connect();
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Weight: 16-bit big-endian at offset 10, unit is 0.01 kg
+    final rawWeight =
+        ((bytes[_weightOffset] & 0xff) << 8) | (bytes[_weightOffset + 1] & 0xff);
+    final weightKg = rawWeight / 100.0;
+
+    // Status byte: upper nibble = stable, lower nibble = unit
+    final statusByte = bytes[_statusOffset];
+    final isStable = ((statusByte & 0xf0) >> 4) != 0;
+    final unitCode = statusByte & 0x0f;
+
+    final unit = switch (unitCode) {
+      1 => WeightUnit.kg,
+      2 => WeightUnit.lb,
+      4 => WeightUnit.jin,
+      _ => WeightUnit.unknown,
+    };
+
+    return WeightReading(
+      weightKg: weightKg,
+      isStable: isStable,
+      unit: unit,
+    );
   }
 
-  Future<void> _disconnectFromDevice() async {
-    // TODO: replace with real BLE disconnect, e.g.:
-    //   await _currentDevice?.disconnect();
-    await Future.delayed(const Duration(milliseconds: 200));
+  void dispose() {
+    stopListening();
+    _weightController.close();
   }
 }
+

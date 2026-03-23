@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:lifter/features/bluetooth/ble_service.dart';
+// import 'package:lifter/features/bluetooth/ble_service.dart';
 import 'package:lifter/features/bluetooth/widgets.dart';
 import 'package:lifter/core/providers/user_provider.dart';
 
@@ -41,9 +41,7 @@ class _WorkoutRow {
 
 
 class HomePage extends ConsumerStatefulWidget {
-  const HomePage({super.key, required this.bleService});
-
-  final BleService bleService;
+  const HomePage({super.key});
 
   @override
   ConsumerState<HomePage> createState() => _HomePageState();
@@ -116,7 +114,7 @@ class _HomePageState extends ConsumerState<HomePage>
         physics: const BouncingScrollPhysics(),
         slivers: [
           _buildHeader(),
-          _buildBleBanner(),
+          // _buildBleBanner(),
           _buildSectionLabel('$month at a glance'),
           _buildStatsGrid(),
           _buildSectionLabel('Recent workouts'),
@@ -277,22 +275,22 @@ class _HomePageState extends ConsumerState<HomePage>
 
   // ── BLE Banner ─────────────────────────────────────────────────────────────
 
-  Widget _buildBleBanner() {
-    return SliverToBoxAdapter(
-      child: _FadeSlide(
-        animation: _controller,
-        intervalStart: 0.05,
-        intervalEnd: 0.45,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: ListenableBuilder(
-            listenable: widget.bleService,
-            builder: (context, _) => BleBanner(service: widget.bleService),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildBleBanner() {
+  //   return SliverToBoxAdapter(
+  //     child: _FadeSlide(
+  //       animation: _controller,
+  //       intervalStart: 0.05,
+  //       intervalEnd: 0.45,
+  //       child: Padding(
+  //         padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+  //         child: ListenableBuilder(
+  //           listenable: widget.bleService,
+  //           builder: (context, _) => BleBanner(service: widget.bleService),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   // ── Month progress bar ─────────────────────────────────────────────────────
 

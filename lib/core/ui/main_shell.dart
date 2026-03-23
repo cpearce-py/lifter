@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'home_page.dart';
-import 'package:lifter/features/bluetooth/ble_service.dart';
-import 'package:lifter/features/workouts/workout_page.dart';
 import 'package:lifter/ui/pages/graph_page.dart';
+import 'home_page.dart';
+// import 'package:lifter/features/bluetooth/ble_service.dart';
+import 'package:lifter/features/workouts/workout_page.dart';
+// import 'package:lifter/ui/pages/graph_page.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.bleService});
-
-  final BleService bleService;
+  const MainShell({super.key});
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -39,7 +38,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Home',
         icon: Icons.home_rounded,
         activeIcon: Icons.home_rounded,
-        page: HomePage(bleService: widget.bleService),
+        page: HomePage(),
       ),
       _NavDestination(
         label: 'Workout',
@@ -51,7 +50,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Graph',
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart_rounded,
-        page: GraphPage(bleService: widget.bleService),
+        page: WorkoutLiveGraphDebugPage(),
       ),
       _NavDestination(
         label: 'Profile',

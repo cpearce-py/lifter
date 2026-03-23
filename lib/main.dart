@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/features/bluetooth/ble_service.dart';
+// import 'package:lifter/features/bluetooth/ble_service.dart';
 import 'package:lifter/core/providers/user_provider.dart';
 import 'package:lifter/core/ui/screens/username_screen.dart';
 import 'package:lifter/core/ui/main_shell.dart';
@@ -25,11 +25,11 @@ class FitApp extends ConsumerStatefulWidget {
 }
 
 class _FitAppState extends ConsumerState<FitApp> {
-  final _bleService = BleService();
+  // final _bleService = BleService();
 
   @override
   void dispose() {
-    _bleService.dispose();
+    // _bleService.dispose();
     super.dispose();
   }
 
@@ -56,7 +56,7 @@ class _FitAppState extends ConsumerState<FitApp> {
         ),
         data: (username) => username == null
             ? const UsernameScreen()
-            : MainShell(bleService: _bleService),
+            : MainShell(),
       ),
     );
   }
