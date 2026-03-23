@@ -150,14 +150,14 @@ class BaseSessionPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Expanded(
-              child: _StatChip(
-                label: 'Samples',
-                value: controller.data.length.toString(),
-                unit: '',
-                color: const Color(0xFFB47FFF),
-              ),
-            ),
+            // Expanded(
+            //   child: _StatChip(
+            //     label: 'Samples',
+            //     value: controller.,
+            //     unit: '',
+            //     color: const Color(0xFFB47FFF),
+            //   ),
+            // ),
           ],
         ),
       ),

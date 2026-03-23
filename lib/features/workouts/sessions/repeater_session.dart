@@ -6,22 +6,6 @@ import 'package:lifter/features/workouts/workout_provider.dart';
 import 'package:lifter/features/workouts/graph.dart';
 
 class RepeaterWorkoutPage extends ConsumerWidget {
-  static const _accentColor    = Color(0xFFE8FF47);
-  static const _restColor      = Color(0xFF47C8FF);
-  static const _setRestColor   = Color(0xFFB47FFF);
-  static const _pauseColour   = Color.fromARGB(255, 255, 127, 127);
-  static const _finishedColour   = Color.fromARGB(255, 129, 255, 127);
-
-  static const _accentForPhase = {
-    Phase.working: _accentColor,
-    Phase.idle: _accentColor,
-    Phase.resting: _restColor,
-    Phase.setResting: _setRestColor,
-    Phase.paused: _pauseColour,
-    Phase.done: _finishedColour,
-    Phase.cancelled: _pauseColour,
-  };
-
   const RepeaterWorkoutPage({super.key});
 
   @override
@@ -41,14 +25,13 @@ class RepeaterWorkoutPage extends ConsumerWidget {
         }
       });
 
-    final phase = ref.watch(workoutNotifierProvider.select((s) => s.phase));
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: Column(
         children: [
           WorkoutHeader(),
-          Expanded(child: GraphArea(accentColor: _accentForPhase[phase]!)),
-          WorkoutControlsSection(accentColor: _accentForPhase[phase]!),
+          Expanded(child: GraphArea()),
+          WorkoutControlsSection(),
         ],
       )
     );
@@ -58,16 +41,15 @@ class RepeaterWorkoutPage extends ConsumerWidget {
 class GraphArea extends ConsumerWidget {
   const GraphArea({
     super.key,
-    required Color accentColor,
-  }) : _accentColor = accentColor;
-
-  final Color _accentColor;
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isRecording = ref.watch(
-      workoutNotifierProvider.select((s) => s.phase == Phase.working)
+    final phase = ref.watch(
+      workoutNotifierProvider.select((s) => s.phase)
     );
+    final accentColor = accentColorForPhase(phase);
+    final isRecording = phase == Phase.working;
     final controller = ref.watch(graphControllerProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -77,7 +59,7 @@ class GraphArea extends ConsumerWidget {
           Positioned.fill(
             child: LiveGraph(
               controller: controller,
-              accentColor: _accentColor,
+              accentColor: accentColor,
               showPeakLine: true,
               isRecording: isRecording,
             ),
@@ -86,7 +68,7 @@ class GraphArea extends ConsumerWidget {
           Positioned(
             top: 12,
             right: 12,
-            child: _RepCounterOverlay(accentColor: _accentColor),
+            child: _RepCounterOverlay(accentColor: accentColor),
           ),
         ],
       ),
@@ -97,14 +79,11 @@ class GraphArea extends ConsumerWidget {
 class WorkoutControlsSection extends ConsumerWidget {
   const WorkoutControlsSection({
     super.key,
-    required Color accentColor,
-  }) : _accentColor = accentColor;
-
-  final Color _accentColor;
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workoutPhase = ref.watch(
+    final phase = ref.watch(
       workoutNotifierProvider.select((s) => s.phase)
     );
     final notifier = ref.read(workoutNotifierProvider.notifier);
@@ -116,7 +95,7 @@ class WorkoutControlsSection extends ConsumerWidget {
           // Reset
           GestureDetector(
             onTap: () {
-              if (workoutPhase != Phase.idle) {
+              if (phase != Phase.idle) {
                 HapticFeedback.lightImpact();
                 notifier.reset();
               }
@@ -136,7 +115,7 @@ class WorkoutControlsSection extends ConsumerWidget {
           const SizedBox(width: 12),
     
           // Start / Stop
-          StartStopButton(accentColor: _accentColor),
+          StartStopButton(accentColor: accentColorForPhase(phase)),
         ],
       ),
     );
@@ -192,6 +171,7 @@ class StartStopButton extends ConsumerWidget {
         onTap: () {
           HapticFeedback.mediumImpact();
           final event = primaryButtonEvent(workoutPhase);
+          debugPrint("Primary button event: $event");
           if (event != null){
           notifier.send(event);
           }
@@ -296,39 +276,11 @@ class _RepCounterOverlay extends ConsumerWidget {
           // Set indicator
           Column(
             children: [
-              Text(
-                'SET ${workoutState.currentSet}/${workoutState.sets}',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: accentColor.withOpacity(0.6),
-                ),
-              ),
+              _SetLabel(accentColor: accentColor),
               const SizedBox(height: 6),
                
               // Rep dots
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(workoutState.reps, (i) {
-                  final done   = i < workoutState.currentRep - 1;
-                  final active = i == workoutState.currentRep - 1;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: active ? 10 : 7,
-                      height: active ? 10 : 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: (done || active)
-                            ? accentColor
-                            : accentColor.withOpacity(0.15),
-                      ),
-                    ),
-                  );
-                }),
-              ),
+              _RepDots(accentColor: accentColor),
             ],
           ),
           const SizedBox(height: 8),
@@ -375,6 +327,64 @@ class _RepCounterOverlay extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RepDots extends ConsumerWidget {
+  const _RepDots({required this.accentColor});
+
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (reps, currentRep) = ref.watch(
+      workoutNotifierProvider.select((s) => (s.reps, s.currentRep))
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(reps, (i) {
+        final done   = i < currentRep - 1;
+        final active = i == currentRep - 1;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: active ? 10 : 7,
+            height: active ? 10 : 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: (done || active)
+                  ? accentColor
+                  : accentColor.withOpacity(0.15),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _SetLabel extends ConsumerWidget {
+  const _SetLabel({
+    required this.accentColor,
+  });
+
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (currentSet, sets) = ref.watch(
+      workoutNotifierProvider.select((s) => (s.currentSet, s.sets))
+    );
+    return Text(
+      'SET $currentSet/$sets',
+      style: TextStyle(
+        fontSize: 9,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.5,
+        color: accentColor.withOpacity(0.6),
       ),
     );
   }

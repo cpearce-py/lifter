@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/scale_provider.dart';
 import 'package:lifter/features/bluetooth/ble_service.dart';
@@ -94,7 +94,7 @@ class StateMachine extends Notifier<WorkoutState> {
   WorkoutState _initialState = const WorkoutState();
   Phase _resumePhase = Phase.working;
 
-  final graphController = LiveGraphController(maxPoints: 200, yMax: 150.0);
+  final graphController = LiveGraphController(yMax: 150.0);
 
   static const _transitions = {
     (Phase.idle,    Event.start):  Phase.working,
@@ -270,4 +270,13 @@ String secondaryLabelForPhase(Phase phase) => switch (phase) {
   Phase.idle       => 'READY',
   Phase.done       => 'DONE ✓',
   _ => "",
+};
+
+Color accentColorForPhase(Phase phase) => switch (phase) {
+  Phase.working    => const Color(0xFFE8FF47),
+  Phase.resting    => const Color(0xFF47C8FF),
+  Phase.setResting => const Color(0xFFB47FFF),
+  Phase.paused     => const Color(0xFFFF7F7F),
+  Phase.done       => const Color(0xFF81FF7F),
+  _                => const Color(0xFFE8FF47),
 };

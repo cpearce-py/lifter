@@ -15,12 +15,13 @@ class _WorkoutLiveGraphDebugPageState
     extends ConsumerState<WorkoutLiveGraphDebugPage> {
   static const _accentColor = Color(0xFF47C8FF);
 
-  final _graphController = LiveGraphController(maxPoints: 200, yMax: 150.0);
-  int _packetCount = 0;
+  final _graphController = LiveGraphController(yMax: 10.0);
+  final _packetCount = ValueNotifier<int>(0);
 
   @override
   void dispose() {
     _graphController.dispose();
+    _packetCount.dispose();
     super.dispose();
   }
 
@@ -29,7 +30,7 @@ class _WorkoutLiveGraphDebugPageState
     ref.listen(weightStreamProvider, (_, next) {
       next.whenData((reading) {
         _graphController.addSample(reading.weightKg);
-        setState(() => _packetCount++);
+        _packetCount.value++;
       });
     });
 
@@ -65,7 +66,10 @@ class _WorkoutLiveGraphDebugPageState
                   'Peak',
                   '${_graphController.peakValue.toStringAsFixed(2)} kg',
                 ),
-                _DebugRow('Packets', '$_packetCount'),
+                ValueListenableBuilder<int>(
+                  valueListenable: _packetCount,
+                  builder: (_, count, _) => _DebugRow("Packets", '$count'),
+                ),
               ],
             ),
             const SizedBox(height: 16),
