@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/ui/pages/sessions/peak_load_session.dart';
 import 'package:lifter/features/workouts/sessions/repeater_session.dart';
-import 'package:lifter/features/workouts/workout_provider.dart';
+import 'package:lifter/features/workouts/workout_state_machine.dart';
 import 'package:lifter/core/models/workout_session.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
+import 'package:lifter/core/providers/workout_provider.dart';
 
 class WorkoutPage extends ConsumerStatefulWidget {
   const WorkoutPage({super.key});
@@ -397,6 +398,8 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
   @override
   Widget build(BuildContext context) {
     final w = widget.workout;
+    // Need to anchor the provider so we don't overwrite on transition
+    // ref.watch(workoutNotifierProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),

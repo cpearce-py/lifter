@@ -116,6 +116,7 @@ class StateMachine extends Notifier<WorkoutState> {
     graphController.reset(resetPeak: true);
     _initialState = ws;
     state = ws;
+    ref.read(bleServiceProvider).startListening();
   }
 
   void reset() {
@@ -147,6 +148,10 @@ class StateMachine extends Notifier<WorkoutState> {
     }
 
     state = _transitionTo(nextPhase);
+
+    if (nextPhase == Phase.done || nextPhase == Phase.cancelled) {
+      ref.read(bleServiceProvider).stopListening();
+    }
 
     if (nextPhase == Phase.working || nextPhase == Phase.resting || nextPhase == Phase.setResting) {
       _startTimers();
@@ -232,6 +237,7 @@ class StateMachine extends Notifier<WorkoutState> {
       _cancelTimers(); // clean up timer if provider is destroyed
       _scaleSub?.cancel();
       graphController.dispose();
+      ref.read(bleServiceProvider).stopListening();
     });
     return const WorkoutState();
   }

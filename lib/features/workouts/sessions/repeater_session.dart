@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:lifter/core/providers/workout_provider.dart';
 import 'package:lifter/features/workouts/notes/save_page.dart';
 import 'package:lifter/features/workouts/workout_state_machine.dart';
@@ -53,7 +54,7 @@ class GraphArea extends ConsumerWidget {
     final isGraphActive = phase != Phase.idle && 
                           phase != Phase.done &&
                           phase != Phase.cancelled;
-    final controller = ref.read(graphControllerProvider);
+    final controller = ref.watch(graphControllerProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Stack(
@@ -89,7 +90,6 @@ class WorkoutControlsSection extends ConsumerWidget {
     final phase = ref.watch(
       workoutNotifierProvider.select((s) => s.phase)
     );
-    final notifier = ref.read(workoutNotifierProvider.notifier);
     return Padding(
       padding: EdgeInsets.fromLTRB(
           16, 8, 16, MediaQuery.of(context).padding.bottom + 24),
@@ -100,7 +100,7 @@ class WorkoutControlsSection extends ConsumerWidget {
             onTap: () {
               if (phase != Phase.idle) {
                 HapticFeedback.lightImpact();
-                notifier.reset();
+                ref.read(workoutNotifierProvider.notifier).reset();
               }
            },
             child: Container(
@@ -161,8 +161,6 @@ class StartStopButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    final notifier = ref.read(workoutNotifierProvider.notifier);
-
     final workoutPhase = ref.watch(
       workoutNotifierProvider.select((s) => s.phase)
     );
@@ -176,7 +174,7 @@ class StartStopButton extends ConsumerWidget {
           final event = primaryButtonEvent(workoutPhase);
           debugPrint("Primary button event: $event");
           if (event != null){
-          notifier.send(event);
+          ref.read(workoutNotifierProvider.notifier).send(event);
           }
         },
         child: AnimatedContainer(

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-// import 'package:lifter/features/bluetooth/ble_service.dart';
-import 'package:lifter/features/bluetooth/widgets.dart';
 import 'package:lifter/core/providers/user_provider.dart';
+import 'package:lifter/features/bluetooth/ui/widgets.dart';
 
 
 // ─── Data models ──────────────────────────────────────────────────────────────
@@ -37,7 +36,6 @@ class _WorkoutRow {
   final int daysAgo;
   final IconData icon;
 }
-
 
 
 class HomePage extends ConsumerStatefulWidget {
@@ -114,12 +112,10 @@ class _HomePageState extends ConsumerState<HomePage>
         physics: const BouncingScrollPhysics(),
         slivers: [
           _buildHeader(),
-          // _buildBleBanner(),
           _buildSectionLabel('$month at a glance'),
           _buildStatsGrid(),
           _buildSectionLabel('Recent workouts'),
           _buildRecentWorkouts(),
-          // _buildMonthProgress(),
           // Bottom padding so last card clears the nav bar
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -272,102 +268,6 @@ class _HomePageState extends ConsumerState<HomePage>
       ),
     );
   }
-
-  // ── BLE Banner ─────────────────────────────────────────────────────────────
-
-  // Widget _buildBleBanner() {
-  //   return SliverToBoxAdapter(
-  //     child: _FadeSlide(
-  //       animation: _controller,
-  //       intervalStart: 0.05,
-  //       intervalEnd: 0.45,
-  //       child: Padding(
-  //         padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-  //         child: ListenableBuilder(
-  //           listenable: widget.bleService,
-  //           builder: (context, _) => BleBanner(service: widget.bleService),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // ── Month progress bar ─────────────────────────────────────────────────────
-
-  // Widget _buildMonthProgress() {
-  //   final now = DateTime.now();
-  //   final daysInMonth = DateUtils.getDaysInMonth(now.year, now.month);
-  //   final progress = now.day / daysInMonth;
-
-  //   return SliverToBoxAdapter(
-  //     child: _FadeSlide(
-  //       animation: _controller,
-  //       intervalStart: 0.6,
-  //       intervalEnd: 1.0,
-  //       child: Padding(
-  //         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-  //         child: Container(
-  //           padding: const EdgeInsets.all(20),
-  //           decoration: BoxDecoration(
-  //             color: const Color(0xFF111118),
-  //             borderRadius: BorderRadius.circular(20),
-  //             border: Border.all(color: const Color(0xFF1E1E2A), width: 1),
-  //           ),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Row(
-  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                 children: [
-  //                   const Text(
-  //                     'Month progress',
-  //                     style: TextStyle(
-  //                       fontSize: 14,
-  //                       fontWeight: FontWeight.w700,
-  //                       color: Color(0xFFF0F0F0),
-  //                     ),
-  //                   ),
-  //                   Text(
-  //                     'Day ${now.day} of $daysInMonth',
-  //                     style: TextStyle(
-  //                       fontSize: 12,
-  //                       color: Colors.white.withOpacity(0.4),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 14),
-  //               ClipRRect(
-  //                 borderRadius: BorderRadius.circular(8),
-  //                 child: TweenAnimationBuilder<double>(
-  //                   tween: Tween(begin: 0, end: progress),
-  //                   duration: const Duration(milliseconds: 1200),
-  //                   curve: Curves.easeOutCubic,
-  //                   builder: (context, value, _) {
-  //                     return LinearProgressIndicator(
-  //                       value: value,
-  //                       minHeight: 8,
-  //                       backgroundColor: Colors.white.withOpacity(0.07),
-  //                       valueColor: const AlwaysStoppedAnimation(Color(0xFFE8FF47)),
-  //                     );
-  //                   },
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 10),
-  //               Text(
-  //                 '${(progress * 100).round()}% of the month done — keep the momentum!',
-  //                 style: TextStyle(
-  //                   fontSize: 12,
-  //                   color: Colors.white.withOpacity(0.35),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   String _greeting() {
     final hour = DateTime.now().hour;

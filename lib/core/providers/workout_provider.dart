@@ -1,4 +1,3 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/workouts/graph.dart';
 import 'package:lifter/features/workouts/workout_state_machine.dart';

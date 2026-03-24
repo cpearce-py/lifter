@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:lifter/core/providers/workout_provider.dart';
 import 'package:lifter/features/workouts/workout_page.dart';
-import 'package:lifter/features/workouts/workout_provider.dart';
 
 class SaveWorkoutPage extends ConsumerStatefulWidget {
   const SaveWorkoutPage({super.key});
