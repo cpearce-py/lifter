@@ -17,6 +17,14 @@ class _WorkoutLiveGraphDebugPageState
 
   final _graphController = LiveGraphController(yMax: 10.0);
   final _packetCount = ValueNotifier<int>(0);
+  bool isActive = true;
+
+  void _toggleGraph() {
+    debugPrint("Changing isActive");
+    setState(() {
+      isActive = !isActive;
+    });
+  }
 
   @override
   void dispose() {
@@ -29,6 +37,7 @@ class _WorkoutLiveGraphDebugPageState
   Widget build(BuildContext context) {
     ref.listen(weightStreamProvider, (_, next) {
       next.whenData((reading) {
+        if (!isActive) return;
         _graphController.addSample(reading.weightKg);
         _packetCount.value++;
       });
@@ -78,7 +87,7 @@ class _WorkoutLiveGraphDebugPageState
                 controller: _graphController,
                 accentColor: _accentColor,
                 showPeakLine: true,
-                isRecording: isReceiving,
+                isActive: isActive,
               ),
             ),
             const SizedBox(height: 16),
@@ -94,9 +103,9 @@ class _WorkoutLiveGraphDebugPageState
                 const SizedBox(width: 12),
                 Expanded(
                   child: _DebugButton(
-                    label: 'Reset Peak',
+                    label: isActive ? 'Toggle Active': "Resume Graph",
                     icon: Icons.flag_rounded,
-                    onTap: () => _graphController.reset(resetPeak: true),
+                    onTap: () => _toggleGraph(),
                   ),
                 ),
               ],

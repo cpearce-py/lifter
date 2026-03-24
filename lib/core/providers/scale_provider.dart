@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/bluetooth/ble_service.dart';
 
-final weiHengServiceProvider = Provider<WeiHengC06Service>((ref) {
+final bleServiceProvider = Provider<WeiHengC06Service>((ref) {
   final service = WeiHengC06Service();
   service.startListening();
   ref.onDispose(service.dispose);
@@ -9,5 +9,6 @@ final weiHengServiceProvider = Provider<WeiHengC06Service>((ref) {
 });
 
 final weightStreamProvider = StreamProvider<WeightReading>((ref) {
-  return ref.watch(weiHengServiceProvider).weightStream;
+  return ref.watch(bleServiceProvider).weightStream;
 });
+

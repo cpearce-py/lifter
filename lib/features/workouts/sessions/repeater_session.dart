@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/workout_provider.dart';
 import 'package:lifter/features/workouts/notes/save_page.dart';
-import 'package:lifter/features/workouts/workout_provider.dart';
+import 'package:lifter/features/workouts/workout_state_machine.dart';
 import 'package:lifter/features/workouts/graph.dart';
 
 class RepeaterWorkoutPage extends ConsumerWidget {
@@ -49,8 +50,10 @@ class GraphArea extends ConsumerWidget {
       workoutNotifierProvider.select((s) => s.phase)
     );
     final accentColor = accentColorForPhase(phase);
-    final isRecording = phase == Phase.working;
-    final controller = ref.watch(graphControllerProvider);
+    final isGraphActive = phase != Phase.idle && 
+                          phase != Phase.done &&
+                          phase != Phase.cancelled;
+    final controller = ref.read(graphControllerProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Stack(
@@ -61,7 +64,7 @@ class GraphArea extends ConsumerWidget {
               controller: controller,
               accentColor: accentColor,
               showPeakLine: true,
-              isRecording: isRecording,
+              isActive: isGraphActive,
             ),
           ),
           // Overlay sits on top (top-right corner by default)

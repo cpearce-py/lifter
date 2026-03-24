@@ -218,10 +218,12 @@ class StateMachine extends Notifier<WorkoutState> {
   @override
   WorkoutState build() {
     _scaleSub = ref
-      .read(weiHengServiceProvider)
+      .read(bleServiceProvider)
       .weightStream
       .listen((reading) {
-        if (state.phase == Phase.working) {
+        if (state.phase != Phase.idle &&
+            state.phase != Phase.done &&
+            state.phase != Phase.cancelled) {
           graphController.addSample(reading.weightKg);
           }
         });
@@ -234,14 +236,6 @@ class StateMachine extends Notifier<WorkoutState> {
     return const WorkoutState();
   }
 }
-
-final workoutNotifierProvider = NotifierProvider<StateMachine, WorkoutState>(() {
-  return StateMachine();
-});
-
-final graphControllerProvider = Provider<LiveGraphController>((ref) {
-  return ref.watch(workoutNotifierProvider.notifier).graphController;
-});
 
 String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
   Phase.idle => "Start",

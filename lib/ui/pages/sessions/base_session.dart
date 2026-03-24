@@ -108,7 +108,7 @@ class BaseSessionPage extends ConsumerWidget {
               controller: controller,
               accentColor: accentColor,
               showPeakLine: showPeakLine,
-              isRecording: isRecording,
+              isActive: isRecording,
             ),
           ),
           // Overlay sits on top (top-right corner by default)
