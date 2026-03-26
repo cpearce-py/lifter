@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/features/workouts2/engines/repeater_engine.dart';
-import 'package:lifter/features/workouts2/models/repeater_state.dart';
-import 'package:lifter/features/workouts2/repeater_workout_page.dart';
+import 'package:lifter/features/workouts/engines/repeater_engine.dart';
+import 'package:lifter/features/workouts/models/repeater_state.dart';
+import 'package:lifter/features/workouts/sessions/repeater_workout_page.dart';
 
 import 'package:lifter/ui/pages/sessions/peak_load_session.dart';
 import 'package:lifter/core/models/workout_session.dart';

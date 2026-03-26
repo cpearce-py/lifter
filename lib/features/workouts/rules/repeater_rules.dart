@@ -1,7 +1,7 @@
-import 'package:lifter/features/workouts2/models/base_models.dart';
-import 'package:lifter/features/workouts2/models/repeater_state.dart';
-import 'package:lifter/features/workouts2/rules/workout_rules.dart';
-import 'package:lifter/features/workouts2/workout_action.dart';
+import 'package:lifter/features/workouts/models/actions.dart';
+import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/repeater_state.dart';
+import 'package:lifter/features/workouts/rules/workout_rules.dart';
 
 class RepeaterRules implements WorkoutRules<RepeaterState> {
   final RepeaterState initialConfig;

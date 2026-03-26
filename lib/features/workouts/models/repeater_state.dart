@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
-import 'package:lifter/features/workouts/models/workout_phases.dart';
+import 'package:lifter/features/workouts/models/base_models.dart';
+
 
 @immutable
 class RepeaterState {

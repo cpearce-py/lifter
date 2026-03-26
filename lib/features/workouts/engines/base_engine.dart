@@ -4,12 +4,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
-import 'package:lifter/features/workouts2/ble_manager.dart';
-import 'package:lifter/features/workouts2/models/base_models.dart';
-import 'package:lifter/features/workouts2/rules/workout_rules.dart';
-import 'package:lifter/features/workouts2/workout_action.dart';
+import 'package:lifter/features/bluetooth/ble_manager.dart';
+import 'package:lifter/features/workouts/models/actions.dart';
+import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/rules/workout_rules.dart';
 
-abstract class BaseWorkoutOrchestrator<T> extends Notifier<T> {
+abstract class BaseEngine<T> extends Notifier<T> {
   // Child classes must assign this in their build() method
   late final WorkoutRules<T> rules; 
   
@@ -20,7 +20,6 @@ abstract class BaseWorkoutOrchestrator<T> extends Notifier<T> {
   // Child classes tell the base class how to read their specific phase
   Phase extractPhase(T state);
 
-  // --- The Dispatch Pipeline ---
   void dispatch(WorkoutAction action) {
     // 1. Calculate the new state using the pure rules
     final newState = rules.reduce(state, action);
@@ -34,7 +33,6 @@ abstract class BaseWorkoutOrchestrator<T> extends Notifier<T> {
     state = newState;
   }
 
-  // --- Environment Management ---
   void _syncEnvironment(Phase oldPhase, Phase newPhase) {
     if (oldPhase == newPhase) return;
 

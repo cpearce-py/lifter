@@ -1,5 +1,4 @@
-
-import 'package:lifter/features/workouts2/models/base_models.dart';
+import 'package:lifter/features/workouts/models/base_models.dart';
 
 sealed class WorkoutAction {}
 
@@ -14,3 +13,4 @@ class UserEventAction extends WorkoutAction {
   final Event event;
   UserEventAction(this.event);
 }
+

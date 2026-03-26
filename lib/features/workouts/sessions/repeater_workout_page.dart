@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/workouts/graph.dart';
-import 'package:lifter/features/workouts2/engines/repeater_engine.dart';
-import 'package:lifter/features/workouts2/models/base_models.dart';
-import 'package:lifter/features/workouts2/models/repeater_state.dart';
-import 'package:lifter/features/workouts2/workout_action.dart';
+import 'package:lifter/features/workouts/models/actions.dart';
+import 'package:lifter/features/workouts/engines/repeater_engine.dart';
+import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/repeater_state.dart';
 
 String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
   Phase.idle => "Start",
@@ -39,36 +39,15 @@ Color accentColorForPhase(Phase phase) => switch (phase) {
   _                => const Color(0xFFE8FF47),
 };
 
-// class RepeaterWorkoutPage extends ConsumerStatefulWidget {
-//   final RepeaterState initialConfig;
-// 
-//   const RepeaterWorkoutPage({
-//     super.key,
-//     required this.initialConfig,
-//   });
-// 
-//   @override
-//   ConsumerState<RepeaterWorkoutPage> createState() => _RepeaterWorkoutPageState();
-// }
-// 
-// class _RepeaterWorkoutPageState extends ConsumerState<RepeaterWorkoutPage> {
 
 class RepeaterWorkoutPage extends ConsumerWidget {
   const RepeaterWorkoutPage({super.key});
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     ref.read(repeaterOrchestratorProvider.notifier).initialize(widget.initialConfig);
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
     ref.listen<RepeaterState>(
-      repeaterOrchestratorProvider, 
+      repeaterEngineProvider, 
       (previous, next) {
         if (previous?.phase != Phase.done && next.phase == Phase.done) {
           Future.delayed(const Duration(seconds: 2), () {
@@ -102,7 +81,7 @@ class GraphArea extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final phase = ref.watch(
-      repeaterOrchestratorProvider.select((s) => s.phase)
+      repeaterEngineProvider.select((s) => s.phase)
     );
     final accentColor = accentColorForPhase(phase);
     final isGraphActive = phase != Phase.idle && 
@@ -142,7 +121,7 @@ class WorkoutControlsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final phase = ref.watch(
-      repeaterOrchestratorProvider.select((s) => s.phase)
+      repeaterEngineProvider.select((s) => s.phase)
     );
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -154,7 +133,7 @@ class WorkoutControlsSection extends ConsumerWidget {
             onTap: () {
               if (phase != Phase.idle) {
                 HapticFeedback.lightImpact();
-                ref.read(repeaterOrchestratorProvider.notifier).dispatch(UserEventAction(Event.reset));
+                ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(Event.reset));
               }
            },
             child: Container(
@@ -216,7 +195,7 @@ class StartStopButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
 
     final workoutPhase = ref.watch(
-      repeaterOrchestratorProvider.select((s) => s.phase)
+      repeaterEngineProvider.select((s) => s.phase)
     );
 
     final isRecording = workoutPhase == Phase.working;
@@ -228,7 +207,7 @@ class StartStopButton extends ConsumerWidget {
           final event = primaryButtonEvent(workoutPhase);
           debugPrint("Primary button event: $event");
           if (event != null){
-          ref.read(repeaterOrchestratorProvider.notifier).dispatch(UserEventAction(event));
+          ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(event));
           }
         },
         child: AnimatedContainer(
@@ -287,7 +266,7 @@ class HeaderLabel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workoutPhase = ref.watch(
-      repeaterOrchestratorProvider.select((s) => s.phase)
+      repeaterEngineProvider.select((s) => s.phase)
     );
     return Expanded(
       child: Text(
@@ -315,7 +294,7 @@ class _RepCounterOverlay extends ConsumerWidget {
  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workoutState = ref.watch(repeaterOrchestratorProvider);
+    final workoutState = ref.watch(repeaterEngineProvider);
     final progress = workoutState.phaseProgress;
  
     return Container(
@@ -395,7 +374,7 @@ class _RepDots extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (reps, currentRep) = ref.watch(
-      repeaterOrchestratorProvider.select((s) => (s.reps, s.currentRep))
+      repeaterEngineProvider.select((s) => (s.reps, s.currentRep))
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -431,7 +410,7 @@ class _SetLabel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (currentSet, sets) = ref.watch(
-      repeaterOrchestratorProvider.select((s) => (s.currentSet, s.sets))
+      repeaterEngineProvider.select((s) => (s.currentSet, s.sets))
     );
     return Text(
       'SET $currentSet/$sets',
