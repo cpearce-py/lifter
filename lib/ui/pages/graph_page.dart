@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/scale_provider.dart';
 import 'package:lifter/features/bluetooth/ble_service.dart';
 import 'package:lifter/features/bluetooth/ui/widgets.dart';
-import 'package:lifter/features/workouts/graph.dart';
+import 'package:lifter/features/workouts/ui/graph.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class WorkoutLiveGraphDebugPage extends ConsumerStatefulWidget {

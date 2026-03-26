@@ -5,7 +5,6 @@ import 'package:lifter/features/workouts/engines/repeater_engine.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
 import 'package:lifter/features/workouts/sessions/repeater_workout_page.dart';
 
-import 'package:lifter/ui/pages/sessions/peak_load_session.dart';
 import 'package:lifter/core/models/workout_session.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 
@@ -75,12 +74,15 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
         WorkoutOption(label: 'Beep countdown',    type: OptionType.toggle),
         WorkoutOption(label: 'Auto-detect peak',  type: OptionType.toggle),
       ],
-      sessionBuilder: (values) => PeakLoadSessionPage(
-        attempts:       (values[0] as num).toInt(),
-        restSeconds:    (values[1] as num).toInt(),
-        holdSeconds:    (values[2] as num).toInt(),
-        beepCountdown:  values[3] as bool,
-      ),
+      sessionBuilder: (values) { 
+        return const SizedBox.shrink();
+      }
+      // PeakLoadSessionPage(
+      //   attempts:       (values[0] as num).toInt(),
+      //   restSeconds:    (values[1] as num).toInt(),
+      //   holdSeconds:    (values[2] as num).toInt(),
+      //   beepCountdown:  values[3] as bool,
+      // ),
     ),
     WorkoutType(
       name: 'Critical Force',

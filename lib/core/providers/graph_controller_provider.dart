@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/features/workouts/graph.dart';
+import 'package:lifter/features/workouts/ui/graph.dart';
 
 final graphControllerProvider = Provider.autoDispose<LiveGraphController>((ref) {
   final controller = LiveGraphController(yMax: 100.0);
