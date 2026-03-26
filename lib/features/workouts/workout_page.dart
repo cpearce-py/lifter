@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/features/workouts2/engines/repeater_engine.dart';
+import 'package:lifter/features/workouts2/models/repeater_state.dart';
+import 'package:lifter/features/workouts2/repeater_workout_page.dart';
 
 import 'package:lifter/ui/pages/sessions/peak_load_session.dart';
-import 'package:lifter/features/workouts/sessions/repeater_session.dart';
-import 'package:lifter/features/workouts/workout_state_machine.dart';
 import 'package:lifter/core/models/workout_session.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
-import 'package:lifter/core/providers/workout_provider.dart';
 
 class WorkoutPage extends ConsumerStatefulWidget {
   const WorkoutPage({super.key});
@@ -50,7 +50,17 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
         WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
       ],
       sessionBuilder: (values) {
-        return RepeaterWorkoutPage();
+        final workoutState = RepeaterState(
+          sets:           (values[0] as num).toInt(),
+          reps:           (values[1] as num).toInt(),
+          workSeconds:    (values[2] as num).toInt(),
+          restSeconds:    (values[3] as num).toInt(),
+          setRestSeconds: (values[4] as num).toInt(),
+        );
+        return ProviderScope(
+          overrides: [repeaterConfigProvider.overrideWithValue(workoutState)],
+          child: const RepeaterWorkoutPage(),
+        );
       }
       ),
     WorkoutType(
@@ -531,20 +541,10 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                 child: GestureDetector(
                   onTap: () {
                     HapticFeedback.mediumImpact();
-                    final workoutState = WorkoutState(
-                      sets:           (_values[0] as num).toInt(),
-                      reps:           (_values[1] as num).toInt(),
-                      workSeconds:    (_values[2] as num).toInt(),
-                      restSeconds:    (_values[3] as num).toInt(),
-                      setRestSeconds: (_values[4] as num).toInt(),
-                    );
-                    ref.read(workoutNotifierProvider.notifier).initialize(workoutState);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) {
-                          return widget.workout.sessionBuilder(_values);
-                        }
+                        builder: (_) => widget.workout.sessionBuilder(_values)
                       ),
                     );
                   },

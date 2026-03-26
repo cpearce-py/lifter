@@ -1,13 +1,13 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:lifter/features/workouts/notes/save_page.dart';
-import 'package:lifter/features/workouts/graph.dart';
-import 'package:lifter/features/workouts/models/repeater_state.dart';
-import 'package:lifter/features/workouts/models/workout_phases.dart';
-import 'package:lifter/core/providers/workouts/repeater_state_provider.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
+import 'package:lifter/features/workouts/graph.dart';
+import 'package:lifter/features/workouts2/engines/repeater_engine.dart';
+import 'package:lifter/features/workouts2/models/base_models.dart';
+import 'package:lifter/features/workouts2/models/repeater_state.dart';
+import 'package:lifter/features/workouts2/workout_action.dart';
 
 String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
   Phase.idle => "Start",
@@ -60,7 +60,7 @@ class RepeaterWorkoutPage extends ConsumerWidget {
   // void initState() {
   //   super.initState();
   //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     ref.read(repeaterEngineProvider.notifier).initialize(widget.initialConfig);
+  //     ref.read(repeaterOrchestratorProvider.notifier).initialize(widget.initialConfig);
   //   });
   // }
 
@@ -68,13 +68,13 @@ class RepeaterWorkoutPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
 
     ref.listen<RepeaterState>(
-      repeaterEngineProvider, 
+      repeaterOrchestratorProvider, 
       (previous, next) {
         if (previous?.phase != Phase.done && next.phase == Phase.done) {
           Future.delayed(const Duration(seconds: 2), () {
             if (context.mounted) {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const SaveWorkoutPage()),
+                MaterialPageRoute(builder: (_) => const Text("Good job")),
               );
             }
           });
@@ -102,7 +102,7 @@ class GraphArea extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final phase = ref.watch(
-      repeaterEngineProvider.select((s) => s.phase)
+      repeaterOrchestratorProvider.select((s) => s.phase)
     );
     final accentColor = accentColorForPhase(phase);
     final isGraphActive = phase != Phase.idle && 
@@ -142,7 +142,7 @@ class WorkoutControlsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final phase = ref.watch(
-      repeaterEngineProvider.select((s) => s.phase)
+      repeaterOrchestratorProvider.select((s) => s.phase)
     );
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -154,7 +154,7 @@ class WorkoutControlsSection extends ConsumerWidget {
             onTap: () {
               if (phase != Phase.idle) {
                 HapticFeedback.lightImpact();
-                ref.read(repeaterEngineProvider.notifier).send(Event.reset);
+                ref.read(repeaterOrchestratorProvider.notifier).dispatch(UserEventAction(Event.reset));
               }
            },
             child: Container(
@@ -216,7 +216,7 @@ class StartStopButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
 
     final workoutPhase = ref.watch(
-      repeaterEngineProvider.select((s) => s.phase)
+      repeaterOrchestratorProvider.select((s) => s.phase)
     );
 
     final isRecording = workoutPhase == Phase.working;
@@ -228,7 +228,7 @@ class StartStopButton extends ConsumerWidget {
           final event = primaryButtonEvent(workoutPhase);
           debugPrint("Primary button event: $event");
           if (event != null){
-          ref.read(repeaterEngineProvider.notifier).send(event);
+          ref.read(repeaterOrchestratorProvider.notifier).dispatch(UserEventAction(event));
           }
         },
         child: AnimatedContainer(
@@ -287,7 +287,7 @@ class HeaderLabel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workoutPhase = ref.watch(
-      repeaterEngineProvider.select((s) => s.phase)
+      repeaterOrchestratorProvider.select((s) => s.phase)
     );
     return Expanded(
       child: Text(
@@ -315,7 +315,7 @@ class _RepCounterOverlay extends ConsumerWidget {
  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workoutState = ref.watch(repeaterEngineProvider);
+    final workoutState = ref.watch(repeaterOrchestratorProvider);
     final progress = workoutState.phaseProgress;
  
     return Container(
@@ -395,7 +395,7 @@ class _RepDots extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (reps, currentRep) = ref.watch(
-      repeaterEngineProvider.select((s) => (s.reps, s.currentRep))
+      repeaterOrchestratorProvider.select((s) => (s.reps, s.currentRep))
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -431,7 +431,7 @@ class _SetLabel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (currentSet, sets) = ref.watch(
-      repeaterEngineProvider.select((s) => (s.currentSet, s.sets))
+      repeaterOrchestratorProvider.select((s) => (s.currentSet, s.sets))
     );
     return Text(
       'SET $currentSet/$sets',
