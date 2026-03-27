@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/features/workouts/engines/peak_load_engine.dart';
 import 'package:lifter/features/workouts/engines/repeater_engine.dart';
+import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/peak_load_state.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
+import 'package:lifter/features/workouts/sessions/peak_load_page.dart';
 import 'package:lifter/features/workouts/sessions/repeater_workout_page.dart';
 
 import 'package:lifter/core/models/workout_session.dart';
@@ -61,29 +65,36 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
           child: const RepeaterWorkoutPage(),
         );
       }
-      ),
+    ),
+
     WorkoutType(
       name: 'Peak Load',
       description: 'Measure your maximum single effort',
       icon: Icons.arrow_upward_rounded,
       accentColor: Color(0xFFFF6B6B),
       options: [
-        WorkoutOption(label: 'Attempts',          type: OptionType.stepper, min: 1, max: 10, step: 1, unit: ''),
-        WorkoutOption(label: 'Rest between',      type: OptionType.stepper, min: 30, max: 300, step: 30, unit: 's'),
-        WorkoutOption(label: 'Hold duration',     type: OptionType.stepper, min: 1, max: 10, step: 1, unit: 's'),
-        WorkoutOption(label: 'Beep countdown',    type: OptionType.toggle),
-        WorkoutOption(label: 'Auto-detect peak',  type: OptionType.toggle),
+        WorkoutOption(label: 'Body weight',     type: OptionType.stepper, min: 40, max: 150, step: 1, unit: 'kg'),
+        WorkoutOption(label: 'Rest time',       type: OptionType.stepper, min: 120, max: 300, step: 30, unit: 's'),
+        WorkoutOption(label: 'Starting hand',   type: OptionType.segmented, choices: ['Left', 'Right']),
       ],
       sessionBuilder: (values) { 
-        return const SizedBox.shrink();
+        final bodyWeight = (values[0] as num).toDouble();
+        final restSeconds = (values[1] as num).toInt();
+        final startingHandIndex = values[2] as int;
+        final startingHand = startingHandIndex == 0 ? Hand.left : Hand.right;
+        final config = PeakLoadState(
+          bodyWeight: bodyWeight,
+          restSeconds: restSeconds,
+          startingHand: startingHand,
+          currentHand: startingHand,
+        );
+        return ProviderScope(
+          overrides: [peakLoadConfigProvider.overrideWithValue(config)],
+          child: const PeakLoadSessionPage(),
+        );
       }
-      // PeakLoadSessionPage(
-      //   attempts:       (values[0] as num).toInt(),
-      //   restSeconds:    (values[1] as num).toInt(),
-      //   holdSeconds:    (values[2] as num).toInt(),
-      //   beepCountdown:  values[3] as bool,
-      // ),
     ),
+
     WorkoutType(
       name: 'Critical Force',
       description: 'Estimate your aerobic threshold',

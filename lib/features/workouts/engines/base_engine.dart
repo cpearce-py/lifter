@@ -36,7 +36,8 @@ abstract class BaseEngine<T> extends Notifier<T> {
   void _syncEnvironment(Phase oldPhase, Phase newPhase) {
     if (oldPhase == newPhase) return;
 
-    if (newPhase == Phase.working || newPhase == Phase.resting || newPhase == Phase.setResting) {
+    if (newPhase == Phase.working || newPhase == Phase.resting || 
+        newPhase == Phase.setResting || newPhase == Phase.switching) {
       startTimer();
     } else {
       stopTimer();

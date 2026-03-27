@@ -14,6 +14,7 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
       TickAction() => _handleTick(state),
       WeightReceivedAction(weightKg: var w) => _handleWeight(state, w),
       UserEventAction(event: var e) => _handleUserEvent(state, e),
+      StopHandAction() => state,
     };
   }
 

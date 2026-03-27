@@ -14,3 +14,7 @@ class UserEventAction extends WorkoutAction {
   UserEventAction(this.event);
 }
 
+class StopHandAction extends WorkoutAction {
+  final Hand hand;
+  StopHandAction(this.hand);
+}

@@ -71,7 +71,8 @@ class GenericGraphArea extends ConsumerWidget {
     final accentColor = accentColorForPhase(phase);
     final isGraphActive = phase != Phase.idle && 
                           phase != Phase.done && 
-                          phase != Phase.cancelled;
+                          phase != Phase.cancelled &&
+                          phase != Phase.paused;
     
     final controller = ref.watch(graphControllerProvider); 
 
