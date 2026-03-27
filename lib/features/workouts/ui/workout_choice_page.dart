@@ -24,21 +24,23 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
   late final AnimationController _controller;
 
   static final _workouts = [
-    WorkoutType(
-      name: 'Live Data',
-      description: 'Real-time feed from your sensor',
-      icon: Icons.sensors_rounded,
-      accentColor: Color(0xFF47C8FF),
-      options: [
-        WorkoutOption(label: 'Units',           type: OptionType.segmented, choices: ['kg', 'lb', 'N']),
-        WorkoutOption(label: 'Graph duration',  type: OptionType.stepper,   min: 10, max: 120, step: 10, unit: 's'),
-        WorkoutOption(label: 'Show peak line',  type: OptionType.toggle),
-        WorkoutOption(label: 'Auto-zero on start', type: OptionType.toggle),
-      ],
-      sessionBuilder: (values) {
-        return const SizedBox.shrink();
-      }
-    ),
+
+    // WorkoutType(
+    //   name: 'Live Data',
+    //   description: 'Real-time feed from your sensor',
+    //   icon: Icons.sensors_rounded,
+    //   accentColor: Color(0xFF47C8FF),
+    //   options: [
+    //     WorkoutOption(label: 'Units',           type: OptionType.segmented, choices: ['kg', 'lb', 'N']),
+    //     WorkoutOption(label: 'Graph duration',  type: OptionType.stepper,   min: 10, max: 120, step: 10, unit: 's'),
+    //     WorkoutOption(label: 'Show peak line',  type: OptionType.toggle),
+    //     WorkoutOption(label: 'Auto-zero on start', type: OptionType.toggle),
+    //   ],
+    //   sessionBuilder: (values) {
+    //     return const SizedBox.shrink();
+    //   }
+    // ),
+
     WorkoutType(
       name: 'Repeaters',
       description: 'Timed hang sets with rest intervals',
@@ -50,15 +52,20 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
         WorkoutOption(label: 'Work time',  type: OptionType.stepper, min: 3, max: 60, step: 1, unit: 's'),
         WorkoutOption(label: 'Rest time',  type: OptionType.stepper, min: 3, max: 120, step: 3, unit: 's'),
         WorkoutOption(label: 'Set rest',   type: OptionType.stepper, min: 10, max: 300, step: 10, unit: 's'),
+        WorkoutOption(label: 'Starting hand',   type: OptionType.segmented, choices:  ['Left', 'Right']),
         WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
       ],
       sessionBuilder: (values) {
+        final startingHandIndex = values[5] as int;
+        final startingHand = startingHandIndex == 0 ? Hand.left : Hand.right;
         final workoutState = RepeaterState(
           sets:           (values[0] as num).toInt(),
           reps:           (values[1] as num).toInt(),
           workSeconds:    (values[2] as num).toInt(),
           restSeconds:    (values[3] as num).toInt(),
           setRestSeconds: (values[4] as num).toInt(),
+          startingHand:   startingHand,
+          currentHand:    startingHand
         );
         return ProviderScope(
           overrides: [repeaterConfigProvider.overrideWithValue(workoutState)],
@@ -95,40 +102,41 @@ class _WorkoutPageState extends ConsumerState<WorkoutPage>
       }
     ),
 
-    WorkoutType(
-      name: 'Critical Force',
-      description: 'Estimate your aerobic threshold',
-      icon: Icons.show_chart_rounded,
-      accentColor: Color(0xFFB47FFF),
-      options: [
-        WorkoutOption(label: 'Protocol',    type: OptionType.segmented, choices: ['7/3', '6/4', '10/5', 'Custom']),
-        WorkoutOption(label: 'Total time',  type: OptionType.stepper, min: 5, max: 30, step: 5, unit: 'min'),
-        WorkoutOption(label: 'Reps',        type: OptionType.stepper, min: 3, max: 20, step: 1, unit: ''),
-        WorkoutOption(label: 'Show CF line', type: OptionType.toggle),
-        WorkoutOption(label: 'Save result',  type: OptionType.toggle),
-      ],
-      sessionBuilder: (values) {
-        // TODO: return CriticalForceSessionPage(...)
-        return const SizedBox.shrink();
-      }
-    ),
-    WorkoutType(
-      name: 'Trainings',
-      description: 'Follow a structured training plan',
-      icon: Icons.calendar_today_rounded,
-      accentColor: Color(0xFF47FF8A),
-      options: [
-        WorkoutOption(label: 'Plan',        type: OptionType.segmented, choices: ['Beginner', 'Intermediate', 'Advanced']),
-        WorkoutOption(label: 'Duration',    type: OptionType.stepper, min: 15, max: 90, step: 15, unit: 'min'),
-        WorkoutOption(label: 'Difficulty',  type: OptionType.segmented, choices: ['Easy', 'Medium', 'Hard']),
-        WorkoutOption(label: 'Rest alerts', type: OptionType.toggle),
-        WorkoutOption(label: 'Voice cues',  type: OptionType.toggle),
-      ],
-      sessionBuilder: (values) {
-        // TODO: return CriticalForceSessionPage(...)
-        return const SizedBox.shrink();
-      }
-    ),
+    // May bring back at some point
+    // WorkoutType(
+    //   name: 'Critical Force',
+    //   description: 'Estimate your aerobic threshold',
+    //   icon: Icons.show_chart_rounded,
+    //   accentColor: Color(0xFFB47FFF),
+    //   options: [
+    //     WorkoutOption(label: 'Protocol',    type: OptionType.segmented, choices: ['7/3', '6/4', '10/5', 'Custom']),
+    //     WorkoutOption(label: 'Total time',  type: OptionType.stepper, min: 5, max: 30, step: 5, unit: 'min'),
+    //     WorkoutOption(label: 'Reps',        type: OptionType.stepper, min: 3, max: 20, step: 1, unit: ''),
+    //     WorkoutOption(label: 'Show CF line', type: OptionType.toggle),
+    //     WorkoutOption(label: 'Save result',  type: OptionType.toggle),
+    //   ],
+    //   sessionBuilder: (values) {
+    //     // TODO: return CriticalForceSessionPage(...)
+    //     return const SizedBox.shrink();
+    //   }
+    // ),
+    // WorkoutType(
+    //   name: 'Trainings',
+    //   description: 'Follow a structured training plan',
+    //   icon: Icons.calendar_today_rounded,
+    //   accentColor: Color(0xFF47FF8A),
+    //   options: [
+    //     WorkoutOption(label: 'Plan',        type: OptionType.segmented, choices: ['Beginner', 'Intermediate', 'Advanced']),
+    //     WorkoutOption(label: 'Duration',    type: OptionType.stepper, min: 15, max: 90, step: 15, unit: 'min'),
+    //     WorkoutOption(label: 'Difficulty',  type: OptionType.segmented, choices: ['Easy', 'Medium', 'Hard']),
+    //     WorkoutOption(label: 'Rest alerts', type: OptionType.toggle),
+    //     WorkoutOption(label: 'Voice cues',  type: OptionType.toggle),
+    //   ],
+    //   sessionBuilder: (values) {
+    //     // TODO: return CriticalForceSessionPage(...)
+    //     return const SizedBox.shrink();
+    //   }
+    // ),
   ];
 
   @override

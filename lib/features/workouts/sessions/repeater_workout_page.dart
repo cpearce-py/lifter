@@ -100,7 +100,16 @@ class _RepeaterOverlay extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
- 
+          // Let's add the hand indicator right below the set tracker!
+          Text(
+            'HAND: ${state.currentHand.name.toUpperCase()}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
           // Circular countdown
           SizedBox(
             width: 64,
