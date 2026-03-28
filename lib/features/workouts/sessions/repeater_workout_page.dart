@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/features/workouts/notes/save_page.dart';
 import 'package:lifter/features/workouts/ui/generic_widgets.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/engines/repeater_engine.dart';
@@ -29,10 +30,11 @@ class RepeaterWorkoutPage extends ConsumerWidget {
       repeaterEngineProvider, 
       (previous, next) {
         if (previous?.phase != Phase.done && next.phase == Phase.done) {
-          Future.delayed(const Duration(seconds: 2), () {
+          final finalLog = ref.read(repeaterEngineProvider.notifier).getFinalSummary();
+          Future.delayed(const Duration(seconds: 1), () {
             if (context.mounted) {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const Text("Good job")),
+                MaterialPageRoute(builder: (_) => SaveWorkoutPage(workoutLog: finalLog)),
             );
           }
         });

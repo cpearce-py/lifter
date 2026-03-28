@@ -1,6 +1,7 @@
 // features/workouts/orchestrators/peak_load_orchestrator.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/engines/base_engine.dart';
 import 'package:lifter/features/workouts/models/peak_load_state.dart';
 import 'package:lifter/features/workouts/models/base_models.dart'; // For Phase
@@ -33,6 +34,17 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
     return config.copyWith(
       currentTarget: config.bodyWeight * 0.5,
       repCount: 1, // Start at rep 1
+    );
+  }
+
+  @override
+  WorkoutLog buildSummary(PeakLoadState state) {
+    return WorkoutLog(
+      workoutTypeId: 2, 
+      dateDone: DateTime.now(), 
+      duration: 11, 
+      workingTime: state.elapsedSeconds, 
+      sets:[],
     );
   }
 }

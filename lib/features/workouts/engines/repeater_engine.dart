@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/engines/base_engine.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
@@ -13,7 +14,8 @@ final repeaterConfigProvider = Provider<RepeaterState>((ref) {
 
 // 2. The Specific Orchestrator
 class RepeaterEngine extends BaseEngine<RepeaterState> {
-  
+  final DateTime _startTime = DateTime.now();
+
   // Implement the abstract method so the base class knows how to read the phase
   @override
   Phase extractPhase(RepeaterState state) => state.phase;
@@ -41,6 +43,19 @@ class RepeaterEngine extends BaseEngine<RepeaterState> {
 
     // E. Return the initial state
     return config;
+  }
+
+  @override
+  WorkoutLog buildSummary(RepeaterState state) {
+    final totalTime = DateTime.now().difference(_startTime).inSeconds;
+
+    return WorkoutLog(
+      workoutTypeId: 1, 
+      dateDone: DateTime.now(), 
+      duration: totalTime, 
+      workingTime: state.accumulatedWorkSeconds, 
+      sets: state.completedSets
+    );
   }
 }
 

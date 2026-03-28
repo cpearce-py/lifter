@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/bluetooth/ble_manager.dart';
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/rules/workout_rules.dart';
@@ -19,6 +20,9 @@ abstract class BaseEngine<T> extends Notifier<T> {
 
   // Child classes tell the base class how to read their specific phase
   Phase extractPhase(T state);
+
+  // Every engine must know how to build a workout summary.
+  WorkoutLog buildSummary(T state);
 
   void dispatch(WorkoutAction action) {
     // 1. Calculate the new state using the pure rules
@@ -46,6 +50,10 @@ abstract class BaseEngine<T> extends Notifier<T> {
     if (newPhase == Phase.done || newPhase == Phase.cancelled) {
       stopBle();
     }
+  }
+
+  WorkoutLog getFinalSummary() {
+    return buildSummary(state);
   }
 
   void startTimer() {

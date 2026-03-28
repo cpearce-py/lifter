@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 
 
@@ -20,6 +21,13 @@ class RepeaterState {
   final Hand startingHand;
   final Hand currentHand;
 
+  // history
+  final double currentPullMax;
+  final double savedFirstHandMax;
+  final int accumulatedWorkSeconds;
+  final List<RepetitionLog> currentSetReps;
+  final List<SetLog> completedSets;
+
   const RepeaterState({
     this.sets = 1,
     this.reps = 1,
@@ -34,6 +42,11 @@ class RepeaterState {
     this.currentPhaseDuration = 0,
     this.startingHand = Hand.left,
     this.currentHand = Hand.left,
+    this.currentPullMax = 0.0,
+    this.savedFirstHandMax = 0.0,
+    this.accumulatedWorkSeconds = 0,
+    this.currentSetReps = const [],
+    this.completedSets = const [],
   });
 
   int get elapsedSeconds => currentPhaseDuration - secondsRemaining;
@@ -57,6 +70,11 @@ class RepeaterState {
     int? currentPhaseDuration,
     Hand? startingHand,
     Hand? currentHand,
+    double? currentPullMax,
+    double? savedFirstHandMax,
+    int? accumulatedWorkSeconds,
+    List<RepetitionLog>? currentSetReps,
+    List<SetLog>? completedSets,
   }) {
     return RepeaterState(
       sets: sets ?? this.sets,
@@ -72,6 +90,11 @@ class RepeaterState {
       currentPhaseDuration: currentPhaseDuration ?? this.currentPhaseDuration,
       startingHand: startingHand ?? this.startingHand,
       currentHand: currentHand ?? this.currentHand,
+      currentPullMax: currentPullMax ?? this.currentPullMax,
+      savedFirstHandMax: savedFirstHandMax ?? this.savedFirstHandMax,
+      accumulatedWorkSeconds: accumulatedWorkSeconds ?? this.accumulatedWorkSeconds,
+      currentSetReps: currentSetReps ?? this.currentSetReps,
+      completedSets: completedSets ?? this.completedSets,
     );
   }
 }

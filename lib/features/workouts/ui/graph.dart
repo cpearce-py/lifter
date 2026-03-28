@@ -133,14 +133,9 @@ class _LiveGraphState extends State<LiveGraph>
   @override
   void didUpdateWidget(LiveGraph old) {
     super.didUpdateWidget(old);
+    
     if (old.isActive != widget.isActive) {
-      if (widget.isActive) {
-        _ticker.start();
-        widget.controller.setIsActive(true);
-      } else {
-        _ticker.stop(); // <-- This actually stops the UI from drawing
-        widget.controller.setIsActive(false);
-      }
+      _syncActiveState(); 
     }
   }
 
