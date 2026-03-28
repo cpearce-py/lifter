@@ -48,7 +48,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Graph',
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart_rounded,
-        page: WorkoutLiveGraphDebugPage(),
+        page: _PagePlaceholder(label: "place holder", icon: Icons.ten_k,),
       ),
       _NavDestination(
         label: 'Profile',
