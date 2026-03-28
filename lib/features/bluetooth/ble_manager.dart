@@ -22,7 +22,6 @@ class BleManager {
   
   // Private constructor prevents anyone else from instantiating this class
   BleManager._internal();
-  // ───────────────────────────────────────────────────────────────────────────
 
   // From manufacturer source: ManufacturerId = 256
   static const int _manufacturerId = 256;
@@ -36,7 +35,6 @@ class BleManager {
   StreamSubscription<List<ScanResult>>? _scanSubscription;
 
   Future<void> startListening() async {
-    // Defensive check: Don't start a new scan if one is already running
     if (_scanSubscription != null) return;
 
     final state = await FlutterBluePlus.adapterState
@@ -56,7 +54,6 @@ class BleManager {
       removeIfGone: const Duration(seconds: 5),
     );
 
-    // BUG FIX: Actually assign the listener to the variable so we can cancel it later!
     _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       for (final result in results) {
         _processResult(result);
