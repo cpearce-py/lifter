@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lifter/ui/pages/graph_page.dart';
 import 'home_page.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
