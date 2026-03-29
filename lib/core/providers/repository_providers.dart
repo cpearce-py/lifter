@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 // 1. Provide the raw SQLite database connection
 final databaseProvider = FutureProvider<Database>((ref) async {
-  return await DatabaseService.database;
+  return await DatabaseService.instance.database;
 });
 
 // 2. Provide the repository

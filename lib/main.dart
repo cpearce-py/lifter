@@ -35,7 +35,7 @@ class _FitAppState extends ConsumerState<FitApp> {
 
   @override
   Widget build(BuildContext context) {
-    final usernameAsync = ref.watch(usernameProvider);
+    final userProfile = ref.watch(userProfileProvider);
 
     return MaterialApp(
       title: 'lifter',
@@ -47,16 +47,19 @@ class _FitAppState extends ConsumerState<FitApp> {
           surface: Color(0xFF0A0A0F),
         ),
       ),
-      home: usernameAsync.when(
+      home: userProfile.when(
         loading: () => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (e, _) => const Scaffold(
           body: Center(child: Text('Something went wrong')),
         ),
-        data: (username) => username == null
-            ? const UsernameScreen()
-            : MainShell(),
+        data: (profile) {
+          final needsOnboarding = profile == null || profile.username.isEmpty;
+          return needsOnboarding 
+              ? const UsernameScreen() 
+              : const MainShell();
+        }
       ),
     );
   }

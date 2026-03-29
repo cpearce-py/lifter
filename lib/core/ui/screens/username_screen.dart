@@ -25,8 +25,9 @@ class _UsernameScreenState extends ConsumerState<UsernameScreen> {
       setState(() => _hasError = true);
       return;
     }
-    await ref.read(usernameProvider.notifier).setUsername(value);
+    await ref.read(userProfileProvider.notifier).setUsername(value);
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

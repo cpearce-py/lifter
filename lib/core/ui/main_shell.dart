@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lifter/features/history/ui/history_screen.dart';
 import 'home_page.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
@@ -44,10 +45,10 @@ class _MainShellState extends State<MainShell> {
         page: WorkoutNavigator(),
       ),
       _NavDestination(
-        label: 'Graph',
+        label: 'History',
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart_rounded,
-        page: _PagePlaceholder(label: "place holder", icon: Icons.ten_k,),
+        page: HistoryPage(),
       ),
       _NavDestination(
         label: 'Profile',

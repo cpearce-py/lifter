@@ -126,7 +126,8 @@ class _HomePageState extends ConsumerState<HomePage>
   // ── Header ─────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
-    final username = ref.watch(usernameProvider).asData?.value ?? "No way we get here";
+    final userProfile = ref.watch(userProfileProvider).value;
+    final username = userProfile?.username ?? "No way we get here";
 
     return SliverToBoxAdapter(
       child: _FadeSlide(
