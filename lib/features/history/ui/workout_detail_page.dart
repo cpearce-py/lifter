@@ -29,7 +29,6 @@ class WorkoutDetailPage extends ConsumerWidget {
       )
     );
     if (confirmed == true && workout.id != null) {
-      // 1. Tell Riverpod to delete it
       await ref.read(workoutHistoryProvider.notifier).deleteWorkout(workout.id!);
       // 2. Pop back to the History list!
       if (context.mounted) {

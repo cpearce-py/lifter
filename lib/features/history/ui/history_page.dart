@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
-import 'package:lifter/features/history/ui/workout_detail_page.dart';
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
 
 class HistoryPage extends ConsumerWidget {
   const HistoryPage({super.key});
@@ -66,52 +65,9 @@ class HistoryPage extends ConsumerWidget {
               }
 
               // --- Render the Normal Workout Card ---
-              final workout = workouts[index];
-              final dateStr = workout.dateDone.toLocal().toString().split(' ')[0]; 
-
-              final colour = workout.uiAccentColor;
-              final icon = workout.uiIcon;
-              
-              return Card(
-                color: Colors.white.withValues(alpha: 0.05),
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: colour.withValues(alpha: 0.15),
-                    child: Icon(icon, color: colour, size: 20),
-                  ),
-
-                  title: Text(
-                  workout.uiTitle,
-                    // getWorkoutName(workout.workoutTypeId),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-                  ),
-
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 14, color: Colors.white.withOpacity(0.5)),
-                        const SizedBox(width: 6),
-                        Text(dateStr, style: TextStyle(color: Colors.white.withOpacity(0.7))),
-                        const SizedBox(width: 16),
-                        Icon(Icons.timer_outlined, size: 14, color: Colors.white.withOpacity(0.5)),
-                        const SizedBox(width: 6),
-                        Text('${(workout.duration / 60).floor()}m', style: TextStyle(color: Colors.white.withOpacity(0.7))),
-                      ],
-                    ),
-                  ),
-
-                  trailing: Icon(Icons.chevron_right, color: colour),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => WorkoutDetailPage(workout: workout)),
-                    );
-                  },
-                ),
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 6), 
+                child: WorkoutCard(workout: workouts[index]),
               );
             },
           );
@@ -120,3 +76,4 @@ class HistoryPage extends ConsumerWidget {
     );
   }
 }
+

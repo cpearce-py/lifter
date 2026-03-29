@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
-import 'package:lifter/features/bluetooth/ui/widgets.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
 
 
 // ─── Data models ──────────────────────────────────────────────────────────────
@@ -23,69 +26,15 @@ class _StatData {
   final Color accentColor;
 }
 
-class _WorkoutRow {
-  const _WorkoutRow({
-    required this.name,
-    required this.duration,
-    required this.daysAgo,
-    required this.icon,
-  });
-
-  final String name;
-  final String duration;
-  final int daysAgo;
-  final IconData icon;
-}
-
-
-class HomePage extends ConsumerStatefulWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage>
-    with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-
-  static const _stats = [
-    _StatData(
-      value: '14.5',
-      unit: 'hrs',
-      label: 'Worked out\nthis month',
-      icon: Icons.timer_rounded,
-      accentColor: Color(0xFFE8FF47),
-    ),
-    _StatData(
-      value: '11',
-      unit: 'sessions',
-      label: 'Workouts\ncompleted',
-      icon: Icons.fitness_center_rounded,
-      accentColor: Color(0xFF47C8FF),
-    ),
-    _StatData(
-      value: '8',
-      unit: 'day streak',
-      label: 'Current\nstreak',
-      icon: Icons.local_fire_department_rounded,
-      accentColor: Color(0xFFFF6B6B),
-    ),
-    _StatData(
-      value: '24,810',
-      unit: 'kcal',
-      label: 'Calories\nburned',
-      icon: Icons.bolt_rounded,
-      accentColor: Color(0xFFB47FFF),
-    ),
-  ];
-
-  static const _recentWorkouts = [
-    _WorkoutRow(name: 'Upper Body Push',   duration: '52 min', daysAgo: 1, icon: Icons.accessibility_new_rounded),
-    _WorkoutRow(name: 'Lower Body Day',    duration: '48 min', daysAgo: 2, icon: Icons.directions_run_rounded),
-    _WorkoutRow(name: 'Pull & Core',       duration: '61 min', daysAgo: 4, icon: Icons.sports_gymnastics_rounded),
-  ];
-  // ──────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -111,36 +60,43 @@ class _HomePageState extends ConsumerState<HomePage>
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildHeader(),
-          _buildSectionLabel('$month at a glance'),
-          _buildStatsGrid(),
-          _buildSectionLabel('Recent workouts'),
-          _buildRecentWorkouts(),
-          // Bottom padding so last card clears the nav bar
+          // All the heavy lifting is now cleanly delegated!
+          HomeHeaderSliver(animation: _controller),
+          SectionLabelSliver(text: '$month at a glance'),
+          StatsGridSliver(animation: _controller),
+          const SectionLabelSliver(text: 'Recent workouts'),
+          RecentWorkoutsSliver(animation: _controller),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
   }
+}
 
-  // ── Header ─────────────────────────────────────────────────────────────────
+class HomeHeaderSliver extends ConsumerWidget {
+  final AnimationController animation;
+  const HomeHeaderSliver({super.key, required this.animation});
 
-  Widget _buildHeader() {
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning,';
+    if (hour < 17) return 'Good afternoon,';
+    return 'Good evening,';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final userProfile = ref.watch(userProfileProvider).value;
-    final username = userProfile?.username ?? "No way we get here";
+    final username = userProfile?.username ?? "Lifter";
+    final initial = username.isNotEmpty ? username[0].toUpperCase() : "L";
 
     return SliverToBoxAdapter(
       child: _FadeSlide(
-        animation: _controller,
+        animation: animation,
         intervalStart: 0.0,
         intervalEnd: 0.5,
         child: Container(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            MediaQuery.of(context).padding.top + 32,
-            24,
-            28,
-          ),
+          padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 32, 24, 28),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -148,49 +104,21 @@ class _HomePageState extends ConsumerState<HomePage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _greeting(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
-                        color: Colors.white.withOpacity(0.45),
-                      ),
-                    ),
+                    Text(_greeting(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.45))),
                     const SizedBox(height: 4),
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
-                        color: Color(0xFFF0F0F0),
-                      ),
-                    ),
+                    Text(username, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Color(0xFFF0F0F0))),
                   ],
                 ),
               ),
-              // Avatar / initials badge
               Container(
-                width: 48,
-                height: 48,
+                width: 48, height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFFE8FF47).withOpacity(0.12),
-                  border: Border.all(
-                    color: const Color(0xFFE8FF47).withOpacity(0.3),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: const Color(0xFFE8FF47).withOpacity(0.3), width: 1.5),
                 ),
                 child: Center(
-                  child: Text(
-                    username[0].toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFFE8FF47),
-                    ),
-                  ),
+                  child: Text(initial, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFE8FF47))),
                 ),
               ),
             ],
@@ -199,82 +127,141 @@ class _HomePageState extends ConsumerState<HomePage>
       ),
     );
   }
+}
 
-  // ── Section label ──────────────────────────────────────────────────────────
+class SectionLabelSliver extends StatelessWidget {
+  final String text;
+  const SectionLabelSliver({super.key, required this.text});
 
-  Widget _buildSectionLabel(String text) {
+  @override
+  Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
         child: Text(
           text.toUpperCase(),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 2.5,
-            color: Colors.white.withOpacity(0.3),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.5, color: Colors.white.withOpacity(0.3)),
+        ),
+      ),
+    );
+  }
+}
+
+class RecentWorkoutsSliver extends ConsumerWidget {
+  final AnimationController animation;
+  const RecentWorkoutsSliver({super.key, required this.animation});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 1. Connect directly to our paginated DB provider!
+    final historyAsync = ref.watch(workoutHistoryProvider);
+
+    return historyAsync.when(
+      loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
+      error: (e, _) => SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
+      data: (pagination) {
+        
+        // 2. Grab only the 3 most recent workouts
+        final recentWorkouts = pagination.workouts.take(3).toList();
+
+        if (recentWorkouts.isEmpty) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Text("No workouts yet. Go crush it!", style: TextStyle(color: Colors.white.withOpacity(0.5))),
+            ),
+          );
+        }
+
+        // 3. Render them using the animated list
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return _FadeSlide(
+                  animation: animation,
+                  intervalStart: 0.35 + index * 0.08,
+                  intervalEnd: 0.75 + index * 0.08,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: WorkoutCard(workout: recentWorkouts[index]), // Use the unified card!
+                  ),
+                );
+              },
+              childCount: recentWorkouts.length,
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
 
-  // ── Stats 2×2 grid ─────────────────────────────────────────────────────────
 
-  Widget _buildStatsGrid() {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverGrid(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            return _FadeSlide(
-              animation: _controller,
-              intervalStart: 0.1 + index * 0.08,
-              intervalEnd:  0.5 + index * 0.08,
-              child: _StatCard(data: _stats[index]),
-            );
-          },
-          childCount: _stats.length,
-        ),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1.05,
-        ),
+class StatsGridSliver extends ConsumerWidget {
+  final AnimationController animation;
+  const StatsGridSliver({super.key, required this.animation});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(userStatsProvider);
+
+    return statsAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: SizedBox(height: 120, child: Center(child: CircularProgressIndicator())),
       ),
+      error: (e, _) => SliverToBoxAdapter(child: Center(child: Text('Error loading stats: $e'))),
+      data: (stats) {
+        
+        // --- Map the real DB math to your UI format ---
+        final statCardsData = [
+          _StatData(
+            value: stats.hoursThisMonth.toStringAsFixed(1), // E.g., "14.5"
+            unit: 'hrs',
+            label: 'Worked out\nthis month',
+            icon: Icons.timer_rounded,
+            accentColor: AppColors.peakLoadAccent, 
+          ),
+          _StatData(
+            value: stats.totalWorkouts.toString(),
+            unit: 'sessions',
+            label: 'Workouts\ncompleted',
+            icon: Icons.fitness_center_rounded,
+            accentColor: AppColors.repeaterAccent,
+          ),
+          _StatData(
+            value: stats.currentStreak.toString(),
+            unit: 'day streak',
+            label: 'Current\nstreak',
+            icon: Icons.local_fire_department_rounded,
+            accentColor: Color(0xFF47C8FF),
+          ),
+        ];
+
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return _FadeSlide( // Ensure your _FadeSlide helper is accessible!
+                  animation: animation,
+                  intervalStart: 0.1 + index * 0.08,
+                  intervalEnd:  0.5 + index * 0.08,
+                  child: _StatCard(data: statCardsData[index]),
+                );
+              },
+              childCount: statCardsData.length,
+            ),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.05,
+            ),
+          ));
+      },
     );
-  }
-
-  // ── Recent workouts list ───────────────────────────────────────────────────
-
-  Widget _buildRecentWorkouts() {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            return _FadeSlide(
-              animation: _controller,
-              intervalStart: 0.35 + index * 0.08,
-              intervalEnd:   0.75 + index * 0.08,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _RecentWorkoutCard(data: _recentWorkouts[index]),
-              ),
-            );
-          },
-          childCount: _recentWorkouts.length,
-        ),
-      ),
-    );
-  }
-
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning,';
-    if (hour < 17) return 'Good afternoon,';
-    return 'Good evening,';
   }
 }
 
@@ -358,73 +345,6 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-
-// ─── Recent Workout Card ──────────────────────────────────────────────────────
-
-class _RecentWorkoutCard extends StatelessWidget {
-  const _RecentWorkoutCard({required this.data});
-  final _WorkoutRow data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111118),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E1E2A), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8FF47).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(data.icon,
-                color: const Color(0xFFE8FF47).withOpacity(0.7), size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFF0F0F0),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  data.duration,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.35),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            data.daysAgo == 1 ? 'Yesterday' : '${data.daysAgo}d ago',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.25),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Fade + Slide entrance animation helper ───────────────────────────────────
 
 class _FadeSlide extends StatelessWidget {
   const _FadeSlide({
