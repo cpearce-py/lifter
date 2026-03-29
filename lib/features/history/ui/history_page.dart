@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
-import 'package:lifter/features/history/ui/helpers.dart';
 import 'package:lifter/features/history/ui/workout_detail_page.dart';
+import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 
 class HistoryPage extends ConsumerWidget {
   const HistoryPage({super.key});
@@ -68,17 +68,27 @@ class HistoryPage extends ConsumerWidget {
               // --- Render the Normal Workout Card ---
               final workout = workouts[index];
               final dateStr = workout.dateDone.toLocal().toString().split(' ')[0]; 
+
+              final colour = workout.uiAccentColor;
+              final icon = workout.uiIcon;
               
               return Card(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  leading: CircleAvatar(
+                    backgroundColor: colour.withValues(alpha: 0.15),
+                    child: Icon(icon, color: colour, size: 20),
+                  ),
+
                   title: Text(
-                    getWorkoutName(workout.workoutTypeId),
+                  workout.uiTitle,
+                    // getWorkoutName(workout.workoutTypeId),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
                   ),
+
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Row(
@@ -93,7 +103,8 @@ class HistoryPage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_right, color: Color(0xFFE8FF47)),
+
+                  trailing: Icon(Icons.chevron_right, color: colour),
                   onTap: () {
                     Navigator.push(
                       context,
