@@ -41,18 +41,13 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
   void _save() async {
     setState(() => _isSaving = true);
     try {
-      // Add note
+      // Add note.
       final finalLog = widget.workoutLog.copyWith(
         notes: _notesController.text.trim(),
       );
       
-      final repository = await ref.read(workoutRepositoryProvider.future);
-      await repository.saveWorkout(finalLog);
+      await ref.read(workoutHistoryProvider.notifier).saveWorkout(finalLog);
 
-      // Invalidate cached states.
-      ref.invalidate(workoutHistoryProvider);
-      ref.invalidate(userStatsProvider);
-      
       _navigateHome();
     } catch (e) {
       debugPrint("Failed to save: $e");

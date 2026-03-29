@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
+import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
 
@@ -71,11 +72,17 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
     }
   }
 
+  Future<void> saveWorkout(WorkoutLog newWorkout) async {
+    final repo = await ref.read(workoutRepositoryProvider.future);
+    await repo.saveWorkout(newWorkout);
+    ref.invalidate(userStatsProvider);
+    ref.invalidateSelf();
+    }
+
   Future<void> deleteWorkout(int workoutId) async {
     final repo = await ref.read(workoutRepositoryProvider.future);
-
     await repo.deleteWorkout(workoutId);
-
+    // Optimistic UI update.
     final currentState = state.value;
     if (currentState != null) {
       final updatedWorkouts = currentState.workouts
@@ -89,6 +96,8 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
         ),
       );
     }
+
+    ref.invalidate(userStatsProvider);
   }
 }
 
