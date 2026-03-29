@@ -7,6 +7,7 @@ import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/engines/repeater_engine.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
+import 'package:lifter/features/workouts/workout_routing.dart';
 
 
 Event? primaryButtonEvent(Phase phase) => switch (phase) {
@@ -23,23 +24,18 @@ class RepeaterWorkoutPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    // deals with re-routing to savepage
+    listenToWorkoutCompletion(
+      context, 
+      ref, 
+      provider: repeaterEngineProvider, 
+      getPhase: (state)  => state.phase, 
+      getFinalLog: () => ref.read(repeaterEngineProvider.notifier).getFinalSummary()
+    );
+
     final state = ref.watch(repeaterEngineProvider);
     final phase = state.phase;
-
-    ref.listen<RepeaterState>(
-      repeaterEngineProvider, 
-      (previous, next) {
-        if (previous?.phase != Phase.done && next.phase == Phase.done) {
-          final finalLog = ref.read(repeaterEngineProvider.notifier).getFinalSummary();
-          Future.delayed(const Duration(seconds: 1), () {
-            if (context.mounted) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => SaveWorkoutPage(workoutLog: finalLog)),
-            );
-          }
-        });
-      }
-    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),

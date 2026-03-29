@@ -4,14 +4,23 @@ import 'package:lifter/features/workouts/engines/peak_load_engine.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/peak_load_state.dart';
+import 'package:lifter/features/workouts/notes/save_page.dart';
 import 'package:lifter/features/workouts/sessions/repeater_workout_page.dart';
 import 'package:lifter/features/workouts/ui/generic_widgets.dart';
+import 'package:lifter/features/workouts/workout_routing.dart';
 
 class PeakLoadSessionPage extends ConsumerWidget {
   const PeakLoadSessionPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    listenToWorkoutCompletion(
+      context,
+      ref,
+      provider: peakLoadEngineProvider,
+      getPhase: (state) => state.phase,
+      getFinalLog: () => ref.read(peakLoadEngineProvider.notifier).getFinalSummary(),
+    );
     final state = ref.watch(peakLoadEngineProvider);
     final phase = state.phase;
 
@@ -24,9 +33,7 @@ class PeakLoadSessionPage extends ConsumerWidget {
           Expanded(
             child: GenericGraphArea(
               phase: phase,
-              overlay: _PeakLoadOverlay(
-                state: state,
-              ),
+              overlay: _PeakLoadOverlay(state: state),
             ),
           ),
 
@@ -102,7 +109,10 @@ class _PeakLoadOverlay extends StatelessWidget {
             children: [
               Text(
                 'TARGET: ${state.currentTarget.toStringAsFixed(1)} kg',
-                style: TextStyle(color: accentColor, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: accentColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
