@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/features/history/ui/helpers.dart';
 import 'package:lifter/features/history/ui/workout_detail_page.dart';
 
 class HistoryPage extends ConsumerWidget {
   const HistoryPage({super.key});
-
-  // Quick helper to map the DB integer to a readable name
-  String _getWorkoutName(int typeId) {
-    switch (typeId) {
-      case 1: return 'Repeater';
-      case 2: return 'Peak Load';
-      default: return 'Workout';
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,9 +17,14 @@ class HistoryPage extends ConsumerWidget {
         backgroundColor: Colors.transparent,
       ),
       body: historyAsync.when(
+        // We only show the main loading spinner on the VERY FIRST load
+        skipLoadingOnReload: true, 
+        skipLoadingOnRefresh: true,
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFE8FF47))),
-        error: (err, stack) => Center(child: Text('Error loading history:\n$err', style: const TextStyle(color: Colors.redAccent))),
-        data: (workouts) {
+        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent))),
+        data: (paginationState) {
+          final workouts = paginationState.workouts;
+
           if (workouts.isEmpty) {
             return Center(
               child: Text(
@@ -38,12 +35,39 @@ class HistoryPage extends ConsumerWidget {
             );
           }
 
+          // If there are more pages, we add +1 to the list to make room for the button
+          final itemCount = workouts.length + (paginationState.hasMore ? 1 : 0);
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: workouts.length,
+            itemCount: itemCount,
             itemBuilder: (context, index) {
+              
+              // --- Render the "Load More" Button at the bottom ---
+              if (index == workouts.length) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: historyAsync.isRefreshing 
+                      // Show a tiny spinner inside the button area while the next 20 fetch
+                      ? const CircularProgressIndicator(color: Color(0xFFE8FF47))
+                      : OutlinedButton(
+                          onPressed: () {
+                            ref.read(workoutHistoryProvider.notifier).loadMore();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          ),
+                          child: const Text('Load Older Workouts', style: TextStyle(color: Colors.white)),
+                        ),
+                  ),
+                );
+              }
+
+              // --- Render the Normal Workout Card ---
               final workout = workouts[index];
-              final dateStr = workout.dateDone.toLocal().toString().split(' ')[0]; // Quick YYYY-MM-DD format
+              final dateStr = workout.dateDone.toLocal().toString().split(' ')[0]; 
               
               return Card(
                 color: Colors.white.withOpacity(0.05),
@@ -52,7 +76,7 @@ class HistoryPage extends ConsumerWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   title: Text(
-                    _getWorkoutName(workout.workoutTypeId),
+                    getWorkoutName(workout.workoutTypeId),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
                   ),
                   subtitle: Padding(
@@ -71,7 +95,6 @@ class HistoryPage extends ConsumerWidget {
                   ),
                   trailing: const Icon(Icons.chevron_right, color: Color(0xFFE8FF47)),
                   onTap: () {
-                    // Navigate to the detail page, passing the full WorkoutLog object
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => WorkoutDetailPage(workout: workout)),

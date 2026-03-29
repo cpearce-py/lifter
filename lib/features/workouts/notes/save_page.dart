@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
@@ -46,6 +47,9 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
       
       final repository = await ref.read(workoutRepositoryProvider.future);
       await repository.saveWorkout(finalLog);
+
+      // invalidate so history list is re-cached.
+      ref.invalidate(workoutHistoryProvider);
       
       _navigateHome();
     } catch (e) {

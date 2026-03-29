@@ -12,7 +12,6 @@ final repeaterConfigProvider = Provider<RepeaterState>((ref) {
   throw UnimplementedError('repeaterConfigProvider must be overridden in a ProviderScope');
 });
 
-// 2. The Specific Orchestrator
 class RepeaterEngine extends BaseEngine<RepeaterState> {
   final DateTime _startTime = DateTime.now();
 
@@ -22,26 +21,19 @@ class RepeaterEngine extends BaseEngine<RepeaterState> {
 
   @override
   RepeaterState build() {
-    // A. Read the injected config
     final config = ref.watch(repeaterConfigProvider);
     
-    // B. Set up the specific rules and initial phase tracker
     rules = RepeaterRules(config);
     currentPhase = config.phase;
 
-    // C. Register cleanup
     ref.onDispose(() {
       stopTimer();
       stopBle();
     });
 
-    // D. Safely start hardware
-    // Future.microtask(() {
     ref.read(graphControllerProvider).reset(resetPeak: true);
     startBle();
-    // });
 
-    // E. Return the initial state
     return config;
   }
 
@@ -59,7 +51,6 @@ class RepeaterEngine extends BaseEngine<RepeaterState> {
   }
 }
 
-// 3. The Orchestrator Provider
 final repeaterEngineProvider = NotifierProvider.autoDispose<RepeaterEngine, RepeaterState>(
   RepeaterEngine.new,
   dependencies: [repeaterConfigProvider],

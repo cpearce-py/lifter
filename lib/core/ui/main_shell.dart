@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lifter/features/history/ui/history_screen.dart';
+import 'package:lifter/features/history/ui/history_page.dart';
 import 'home_page.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 

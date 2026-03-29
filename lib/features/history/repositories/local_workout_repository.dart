@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
 import 'package:sqflite/sqflite.dart';

@@ -1,26 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import './helpers.dart';
 
-class WorkoutDetailPage extends StatelessWidget {
+class WorkoutDetailPage extends ConsumerWidget {
   final WorkoutLog workout;
 
   const WorkoutDetailPage({super.key, required this.workout});
 
-  String _getWorkoutName(int typeId) {
-    if (typeId == 1) return 'Repeater';
-    if (typeId == 2) return 'Peak Load';
-    if (typeId == 3) return 'Critical Force';
-    return 'Workout';
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+    context: context, 
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF1E1E24),
+      title: const Text("Delete workout?", style: TextStyle(color: Colors.white)),
+      content: const Text('This will permanently delete this workout and all of its sets. This cannot be undone.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      )
+    );
+    if (confirmed == true && workout.id != null) {
+      // 1. Tell Riverpod to delete it
+      await ref.read(workoutHistoryProvider.notifier).deleteWorkout(workout.id!);
+      // 2. Pop back to the History list!
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dateStr = workout.dateDone.toLocal().toString().split(' ')[0];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getWorkoutName(workout.workoutTypeId)),
+        title: Text(getWorkoutName(workout.workoutTypeId)),
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            onPressed: () => _confirmDelete(context, ref), 
+            icon: Icon(Icons.delete_outline, color: Colors.redAccent))
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -32,33 +62,58 @@ class WorkoutDetailPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _StatCube(label: 'Date', value: dateStr),
-                _StatCube(label: 'Duration', value: '${(workout.duration / 60).floor()}m ${workout.duration % 60}s'),
+                _StatCube(
+                  label: 'Duration',
+                  value:
+                      '${(workout.duration / 60).floor()}m ${workout.duration % 60}s',
+                ),
                 _StatCube(label: 'Sets', value: '${workout.sets.length}'),
               ],
             ),
-            
+
             const SizedBox(height: 24),
 
             // --- 2. Notes Section (Only shows if they wrote something!) ---
-            if (workout.notes.isNotEmpty) ...[
-              const Text('Notes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(workout.notes, style: const TextStyle(color: Colors.white, height: 1.4)),
+            const Text(
+              'Notes',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    workout.notes,
+                    style: const TextStyle(color: Colors.white, height: 1.4),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.edit)
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
 
             // --- 3. The Granular Set/Rep Data ---
-            const Text('Performance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            const Text(
+              'Performance',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 12),
-            
+
             ...workout.sets.asMap().entries.map((entry) {
               final setIndex = entry.key;
               final setLog = entry.value;
@@ -71,9 +126,16 @@ class WorkoutDetailPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('SET ${setIndex + 1}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFE8FF47), letterSpacing: 1.2)),
+                      Text(
+                        'SET ${setIndex + 1}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFE8FF47),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
                       const SizedBox(height: 12),
-                      
+
                       // Loop through the reps in this set
                       ...setLog.repetitions.asMap().entries.map((repEntry) {
                         final repIndex = repEntry.key;
@@ -83,12 +145,29 @@ class WorkoutDetailPage extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Rep ${repIndex + 1}', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                              Text(
+                                'Rep ${repIndex + 1}',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
                               Row(
                                 children: [
-                                  Text('L: ${rep.peakLoadLeft.toStringAsFixed(1)}kg', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  Text(
+                                    'L: ${rep.peakLoadLeft.toStringAsFixed(1)}kg',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   const SizedBox(width: 16),
-                                  Text('R: ${rep.peakLoadRight.toStringAsFixed(1)}kg', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  Text(
+                                    'R: ${rep.peakLoadRight.toStringAsFixed(1)}kg',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -117,9 +196,19 @@ class _StatCube extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+        ),
       ],
     );
   }
