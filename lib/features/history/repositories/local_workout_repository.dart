@@ -159,4 +159,14 @@ class LocalWorkoutRepository implements WorkoutRepository {
     // Because of foreign keys, deleting the workout will cascade and delete its sets/reps
     await db.delete('workout', where: 'workout_id = ?', whereArgs: [id]);
   }
+
+  @override
+  Future<void> updateWorkoutNote(int workoutId, String note) async {
+    await db.update(
+      'workout',
+      {'notes': note},
+      where: 'workout_id = ?',
+      whereArgs: [workoutId],
+    );
+  }
 }

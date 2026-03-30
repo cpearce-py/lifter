@@ -1,15 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
 import './helpers.dart';
 
-class WorkoutDetailPage extends ConsumerWidget {
+class WorkoutDetailPage extends ConsumerStatefulWidget {
   final WorkoutLog workout;
 
   const WorkoutDetailPage({super.key, required this.workout});
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<WorkoutDetailPage> createState() => _WorkoutDetailPageState();
+}
+
+class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
+  late TextEditingController _notesController;
+  bool _isDirty = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController(text: widget.workout.notes);
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveNote() async {
+    if (widget.workout.id == null) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+    await ref.read(workoutHistoryProvider.notifier).updateWorkoutNote(
+      widget.workout.id!,
+      _notesController.text.trim(),
+    );
+
+    setState(() {
+      _isSaving = false;
+      _isDirty = false; // Hide the save button again
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Note updated!'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
     context: context, 
     builder: (context) => AlertDialog(
@@ -28,8 +79,8 @@ class WorkoutDetailPage extends ConsumerWidget {
         ],
       )
     );
-    if (confirmed == true && workout.id != null) {
-      await ref.read(workoutHistoryProvider.notifier).deleteWorkout(workout.id!);
+    if (confirmed == true && widget.workout.id != null) {
+      await ref.read(workoutHistoryProvider.notifier).deleteWorkout(widget.workout.id!);
       // 2. Pop back to the History list!
       if (context.mounted) {
         Navigator.of(context).pop();
@@ -38,7 +89,8 @@ class WorkoutDetailPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final workout = widget.workout;
     final dateStr = workout.dateDone.toLocal().toString().split(' ')[0];
 
     return Scaffold(
@@ -47,7 +99,7 @@ class WorkoutDetailPage extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            onPressed: () => _confirmDelete(context, ref), 
+            onPressed: () => _confirmDelete(context), 
             icon: Icon(Icons.delete_outline, color: Colors.redAccent))
         ],
       ),
@@ -72,33 +124,58 @@ class WorkoutDetailPage extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // --- 2. Notes Section (Only shows if they wrote something!) ---
-            const Text(
-              'Notes',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            // --- Notes Section ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Notes',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                // Save button, turn on if we're dirty.
+                SizedBox(
+                  height: 48,
+                  width: 100,
+                  child: AnimatedOpacity(
+                    opacity: _isDirty ? 1.0 : 0.0, 
+                    duration: const Duration(milliseconds: 200),
+                    child: IgnorePointer(
+                      ignoring: !_isDirty,
+                      child: Center(
+                        child:
+                        _isSaving
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                          : TextButton(onPressed: _saveNote,
+                          child: const Text(
+                            "Save Note", 
+                            style: TextStyle(
+                              color: AppColors.peakLoadAccent, 
+                              fontWeight: FontWeight.bold))
+                            )
+                      ),
+                    ),
+                  ),
+                )
+              ],
             ),
             const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    workout.notes,
-                    style: const TextStyle(color: Colors.white, height: 1.4),
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.edit)
-                ],
-              ),
+            WorkoutNotesField(
+              controller: _notesController,
+              onChanged: (text) {
+                // If the text differs from the original DB string, show the save button
+                if (text.trim() != widget.workout.notes && !_isDirty) {
+                  setState(() => _isDirty = true);
+                } else if (text.trim() == widget.workout.notes && _isDirty) {
+                  setState(() => _isDirty = false);
+                }
+              },
             ),
             const SizedBox(height: 24),
 

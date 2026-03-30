@@ -6,4 +6,5 @@ abstract class WorkoutRepository {
   Future<List<WorkoutLog>> getWorkouts({WorkoutQueryFilter? filter});
   Future<WorkoutLog?> getWorkoutById(int id);
   Future<void> deleteWorkout(int id);
+  Future<void> updateWorkoutNote(int id, String note);
 }

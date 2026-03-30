@@ -99,6 +99,24 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
 
     ref.invalidate(userStatsProvider);
   }
+
+  Future<void> updateWorkoutNote(int workoutId, String newNote) async {
+    final repo = await ref.read(workoutRepositoryProvider.future);
+    await repo.updateWorkoutNote(workoutId, newNote);
+    // Optimistically update our Riverpod cache
+    final currentState = state.value;
+    if (currentState != null) {
+      final updatedWorkouts = currentState.workouts.map((w) {
+        if (w.id == workoutId) return w.copyWith(notes: newNote);
+        return w;
+      }).toList();
+
+      state = AsyncData(HistoryPaginationState(
+        workouts: updatedWorkouts, 
+        hasMore: currentState.hasMore,
+      ));
+    }
+  }
 }
 
 final workoutHistoryProvider =

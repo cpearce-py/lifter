@@ -7,6 +7,8 @@ class AppColors {
   static const surfaceHighlight = Color(0xFF2C2C35); // Replaces white.withOpacity(0.05)
   static const textMuted = Colors.white54;
 
+  static const success = Colors.greenAccent;
+
   // Workout Specific Accents
   // You can tweak these to exactly match your Workout Choice page!
   static const repeaterAccent = Color(0xFFE8FF47);      // Neon Yellow/Lime

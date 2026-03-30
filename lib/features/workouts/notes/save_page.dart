@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:lifter/core/providers/history_provider.dart';
-import 'package:lifter/core/providers/repository_providers.dart';
-import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
 class SaveWorkoutPage extends ConsumerStatefulWidget {
@@ -101,22 +100,7 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
             // Notes field
             const Text('Notes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 8),
-            TextField(
-              controller: _notesController,
-              maxLines: 5,
-              autofocus: true,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'How did it feel?',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
+            WorkoutNotesField(controller: _notesController),
 
             const Spacer(),
 
