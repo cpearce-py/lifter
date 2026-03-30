@@ -562,8 +562,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                 child: GestureDetector(
                   onTap: () {
                     HapticFeedback.mediumImpact();
-                    Navigator.push(
-                      context,
+                    Navigator.of(context, rootNavigator: true).push(
                       MaterialPageRoute(
                         builder: (_) => widget.workout.sessionBuilder(_values)
                       ),

@@ -1,82 +1,135 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/features/workouts/notes/save_page.dart';
-import 'package:lifter/features/workouts/ui/generic_widgets.dart';
-import 'package:lifter/features/workouts/models/actions.dart';
+import 'package:flutter_riverpod/misc.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/workouts/engines/repeater_engine.dart';
+import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
+import 'package:lifter/features/workouts/ui/generic_widgets.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_live_stats.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_top_bar.dart';
 import 'package:lifter/features/workouts/workout_routing.dart';
-
-
-Event? primaryButtonEvent(Phase phase) => switch (phase) {
-  Phase.idle => Event.start,
-  Phase.paused => Event.resume,
-  Phase.working => Event.pause,
-  Phase.resting => Event.skip,
-  Phase.setResting => Event.skip,
-  _ => null,
-};
 
 class RepeaterWorkoutPage extends ConsumerWidget {
   const RepeaterWorkoutPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     // deals with re-routing to savepage
     listenToWorkoutCompletion(
-      context, 
-      ref, 
-      provider: repeaterEngineProvider, 
-      getPhase: (state)  => state.phase, 
-      getFinalLog: () => ref.read(repeaterEngineProvider.notifier).getFinalSummary()
+      context,
+      ref,
+      provider: repeaterEngineProvider,
+      getPhase: (state) => state.phase,
+      getFinalLog: () =>
+          ref.read(repeaterEngineProvider.notifier).getFinalSummary(),
     );
 
     final state = ref.watch(repeaterEngineProvider);
-    final phase = state.phase;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
-      body: Column(
-        children: [
-          GenericWorkoutHeader(title: phase.name),
-          Expanded(
-            child: GenericGraphArea(
-              phase: phase,
-              overlay: _RepeaterOverlay(state: state)
-            )
-          ),
-          GenericWorkoutControls(
-            phase: phase, 
-            onReset: () => ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(Event.reset)), 
-            onPrimaryAction: () {
-              final event = primaryButtonEvent(phase);
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WorkoutTopBar(
+              phaseName: state.phase.name,
+              onClose: () => Navigator.of(context).pop(),
+              trailing: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'SET ${state.currentSet} OF ${state.sets}',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(state.reps, (index) {
+                        final isCompleted = index < (state.currentRep - 1);
+                        final isCurrent = index == (state.currentRep - 1);
+                        return Container(
+                          margin: const EdgeInsets.only(left: 4),
+                          width: isCurrent ? 12 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isCompleted || isCurrent ? AppColors.repeaterAccent : Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            StatInfoBar(timeProvider: repeaterEngineProvider.select((s) => s.secondsRemaining)),
+
+            const SizedBox(height: 16),
+
+            Expanded(
+              child: GenericGraphArea(
+                phase: state.phase,
+                overlay: 
+                  Text(
+                    'HAND: ${state.currentHand.name.toUpperCase()}',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            GenericWorkoutControls(
+              phase: state.phase, 
+              onReset: () => ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(Event.reset)),
+              onPrimaryAction: () {
+              final event = primaryButtonEvent(state.phase);
               if (event != null) {
                 ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(event));
-                }
-              })
-        ],
-      )
+              }
+            })
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StatInfoBar extends ConsumerWidget {
+  final ProviderListenable<int> timeProvider;
+  const StatInfoBar({
+    super.key,
+    required this.timeProvider,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    
+    final secondsRemaining = ref.watch(
+      timeProvider
+    );
+
+    return WorkoutLiveStats(
+      secondsRemaining: secondsRemaining,
     );
   }
 }
 
 // ─── Rep Counter Overlay ──────────────────────────────────────────────────────
- 
+
 class _RepeaterOverlay extends ConsumerWidget {
-  const _RepeaterOverlay({
-    required this.state,
-  });
- 
+  const _RepeaterOverlay({required this.state});
+
   final RepeaterState state;
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = state.phaseProgress;
     final accentColor = accentColorForPhase(state.phase);
- 
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
@@ -92,7 +145,7 @@ class _RepeaterOverlay extends ConsumerWidget {
             children: [
               _SetLabel(accentColor: accentColor),
               const SizedBox(height: 6),
-               
+
               // Rep dots
               _RepDots(accentColor: accentColor),
             ],
@@ -100,7 +153,7 @@ class _RepeaterOverlay extends ConsumerWidget {
           const SizedBox(height: 8),
           // Let's add the hand indicator right below the set tracker!
           Text(
-            'HAND: ${state.currentHand.name.toUpperCase()}',
+            state.currentHand.name.toUpperCase(),
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -154,12 +207,12 @@ class _RepDots extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (reps, currentRep) = ref.watch(
-      repeaterEngineProvider.select((s) => (s.reps, s.currentRep))
+      repeaterEngineProvider.select((s) => (s.reps, s.currentRep)),
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(reps, (i) {
-        final done   = i < currentRep - 1;
+        final done = i < currentRep - 1;
         final active = i == currentRep - 1;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -181,16 +234,14 @@ class _RepDots extends ConsumerWidget {
 }
 
 class _SetLabel extends ConsumerWidget {
-  const _SetLabel({
-    required this.accentColor,
-  });
+  const _SetLabel({required this.accentColor});
 
   final Color accentColor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (currentSet, sets) = ref.watch(
-      repeaterEngineProvider.select((s) => (s.currentSet, s.sets))
+      repeaterEngineProvider.select((s) => (s.currentSet, s.sets)),
     );
     return Text(
       'SET $currentSet/$sets',

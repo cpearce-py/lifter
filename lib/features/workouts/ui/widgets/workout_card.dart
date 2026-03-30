@@ -10,7 +10,14 @@ class WorkoutCard extends StatelessWidget {
   const WorkoutCard({super.key, required this.workout});
 
   String _getDaysAgo(DateTime date) {
-    final difference = DateTime.now().difference(date).inDays;
+    final now = DateTime.now();
+    
+    // Strip the time to create pure "Midnight" calendar days
+    final today = DateTime(now.year, now.month, now.day);
+    final workoutDay = DateTime(date.year, date.month, date.day);
+    
+    final difference = today.difference(workoutDay).inDays;
+    
     if (difference == 0) return 'Today';
     if (difference == 1) return 'Yesterday';
     return '${difference}d ago';

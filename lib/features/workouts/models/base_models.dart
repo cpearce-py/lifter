@@ -13,3 +13,13 @@ enum Phase {
 }
 
 enum Hand { right, left }
+
+Event? primaryButtonEvent(Phase phase) => switch (phase) {
+  Phase.idle => Event.start,
+  Phase.paused => Event.resume,
+  Phase.working => Event.pause,
+  Phase.resting => Event.skip,
+  Phase.setResting => Event.skip,
+  _ => null,
+};
+

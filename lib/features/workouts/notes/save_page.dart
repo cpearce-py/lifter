@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
-import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
 class SaveWorkoutPage extends ConsumerStatefulWidget {
   final WorkoutLog workoutLog;
@@ -25,16 +24,10 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
   }
 
   void _navigateHome() {
-    Navigator.of(context).pushAndRemoveUntil(
-      PageRouteBuilder(
-        pageBuilder: (_, _, _) => const WorkoutPage(),
-        transitionsBuilder: (_, animation, _, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-      (route) => false,
-      );
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).popUntil((route) => route.isFirst);
   }
 
   void _save() async {
@@ -44,7 +37,7 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
       final finalLog = widget.workoutLog.copyWith(
         notes: _notesController.text.trim(),
       );
-      
+
       await ref.read(workoutHistoryProvider.notifier).saveWorkout(finalLog);
 
       _navigateHome();
@@ -66,7 +59,10 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
       backgroundColor: const Color(0xFF0A0A0F),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Save Workout', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Save Workout',
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
@@ -77,18 +73,28 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
             // Generic Workout Summary Card
             Card(
               color: Colors.white.withOpacity(0.05),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${workoutLog.workoutTypeId} Complete', 
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)
+                      '${workoutLog.workoutTypeId} Complete',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    _StatRow(label: 'Duration', value: '${(workoutLog.workingTime / 60).floor()}m ${workoutLog.duration % 60}s'),
+                    _StatRow(
+                      label: 'Duration',
+                      value:
+                          '${(workoutLog.workingTime / 60).floor()}m ${workoutLog.duration % 60}s',
+                    ),
                     const SizedBox(height: 4),
                   ],
                 ),
@@ -98,7 +104,14 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
             const SizedBox(height: 24),
 
             // Notes field
-            const Text('Notes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            const Text(
+              'Notes',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 8),
             WorkoutNotesField(controller: _notesController),
 
@@ -113,9 +126,14 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text('Discard', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Discard',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -126,11 +144,23 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
                       backgroundColor: const Color(0xFFE8FF47),
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: _isSaving 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                        : const Text('Save Workout', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Save Workout',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ],
@@ -153,7 +183,13 @@ class _StatRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6))),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }

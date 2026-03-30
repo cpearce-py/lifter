@@ -4,10 +4,11 @@ import 'package:lifter/features/workouts/engines/peak_load_engine.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/peak_load_state.dart';
-import 'package:lifter/features/workouts/notes/save_page.dart';
 import 'package:lifter/features/workouts/sessions/repeater_workout_page.dart';
 import 'package:lifter/features/workouts/ui/generic_widgets.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_top_bar.dart';
 import 'package:lifter/features/workouts/workout_routing.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 class PeakLoadSessionPage extends ConsumerWidget {
   const PeakLoadSessionPage({super.key});
@@ -26,14 +27,48 @@ class PeakLoadSessionPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
-      body: Column(
-        children: [
-          GenericWorkoutHeader(title: phase.name),
+      body: SafeArea(
+        child: Column(
+          children: [
+          WorkoutTopBar(
+            phaseName: phase.name, 
+            trailing: Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'ROUND ${state.repCount}',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.peakLoadAccent.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        state.currentHand.name,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.peakLoadAccent),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            onClose: () => Navigator.of(context).pop(),
+          ),
+
+          StatInfoBar(timeProvider: peakLoadEngineProvider.select((s) => s.secondsRemaining)),
 
           Expanded(
             child: GenericGraphArea(
               phase: phase,
-              overlay: _PeakLoadOverlay(state: state),
+              overlay: 
+              Text(
+                'HAND: ${state.currentHand.name.toUpperCase()}',
+                style: const TextStyle(color: Colors.white70),
+              ),
             ),
           ),
 
@@ -54,80 +89,8 @@ class PeakLoadSessionPage extends ConsumerWidget {
                 }
               },
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PeakLoadOverlay extends StatelessWidget {
-  final PeakLoadState state;
-  const _PeakLoadOverlay({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final accentColor = accentColorForPhase(state.phase);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A0A0F).withOpacity(0.85),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withOpacity(0.25)),
-      ),
-      child: Row(
-        children: [
-          // 1. The Circular Timer
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: state.phaseProgress,
-                  strokeWidth: 3,
-                  backgroundColor: Colors.white.withOpacity(0.07),
-                  valueColor: AlwaysStoppedAnimation(accentColor),
-                ),
-                Text(
-                  state.phase == Phase.idle || state.phase == Phase.done
-                      ? '–'
-                      : '${state.secondsRemaining}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: accentColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'TARGET: ${state.currentTarget.toStringAsFixed(1)} kg',
-                style: TextStyle(
-                  color: accentColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'HAND: ${state.currentHand.name.toUpperCase()}',
-                style: const TextStyle(color: Colors.white70),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'REP MAX: ${state.currentRepMax.toStringAsFixed(1)} kg',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+      )),
     );
   }
 }
