@@ -41,7 +41,8 @@ abstract class BaseEngine<T> extends Notifier<T> {
     if (oldPhase == newPhase) return;
 
     if (newPhase == Phase.working || newPhase == Phase.resting || 
-        newPhase == Phase.setResting || newPhase == Phase.switching) {
+        newPhase == Phase.setResting || newPhase == Phase.switching ||
+        newPhase == Phase.starting) {
       startTimer();
     } else {
       stopTimer();

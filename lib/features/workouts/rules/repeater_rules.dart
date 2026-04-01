@@ -51,11 +51,13 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
 
     // Start
     if (event == Event.start) {
+      const prepTime = 5;
+
        return state.copyWith(
-         phase: Phase.working, 
+         phase: Phase.starting, 
          currentHand: state.startingHand, // Should be setup in UI but not sure
-         secondsRemaining: state.workSeconds,
-         currentPhaseDuration: state.workSeconds,
+         secondsRemaining: prepTime,
+         currentPhaseDuration: prepTime,
        );
     }
 
@@ -63,6 +65,13 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
   }
 
   RepeaterState _advancePhase(RepeaterState state) {
+    if (state.phase == Phase.starting) {
+      return state.copyWith(
+        phase: Phase.working,
+        secondsRemaining: state.workSeconds,
+        currentPhaseDuration: state.workSeconds,
+      );
+    }
     if (state.phase == Phase.working) {
       
       // A. Did we only finish the FIRST hand for this rep?

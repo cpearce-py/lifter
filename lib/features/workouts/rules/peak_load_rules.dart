@@ -60,17 +60,19 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
     if (event == Event.finish) return _finishWorkout(state);
     
     if (event == Event.resume) {
-      return state.copyWith(phase: Phase.working); // Simplified resume
+      return state.copyWith(phase: Phase.working);
     }
 
     if (event == Event.start) {
       // First rep calculation: 50% of body weight
-      return _startWorkingPhase(
-        state.copyWith(
-          currentTarget: state.bodyWeight * 0.5,
-          repCount: 1,
-        ),
-        state.startingHand,
+      const prepTime = 5;
+      return state.copyWith(
+        phase: Phase.starting,
+        currentTarget: state.bodyWeight * 0.5,
+        repCount: 1,
+        currentHand: state.startingHand, 
+        secondsRemaining: prepTime,
+        currentPhaseDuration: prepTime,
       );
     }
 
@@ -80,6 +82,9 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
   // --- Phase Advancement Logic ---
 
   PeakLoadState _advancePhase(PeakLoadState state) {
+    if (state.phase == Phase.starting) {
+      return _startWorkingPhase(state, state.currentHand);
+    }
     if (state.phase == Phase.working) {
       // 1. Save the max value achieved during this 7-second window
       var nextState = _saveRepMax(state);
