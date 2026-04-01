@@ -73,6 +73,8 @@ class LiveGraph extends StatefulWidget {
     this.showPeakLine = true,
     this.isActive = false,
     this.targetFps = 30,
+    this.targetMin,
+    this.targetMax,
   });
 
   final LiveGraphController controller;
@@ -80,6 +82,8 @@ class LiveGraph extends StatefulWidget {
   final bool showPeakLine;
   final bool isActive;
   final int targetFps;
+  final double? targetMin;
+  final double? targetMax;
 
   @override
   State<LiveGraph> createState() => _LiveGraphState();
@@ -171,6 +175,8 @@ class _LiveGraphState extends State<LiveGraph>
               controller: widget.controller,
               accentColor: widget.accentColor,
               showPeakLine: widget.showPeakLine,
+              targetMin: widget.targetMin,
+              targetMax: widget.targetMax,
             ),
             child: const SizedBox.expand(),
           ),
@@ -188,11 +194,15 @@ class _GraphPainter extends CustomPainter {
     required this.controller,
     required this.accentColor,
     required this.showPeakLine,
+    this.targetMin,
+    this.targetMax,
   }) : super(repaint: repaint);
 
   final LiveGraphController controller;
   final Color accentColor;
   final bool showPeakLine;
+  final double? targetMin;
+  final double? targetMax;
 
   double _timeToX(int tMs, double left, double width, int nowMs) {
     final ageSecs = (nowMs - tMs) / 1000.0;
@@ -202,11 +212,10 @@ class _GraphPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Pull the real-time data directly inside the paint method
     final nowMs = controller.currentGraphTimeMs;
     final yMax = controller.yMax;
     final peakValue = showPeakLine ? controller.peakValue : 0.0;
-    final samples = controller.samples; // Using the Queue directly
+    final samples = controller.samples;
 
     final w = size.width;
     final h = size.height;
@@ -214,6 +223,10 @@ class _GraphPainter extends CustomPainter {
     const vPad = 24.0;
     final chartW = w - hPad * 2;
     final chartH = h - vPad * 2;
+
+    final colorBelow = accentColor;
+    const colorInRange = Color(0xFF4CAF50); 
+    const colorAbove = Color(0xFFFF6B6B);   
 
     // ── Grid ─────────────────────────────────────────────────────────────────
     final gridPaint = Paint()
@@ -223,9 +236,13 @@ class _GraphPainter extends CustomPainter {
     for (int i = 0; i <= 4; i++) {
       final y = vPad + chartH * (1 - i / 4);
       canvas.drawLine(Offset(hPad, y), Offset(w - hPad, y), gridPaint);
+      
+      // Reverted to clean integers!
+      final labelText = (yMax * i / 4).toStringAsFixed(0);
+
       final tp = TextPainter(
         text: TextSpan(
-          text: (yMax * i / 4).toStringAsFixed(0),
+          text: labelText,
           style: TextStyle(
             fontSize: 9,
             color: Colors.white.withOpacity(0.2),
@@ -237,11 +254,25 @@ class _GraphPainter extends CustomPainter {
       tp.paint(canvas, Offset(2, y - tp.height / 2));
     }
 
+    // ── Target Zone Background ───────────────────────────────────────────────
+    if (targetMin != null && targetMax != null) {
+      final targetTopY = vPad + chartH * (1 - (targetMax! / yMax).clamp(0.0, 1.0));
+      final targetBottomY = vPad + chartH * (1 - (targetMin! / yMax).clamp(0.0, 1.0));
+      
+      final zoneRect = Rect.fromLTRB(hPad, targetTopY, w - hPad, targetBottomY);
+      canvas.drawRect(
+        zoneRect, 
+        Paint()..color = colorInRange.withOpacity(0.333),
+      );
+    }
+
     if (samples.isEmpty) return;
 
     // ── Peak line ─────────────────────────────────────────────────────────────
     if (peakValue > 0) {
-      final peakY = vPad + chartH * (1 - peakValue / yMax);
+      // Kept the clamp here so it doesn't float above the graph!
+      final peakY = vPad + chartH * (1 - (peakValue / yMax).clamp(0.0, 1.0));
+      
       final dashPath = Path();
       double x = hPad;
       bool on = true;
@@ -256,7 +287,7 @@ class _GraphPainter extends CustomPainter {
       canvas.drawPath(
         dashPath,
         Paint()
-          ..color = const Color(0xFFFF6B6B).withOpacity(0.4)
+          ..color = colorAbove.withOpacity(0.4)
           ..strokeWidth = 1
           ..style = PaintingStyle.stroke,
       );
@@ -275,7 +306,8 @@ class _GraphPainter extends CustomPainter {
       final value = sample.$2;
       
       final x = _timeToX(t, hPad, chartW, nowMs);
-      final y = vPad + chartH * (1 - (value / yMax).clamp(0, 1));
+      // Kept the clamp here so the line doesn't break out of the box!
+      final y = vPad + chartH * (1 - (value / yMax).clamp(0.0, 1.0));
 
       if (isFirst) {
         linePath.moveTo(x, y);
@@ -310,29 +342,56 @@ class _GraphPainter extends CustomPainter {
         ..style = PaintingStyle.fill,
     );
 
-    canvas.drawPath(
-      linePath,
-      Paint()
-        ..color = accentColor
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
+    Paint linePaint = Paint()
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    // ── Live dot — anchored to the last sample's time position ─────────────
+    if (targetMin != null && targetMax != null) {
+      final stopMax = (1 - targetMax! / yMax).clamp(0.0, 1.0);
+      final stopMin = (1 - targetMin! / yMax).clamp(0.0, 1.0);
+
+      linePaint.shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        stops: [
+          0.0, stopMax, 
+          stopMax, stopMin, 
+          stopMin, 1.0,
+        ],
+        colors: [
+          colorAbove, colorAbove,
+          colorInRange, colorInRange,
+          colorBelow, colorBelow,
+        ],
+      ).createShader(Rect.fromLTWH(hPad, vPad, chartW, chartH));
+    } else {
+      linePaint.color = accentColor;
+    }
+
+    canvas.drawPath(linePath, linePaint);
+
+    // ── Live dot ──────────────────────────────────────────────────────────────
     var dotX = w - hPad;
-    canvas.drawCircle(
-        Offset(dotX, lastY), 7, Paint()..color = accentColor.withOpacity(0.25));
-    canvas.drawCircle(
-        Offset(dotX, lastY), 4, Paint()..color = accentColor);
     
+    Color currentDotColor = accentColor;
+    if (targetMin != null && targetMax != null) {
+      final lastValue = samples.last.$2;
+      if (lastValue > targetMax!) {currentDotColor = colorAbove;}
+      else if (lastValue >= targetMin!) {currentDotColor = colorInRange;}
+      else {currentDotColor = colorBelow;}
+    }
+
+    canvas.drawCircle(Offset(dotX, lastY), 7, Paint()..color = currentDotColor.withOpacity(0.25));
+    canvas.drawCircle(Offset(dotX, lastY), 4, Paint()..color = currentDotColor);
   }
 
   @override
   bool shouldRepaint(_GraphPainter old) =>
       old.accentColor != accentColor ||
       old.showPeakLine != showPeakLine ||
+      old.targetMin != targetMin ||
+      old.targetMax != targetMax ||
       old.controller != controller;
 }
-
