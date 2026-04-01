@@ -9,6 +9,7 @@ import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/rules/workout_rules.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 abstract class BaseEngine<T> extends Notifier<T> {
   // Child classes must assign this in their build() method
@@ -44,12 +45,15 @@ abstract class BaseEngine<T> extends Notifier<T> {
         newPhase == Phase.setResting || newPhase == Phase.switching ||
         newPhase == Phase.starting) {
       startTimer();
+      WakelockPlus.enable();
     } else {
       stopTimer();
+      WakelockPlus.disable();
     }
 
     if (newPhase == Phase.done || newPhase == Phase.cancelled) {
       stopBle();
+      WakelockPlus.disable();
     }
   }
 
