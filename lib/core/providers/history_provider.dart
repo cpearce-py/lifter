@@ -3,6 +3,7 @@ import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
+import 'package:lifter/features/workouts/providers/weekly_provider.dart';
 
 // A custom state to hold the list AND the pagination status
 class HistoryPaginationState {
@@ -75,7 +76,7 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
   Future<void> saveWorkout(WorkoutLog newWorkout) async {
     final repo = await ref.read(workoutRepositoryProvider.future);
     await repo.saveWorkout(newWorkout);
-    ref.invalidate(userStatsProvider);
+    _invalidateProviders();
     ref.invalidateSelf();
     }
 
@@ -96,8 +97,8 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
         ),
       );
     }
-
-    ref.invalidate(userStatsProvider);
+    
+    _invalidateProviders();
   }
 
   Future<void> updateWorkoutNote(int workoutId, String newNote) async {
@@ -116,6 +117,12 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
         hasMore: currentState.hasMore,
       ));
     }
+  }
+
+  void _invalidateProviders() {
+    // Invalidate required providers if a workout is Saved, or Deleted.
+    ref.invalidate(userStatsProvider);
+    ref.invalidate(weekWorkoutsProvider);
   }
 }
 
