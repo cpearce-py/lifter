@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lifter/core/ui/home_page.dart';
 import 'package:lifter/features/history/ui/history_page.dart';
-import 'home_page.dart';
+import 'package:lifter/features/workouts/ui/widgets/workout_selection_sheet.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
@@ -14,7 +15,6 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  // Shared notifier — any page can write to this to switch the active tab.
   final _tabNotifier = ValueNotifier<int>(0);
   int _currentIndex = 0;
 
@@ -36,25 +36,27 @@ class _MainShellState extends State<MainShell> {
         label: 'Home',
         icon: Icons.home_rounded,
         activeIcon: Icons.home_rounded,
-        page: HomePage(),
+        page: const HomePage(),
       ),
+      // The Workout destination is flagged as an "Action"
       _NavDestination(
         label: 'Workout',
         icon: Icons.fitness_center_outlined,
         activeIcon: Icons.fitness_center_rounded,
-        page: WorkoutNavigator(),
+        isAction: true,
+        page: const SizedBox(), // Won't be rendered in the stack
       ),
       _NavDestination(
         label: 'History',
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart_rounded,
-        page: HistoryPage(),
+        page: const HistoryPage(),
       ),
       _NavDestination(
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
-        page: _PagePlaceholder(label: "Profile", icon: Icons.abc),
+        page: const _PagePlaceholder(label: "Profile", icon: Icons.abc),
       ),
     ];
   }
@@ -66,33 +68,81 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _onTap(int index) {
+    if (_destinations[index].isAction) {
+      HapticFeedback.lightImpact();
+      _showWorkoutSheet(context);
+      return; // Stop here so the active tab DOES NOT change
+    }
     _tabNotifier.value = index;
+  }
+
+  // ─── The Slide-up Window ───────────────────────────────────────────────────
+  void _showWorkoutSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Color(0xFF111118),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 24),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                "SELECT WORKOUT",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: WorkoutSelectionSheet()
+                ),
+              )
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Filter out the action page from the IndexedStack so indices align
+    final pages = _destinations.where((d) => !d.isAction).map((d) => d.page).toList();
+
+    // Calculate the actual index for IndexedStack by ignoring the action button
+    int stackIndex = _currentIndex;
+    if (_currentIndex > _destinations.indexWhere((d) => d.isAction)) {
+      stackIndex -= 1;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: IndexedStack(
-        index: _currentIndex,
-        children: [for (final d in _destinations) d.page],
+        index: stackIndex,
+        children: pages,
       ),
       bottomNavigationBar: _FitBottomNav(
         destinations: _destinations,
         currentIndex: _currentIndex,
         onTap: _onTap,
       ),
-    );
-  }
-}
-
-class WorkoutNavigator extends StatelessWidget {
-  const WorkoutNavigator({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      onGenerateRoute: (settings) => MaterialPageRoute(builder: (_) => const WorkoutPage()),
     );
   }
 }
@@ -148,9 +198,9 @@ class _FitBottomNav extends StatelessWidget {
   }
 }
 
-// ─── Individual Nav Button ────────────────────────────────────────────────────
+// ─── Nav Button Router ────────────────────────────────────────────────────────
 
-class _NavButton extends StatefulWidget {
+class _NavButton extends StatelessWidget {
   const _NavButton({
     required this.destination,
     required this.isActive,
@@ -162,10 +212,94 @@ class _NavButton extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_NavButton> createState() => _NavButtonState();
+  Widget build(BuildContext context) {
+    const accent = Color(0xFFE8FF47);
+
+    if (destination.isAction) {
+      return _ActionTabWidget(
+        destination: destination,
+        accent: accent,
+        onTap: onTap,
+      );
+    }
+
+    return _StandardTabWidget(
+      destination: destination,
+      isActive: isActive,
+      accent: accent,
+      onTap: onTap,
+    );
+  }
 }
 
-class _NavButtonState extends State<_NavButton>
+// ─── Action Tab Widget (Stateless) ────────────────────────────────────────────
+
+class _ActionTabWidget extends StatelessWidget {
+  const _ActionTabWidget({
+    required this.destination,
+    required this.accent,
+    required this.onTap,
+  });
+
+  final _NavDestination destination;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: accent,
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(
+              destination.icon,
+              size: 28,
+              color: const Color(0xFF111118),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Standard Tab Widget (Stateful for animations) ────────────────────────────
+
+class _StandardTabWidget extends StatefulWidget {
+  const _StandardTabWidget({
+    required this.destination,
+    required this.isActive,
+    required this.accent,
+    required this.onTap,
+  });
+
+  final _NavDestination destination;
+  final bool isActive;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  State<_StandardTabWidget> createState() => _StandardTabWidgetState();
+}
+
+class _StandardTabWidgetState extends State<_StandardTabWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnim;
@@ -186,7 +320,7 @@ class _NavButtonState extends State<_NavButton>
   }
 
   @override
-  void didUpdateWidget(_NavButton old) {
+  void didUpdateWidget(_StandardTabWidget old) {
     super.didUpdateWidget(old);
     if (widget.isActive != old.isActive) {
       widget.isActive ? _controller.forward() : _controller.reverse();
@@ -201,8 +335,6 @@ class _NavButtonState extends State<_NavButton>
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFFE8FF47);
-
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onTap,
@@ -212,17 +344,15 @@ class _NavButtonState extends State<_NavButton>
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icon with glow pill behind it
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Glow pill
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     width: widget.isActive ? 48 : 0,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: accent.withOpacity(0.12),
+                      color: widget.accent.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
@@ -235,7 +365,7 @@ class _NavButtonState extends State<_NavButton>
                       size: 22,
                       color: Color.lerp(
                         Colors.white.withOpacity(0.35),
-                        accent,
+                        widget.accent,
                         _glowAnim.value,
                       ),
                     ),
@@ -243,16 +373,14 @@ class _NavButtonState extends State<_NavButton>
                 ],
               ),
               const SizedBox(height: 4),
-              // Label
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight:
-                      widget.isActive ? FontWeight.w700 : FontWeight.w400,
+                  fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.w400,
                   letterSpacing: 0.5,
                   color: widget.isActive
-                      ? accent
+                      ? widget.accent
                       : Colors.white.withOpacity(0.35),
                 ),
                 child: Text(widget.destination.label),
@@ -273,15 +401,17 @@ class _NavDestination {
     required this.icon,
     required this.activeIcon,
     required this.page,
+    this.isAction = false,
   });
 
   final String label;
   final IconData icon;
   final IconData activeIcon;
   final Widget page;
+  final bool isAction;
 }
 
-// ─── Placeholder pages (swap with real screens) ───────────────────────────────
+// ─── Placeholder pages ────────────────────────────────────────────────────────
 
 class _PagePlaceholder extends StatelessWidget {
   const _PagePlaceholder({required this.label, required this.icon});

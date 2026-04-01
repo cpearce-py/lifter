@@ -5,8 +5,9 @@ import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/core/ui/widgets/controls.dart';
+import 'package:lifter/core/ui/widgets/weekly_calendar.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
-
 
 // ─── Data models ──────────────────────────────────────────────────────────────
 
@@ -33,7 +34,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -60,8 +62,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // All the heavy lifting is now cleanly delegated!
           HomeHeaderSliver(animation: _controller),
+          SliverToBoxAdapter(child: const WeeklyCalendar()),
           SectionLabelSliver(text: '$month at a glance'),
           StatsGridSliver(animation: _controller),
           const SectionLabelSliver(text: 'Recent workouts'),
@@ -91,12 +93,17 @@ class HomeHeaderSliver extends ConsumerWidget {
     final initial = username.isNotEmpty ? username[0].toUpperCase() : "L";
 
     return SliverToBoxAdapter(
-      child: _FadeSlide(
+      child: FadeSlide(
         animation: animation,
         intervalStart: 0.0,
         intervalEnd: 0.5,
         child: Container(
-          padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 32, 24, 28),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            MediaQuery.of(context).padding.top + 32,
+            24,
+            28,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -104,21 +111,46 @@ class HomeHeaderSliver extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_greeting(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.45))),
+                    Text(
+                      _greeting(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.45),
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(username, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Color(0xFFF0F0F0))),
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFF0F0F0),
+                      ),
+                    ),
                   ],
                 ),
               ),
               Container(
-                width: 48, height: 48,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFFE8FF47).withOpacity(0.12),
-                  border: Border.all(color: const Color(0xFFE8FF47).withOpacity(0.3), width: 1.5),
+                  border: Border.all(
+                    color: const Color(0xFFE8FF47).withOpacity(0.3),
+                    width: 1.5,
+                  ),
                 ),
                 child: Center(
-                  child: Text(initial, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFE8FF47))),
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFFE8FF47),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -140,7 +172,12 @@ class SectionLabelSliver extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
         child: Text(
           text.toUpperCase(),
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.5, color: Colors.white.withOpacity(0.3)),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2.5,
+            color: Colors.white.withOpacity(0.3),
+          ),
         ),
       ),
     );
@@ -157,10 +194,12 @@ class RecentWorkoutsSliver extends ConsumerWidget {
     final historyAsync = ref.watch(workoutHistoryProvider);
 
     return historyAsync.when(
-      loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
-      error: (e, _) => SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
+      loading: () => const SliverToBoxAdapter(
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) =>
+          SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
       data: (pagination) {
-        
         // 2. Grab only the 3 most recent workouts
         final recentWorkouts = pagination.workouts.take(3).toList();
 
@@ -168,7 +207,10 @@ class RecentWorkoutsSliver extends ConsumerWidget {
           return SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Text("No workouts yet. Go crush it!", style: TextStyle(color: Colors.white.withOpacity(0.5))),
+              child: Text(
+                "No workouts yet.",
+                style: TextStyle(color: Colors.white.withOpacity(0.5)),
+              ),
             ),
           );
         }
@@ -177,27 +219,25 @@ class RecentWorkoutsSliver extends ConsumerWidget {
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return _FadeSlide(
-                  animation: animation,
-                  intervalStart: 0.35 + index * 0.08,
-                  intervalEnd: 0.75 + index * 0.08,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: WorkoutCard(workout: recentWorkouts[index]), // Use the unified card!
-                  ),
-                );
-              },
-              childCount: recentWorkouts.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return FadeSlide(
+                animation: animation,
+                intervalStart: 0.35 + index * 0.08,
+                intervalEnd: 0.75 + index * 0.08,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: WorkoutCard(
+                    workout: recentWorkouts[index],
+                  ), // Use the unified card!
+                ),
+              );
+            }, childCount: recentWorkouts.length),
           ),
         );
       },
     );
   }
 }
-
 
 class StatsGridSliver extends ConsumerWidget {
   final AnimationController animation;
@@ -209,19 +249,22 @@ class StatsGridSliver extends ConsumerWidget {
 
     return statsAsync.when(
       loading: () => const SliverToBoxAdapter(
-        child: SizedBox(height: 120, child: Center(child: CircularProgressIndicator())),
+        child: SizedBox(
+          height: 120,
+          child: Center(child: CircularProgressIndicator()),
+        ),
       ),
-      error: (e, _) => SliverToBoxAdapter(child: Center(child: Text('Error loading stats: $e'))),
+      error: (e, _) => SliverToBoxAdapter(
+        child: Center(child: Text('Error loading stats: $e')),
+      ),
       data: (stats) {
-        
-        // --- Map the real DB math to your UI format ---
         final statCardsData = [
           _StatData(
             value: stats.hoursThisMonth.toStringAsFixed(1), // E.g., "14.5"
             unit: 'hrs',
             label: 'Worked out\nthis month',
             icon: Icons.timer_rounded,
-            accentColor: AppColors.peakLoadAccent, 
+            accentColor: AppColors.peakLoadAccent,
           ),
           _StatData(
             value: stats.totalWorkouts.toString(),
@@ -242,24 +285,22 @@ class StatsGridSliver extends ConsumerWidget {
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverGrid(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return _FadeSlide( // Ensure your _FadeSlide helper is accessible!
-                  animation: animation,
-                  intervalStart: 0.1 + index * 0.08,
-                  intervalEnd:  0.5 + index * 0.08,
-                  child: _StatCard(data: statCardsData[index]),
-                );
-              },
-              childCount: statCardsData.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return FadeSlide(
+                animation: animation,
+                intervalStart: 0.1 + index * 0.08,
+                intervalEnd: 0.5 + index * 0.08,
+                child: _StatCard(data: statCardsData[index]),
+              );
+            }, childCount: statCardsData.length),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               childAspectRatio: 1.05,
             ),
-          ));
+          ),
+        );
       },
     );
   }
@@ -278,10 +319,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF111118),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: data.accentColor.withOpacity(0.15),
-          width: 1,
-        ),
+        border: Border.all(color: data.accentColor.withOpacity(0.15), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,44 +380,6 @@ class _StatCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FadeSlide extends StatelessWidget {
-  const _FadeSlide({
-    required this.animation,
-    required this.intervalStart,
-    required this.intervalEnd,
-    required this.child,
-  });
-
-  final AnimationController animation;
-  final double intervalStart;
-  final double intervalEnd;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Interval(
-        intervalStart.clamp(0.0, 1.0),
-        intervalEnd.clamp(0.0, 1.0),
-        curve: Curves.easeOutCubic,
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: curved,
-      builder: (context, child) => Opacity(
-        opacity: curved.value,
-        child: Transform.translate(
-          offset: Offset(0, 20 * (1 - curved.value)),
-          child: child,
-        ),
-      ),
-      child: child,
     );
   }
 }
