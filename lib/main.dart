@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:lifter/features/bluetooth/ble_service.dart';
+import 'package:lifter/core/providers/shared_preferences_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
 import 'package:lifter/core/ui/screens/username_screen.dart';
 import 'package:lifter/core/ui/main_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const ProviderScope(child: FitApp()));
+  runApp(
+    ProviderScope(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs)
+    ],
+    child: const FitApp()));
 }
 
 class FitApp extends ConsumerStatefulWidget {

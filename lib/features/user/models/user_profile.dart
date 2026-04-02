@@ -1,3 +1,5 @@
+import 'package:lifter/features/workouts/models/base_models.dart';
+
 class UserProfile {
   final int id;
   final String username;
@@ -47,6 +49,39 @@ class UserProfile {
       firstName: map['first_name'] as String?,
       lastName: map['last_name'] as String?,
       email: map['email'] as String?,
+    );
+  }
+}
+
+// Data class for shared_preference User defaults.
+class UserSettings {
+  final double bodyWeight;
+  final Hand preferredHand;
+  final double maxPullLeft;
+  final double maxPullRight;
+  final bool useLbs; // true = lbs, false = kg
+
+  const UserSettings({
+    this.bodyWeight = 70.0,
+    this.preferredHand = Hand.left,
+    this.maxPullLeft = 0.0,
+    this.maxPullRight = 0.0,
+    this.useLbs = false,
+  });
+
+  UserSettings copyWith({
+    double? bodyWeight,
+    Hand? preferredHand,
+    double? maxPullLeft,
+    double? maxPullRight,
+    bool? useLbs,
+  }) {
+    return UserSettings(
+      bodyWeight: bodyWeight ?? this.bodyWeight,
+      preferredHand: preferredHand ?? this.preferredHand,
+      maxPullLeft: maxPullLeft ?? this.maxPullLeft,
+      maxPullRight: maxPullRight ?? this.maxPullRight,
+      useLbs: useLbs ?? this.useLbs,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lifter/core/ui/home_page.dart';
 import 'package:lifter/features/history/ui/history_page.dart';
+import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_selection_sheet.dart';
 import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
@@ -56,7 +57,7 @@ class _MainShellState extends State<MainShell> {
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
-        page: const _PagePlaceholder(label: "Profile", icon: Icons.abc),
+        page: ProfilePage(),
       ),
     ];
   }

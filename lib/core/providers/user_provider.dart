@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/core/providers/repository_providers.dart'; // Where databaseProvider is
+import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/features/user/models/user_profile.dart';
 import 'package:lifter/features/user/repositories/user_repository.dart';
 
