@@ -13,6 +13,11 @@ class LiveGraphController extends ChangeNotifier {
   });
 
   final double yMax;
+  double? _targetMin;
+  double? _targetMax;
+
+  double? get targetMin => _targetMin;
+  double? get targetMax => _targetMax;
 
   /// How much time is visible across the full width of the graph.
   final Duration windowDuration;
@@ -30,6 +35,12 @@ class LiveGraphController extends ChangeNotifier {
 
   final Stopwatch _stopwatch = Stopwatch();
   int get currentGraphTimeMs => _stopwatch.elapsedMilliseconds;
+
+  void setTargets({double? min, double? max}) {
+    _targetMin = min;
+    _targetMax = max;
+    notifyListeners(); // Instantly update the graph zone
+  }
 
   void setIsActive(bool active) {
     if (active) {
@@ -73,8 +84,6 @@ class LiveGraph extends StatefulWidget {
     this.showPeakLine = true,
     this.isActive = false,
     this.targetFps = 30,
-    this.targetMin,
-    this.targetMax,
   });
 
   final LiveGraphController controller;
@@ -82,8 +91,6 @@ class LiveGraph extends StatefulWidget {
   final bool showPeakLine;
   final bool isActive;
   final int targetFps;
-  final double? targetMin;
-  final double? targetMax;
 
   @override
   State<LiveGraph> createState() => _LiveGraphState();
@@ -175,8 +182,6 @@ class _LiveGraphState extends State<LiveGraph>
               controller: widget.controller,
               accentColor: widget.accentColor,
               showPeakLine: widget.showPeakLine,
-              targetMin: widget.targetMin,
-              targetMax: widget.targetMax,
             ),
             child: const SizedBox.expand(),
           ),
@@ -194,15 +199,11 @@ class _GraphPainter extends CustomPainter {
     required this.controller,
     required this.accentColor,
     required this.showPeakLine,
-    this.targetMin,
-    this.targetMax,
   }) : super(repaint: repaint);
 
   final LiveGraphController controller;
   final Color accentColor;
   final bool showPeakLine;
-  final double? targetMin;
-  final double? targetMax;
 
   double _timeToX(int tMs, double left, double width, int nowMs) {
     final ageSecs = (nowMs - tMs) / 1000.0;
@@ -216,6 +217,8 @@ class _GraphPainter extends CustomPainter {
     final yMax = controller.yMax;
     final peakValue = showPeakLine ? controller.peakValue : 0.0;
     final samples = controller.samples;
+    final targetMin = controller.targetMin;
+    final targetMax = controller.targetMax;
 
     final w = size.width;
     final h = size.height;
@@ -391,7 +394,7 @@ class _GraphPainter extends CustomPainter {
   bool shouldRepaint(_GraphPainter old) =>
       old.accentColor != accentColor ||
       old.showPeakLine != showPeakLine ||
-      old.targetMin != targetMin ||
-      old.targetMax != targetMax ||
+      old.controller.targetMin != controller.targetMin ||
+      old.controller.targetMax != controller.targetMax ||
       old.controller != controller;
 }

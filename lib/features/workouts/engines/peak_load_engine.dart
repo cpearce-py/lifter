@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/engines/base_engine.dart';
+import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/peak_load_state.dart';
 import 'package:lifter/features/workouts/models/base_models.dart'; // For Phase
 import 'package:lifter/features/workouts/rules/peak_load_rules.dart';
@@ -28,11 +29,16 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
       stopBle();
     });
 
-    ref.read(graphControllerProvider).reset(resetPeak: true);
+    final target = config.bodyWeight * 0.5;
+
+    final graphController = ref.read(graphControllerProvider);
+    graphController.reset(resetPeak: true);
+    _syncGraphTargets(target);
+
     startBle();
 
     return config.copyWith(
-      currentTarget: config.bodyWeight * 0.5,
+      currentTarget: target,
       repCount: 1, // Start at rep 1
     );
   }
@@ -46,6 +52,26 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
       workingTime: state.elapsedSeconds, 
       sets:[],
     );
+  }
+
+  @override
+  void dispatch(WorkoutAction action) {
+    final oldTarget = state.currentTarget;
+
+    // Let the BaseEngine and Rules do their normal thing
+    super.dispatch(action); 
+    
+    // Check if the rules decided to change the target during that tick/event
+    if (state.currentTarget != oldTarget) {
+      _syncGraphTargets(state.currentTarget);
+    }
+  }
+
+  void _syncGraphTargets(double baseTarget) {
+    final minZone = baseTarget * 0.90;
+    final maxZone = baseTarget * 1.10;
+    
+    ref.read(graphControllerProvider).setTargets(min: minZone, max: maxZone);
   }
 }
 
