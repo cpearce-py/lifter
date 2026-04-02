@@ -4,7 +4,6 @@ import 'package:lifter/core/ui/home_page.dart';
 import 'package:lifter/features/history/ui/history_page.dart';
 import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_selection_sheet.dart';
-import 'package:lifter/features/workouts/ui/workout_choice_page.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 

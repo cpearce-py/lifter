@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
@@ -229,16 +230,18 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                               ),
                               Row(
                                 children: [
-                                  Text(
-                                    'L: ${rep.peakLoadLeft.toStringAsFixed(1)}kg',
+                                  WeightText(
+                                    prefix: "L: ",
+                                    weightKg: rep.peakLoadLeft,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
-                                  Text(
-                                    'R: ${rep.peakLoadRight.toStringAsFixed(1)}kg',
+                                  WeightText(
+                                    prefix: "R: ",
+                                    weightKg: rep.peakLoadRight,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,

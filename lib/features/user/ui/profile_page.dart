@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
+import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import '../providers/user_settings_provider.dart';
@@ -13,7 +14,6 @@ class ProfilePage extends ConsumerWidget {
     final settings = ref.watch(userSettingsProvider);
     final notifier = ref.read(userSettingsProvider.notifier);
     const accent = Color(0xFFE8FF47);
-    final unit = settings.useLbs ? 'lbs' : 'kg';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
@@ -86,7 +86,7 @@ class ProfilePage extends ConsumerWidget {
                 _SettingsCard(
                   label: 'Preferred Starting Hand',
                   child: SegmentedControl(
-                    choices: const ['Left', 'Right'],
+                    choices: Hand.values.map((h) => h.label).toList(),
                     selectedIndex: settings.preferredHand.index,
                     accentColor: accent,
                     onChanged: (index) =>
@@ -106,8 +106,8 @@ class ProfilePage extends ConsumerWidget {
                             "Left Hand",
                             style: TextStyle(color: Colors.white70),
                           ),
-                          Text(
-                            "${settings.maxPullLeft.toStringAsFixed(1)} $unit",
+                          WeightText(
+                            weightKg: settings.maxPullLeft,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -123,8 +123,8 @@ class ProfilePage extends ConsumerWidget {
                             "Right Hand",
                             style: TextStyle(color: Colors.white70),
                           ),
-                          Text(
-                            "${settings.maxPullRight.toStringAsFixed(1)} $unit",
+                          WeightText(
+                            weightKg: settings.maxPullRight,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,

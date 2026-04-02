@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/measurements/widgets/weight_input.dart';
+import 'package:lifter/features/user/models/user_profile.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
 
 import 'package:lifter/features/workouts/engines/peak_load_engine.dart';
 import 'package:lifter/features/workouts/engines/repeater_engine.dart';
@@ -36,12 +39,11 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
         WorkoutOption(label: 'Work time', type: OptionType.stepper, min: 3, max: 60, step: 1, unit: 's'),
         WorkoutOption(label: 'Rest time', type: OptionType.stepper, min: 3, max: 120, step: 3, unit: 's'),
         WorkoutOption(label: 'Set rest', type: OptionType.stepper, min: 10, max: 300, step: 10, unit: 's'),
-        WorkoutOption(label: 'Starting hand', type: OptionType.segmented, choices: ['Left', 'Right']),
+        WorkoutOption(label: 'Starting hand', type: OptionType.handInput),
         WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
       ],
       sessionBuilder: (values) {
-        final startingHandIndex = values[5] as int;
-        final startingHand = startingHandIndex == 0 ? Hand.left : Hand.right;
+        final startingHand = values[5] as Hand;
         final workoutState = RepeaterState(
           sets: (values[0] as num).toInt(),
           reps: (values[1] as num).toInt(),
@@ -63,15 +65,14 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
       icon: Icons.arrow_upward_rounded,
       accentColor: const Color(0xFFFF6B6B),
       options: [
-        WorkoutOption(label: 'Body weight', type: OptionType.stepper, min: 40, max: 150, step: 1, unit: 'kg'),
+        WorkoutOption(label: 'Body weight', type: OptionType.weightInput),
         WorkoutOption(label: 'Rest time', type: OptionType.stepper, min: 120, max: 300, step: 30, unit: 's'),
-        WorkoutOption(label: 'Starting hand', type: OptionType.segmented, choices: ['Left', 'Right']),
+        WorkoutOption(label: 'Starting hand', type: OptionType.handInput),
       ],
       sessionBuilder: (values) { 
         final bodyWeight = (values[0] as num).toDouble();
         final restSeconds = (values[1] as num).toInt();
-        final startingHandIndex = values[2] as int;
-        final startingHand = startingHandIndex == 0 ? Hand.left : Hand.right;
+        final startingHand = values[2] as Hand;
         final config = PeakLoadState(
           bodyWeight: bodyWeight,
           restSeconds: restSeconds,
@@ -261,7 +262,8 @@ class _WorkoutDetailPage extends ConsumerStatefulWidget {
 class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Map<int, dynamic> _values;
+
+  final Map<int, dynamic> _overrides = {};
 
   @override
   void initState() {
@@ -270,14 +272,13 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..forward();
-
-    _values = {
-      for (int i = 0; i < widget.workout.options.length; i++)
-        i: _defaultValue(widget.workout.options[i]),
-    };
   }
 
-  dynamic _defaultValue(WorkoutOption opt) {
+  dynamic _getCurrentValue(int index, WorkoutOption opt, UserSettings settings) {
+    if (_overrides.containsKey(index)) {
+      return _overrides[index];
+    }
+    
     switch (opt.type) {
       case OptionType.toggle:
         return false;
@@ -285,6 +286,10 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
         return opt.min ?? 1;
       case OptionType.segmented:
         return 0;
+      case OptionType.weightInput:
+        return settings.bodyWeight;
+      case OptionType.handInput:
+        return settings.preferredHand;
     }
   }
 
@@ -297,6 +302,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
   @override
   Widget build(BuildContext context) {
     final w = widget.workout;
+    final settings = ref.watch(userSettingsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
@@ -378,19 +384,23 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
               ),
             ),
           ),
+
+          // Options Builder
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final opt = w.options[index];
+                  final defaultValue = _getCurrentValue(index, opt, settings);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _OptionRow(
                       option: opt,
                       accentColor: w.accentColor,
-                      value: _values[index],
-                      onChanged: (val) => setState(() => _values[index] = val),
+                      value: defaultValue,
+                      // onChange we store new value in the overrides.
+                      onChanged: (val) => setState(() => _overrides[index] = val),
                     ),
                   );
                 },
@@ -398,6 +408,8 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
               ),
             ),
           ),
+
+          // Start Button
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -409,9 +421,14 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.mediumImpact();
+                  // Before starting, unpack the overrides to send to the workout.
+                  final finalValues = {
+                    for (int i=0; i < w.options.length; i++) 
+                      i: _getCurrentValue(i, w.options[i], settings)
+                  };
                   Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
-                      builder: (_) => widget.workout.sessionBuilder(_values),
+                      builder: (_) => widget.workout.sessionBuilder(finalValues),
                     ),
                   );
                 },
@@ -506,6 +523,17 @@ class _OptionRow extends StatelessWidget {
                 accentColor: accentColor,
                 onChanged: onChanged,
               ),
+            OptionType.weightInput => WeightInput(
+                weightKg: (value as num).toDouble(), 
+                onChangedKg: onChanged, 
+                accentColor: accentColor
+              ),
+            OptionType.handInput => SegmentedControl(
+              choices: Hand.values.map((h) => h.label).toList(),
+              selectedIndex: (value as Hand).index, 
+              accentColor: accentColor, 
+              onChanged: (index) => onChanged(Hand.values[index]),
+            ),
           },
         ],
       ),

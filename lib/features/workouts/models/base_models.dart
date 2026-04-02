@@ -12,7 +12,14 @@ enum Phase {
   cancelled,
 }
 
-enum Hand { right, left }
+enum Hand { 
+  left("Left"), 
+  right("Right"); 
+  
+  final String label;
+
+  const Hand(this.label);
+}
 
 Event? primaryButtonEvent(Phase phase) => switch (phase) {
   Phase.idle => Event.start,

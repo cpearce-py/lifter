@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum OptionType { toggle, stepper, segmented }
+enum OptionType { toggle, stepper, segmented, weightInput, handInput }
 
 class WorkoutType {
   const WorkoutType({
