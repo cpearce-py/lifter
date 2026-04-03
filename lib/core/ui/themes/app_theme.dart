@@ -5,12 +5,22 @@ class AppColors {
   static const background = Color(0xFF0A0A0F);
   static const surface = Color(0xFF1E1E24);
   static const surfaceHighlight = Color(0xFF2C2C35); // Replaces white.withOpacity(0.05)
-  static const textMuted = Colors.white54;
 
+  // State
   static const success = Colors.greenAccent;
+  static const danger = Color(0xFFFF6B6B);
+  
+  // Cards and Inputs
+  static const cardBackground = Color(0xFF111118); 
+  static const cardBorder = Color(0xFF1E1E2A);     
+  static const inputBackground = Color(0xFF1E1E2A);
+
+  // Text Colors
+  static const textPrimary = Color(0xFFF0F0F0);
+  static const textMuted = Colors.white54;
+  static const textSubtle = Colors.white30; // For placeholder text
 
   // Workout Specific Accents
-  // You can tweak these to exactly match your Workout Choice page!
   static const repeaterAccent = Color(0xFFE8FF47);      // Neon Yellow/Lime
   static const peakLoadAccent = Color(0xFFFF6B6B);      // Red
 }
@@ -35,4 +45,37 @@ class AppTheme {
       ),
     );
   }
+}
+
+class AppTextStyles {
+  // Large Page Headers (e.g., "Your Data")
+  static const h1 = TextStyle(
+    fontSize: 38,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -1,
+    height: 1.1,
+    color: AppColors.textPrimary,
+  );
+
+  // Card Titles (e.g., "Body Weight", "Measurement Unit")
+  static const cardTitle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  // Small tracking labels (e.g., "PROFILE")
+  static const overline = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 4,
+    color: AppColors.textMuted,
+  );
+
+  // Standard Body Text
+  static const body = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+  );
 }

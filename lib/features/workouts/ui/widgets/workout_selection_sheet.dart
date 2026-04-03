@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/features/user/models/user_profile.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 
@@ -23,9 +25,9 @@ class WorkoutSelectionSheet extends StatefulWidget {
   State<WorkoutSelectionSheet> createState() => _WorkoutSelectionSheetState();
 }
 
-class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet> 
-  with SingleTickerProviderStateMixin {
-    late final AnimationController _controller;
+class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
 
   static final _workouts = [
     WorkoutType(
@@ -34,13 +36,52 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
       icon: Icons.repeat_rounded,
       accentColor: const Color(0xFFE8FF47),
       options: [
-        WorkoutOption(label: 'Sets', type: OptionType.stepper, min: 1, max: 20, step: 1, unit: ''),
-        WorkoutOption(label: 'Reps', type: OptionType.stepper, min: 1, max: 20, step: 1, unit: ''),
-        WorkoutOption(label: 'Work time', type: OptionType.stepper, min: 3, max: 60, step: 1, unit: 's'),
-        WorkoutOption(label: 'Rest time', type: OptionType.stepper, min: 3, max: 120, step: 3, unit: 's'),
-        WorkoutOption(label: 'Set rest', type: OptionType.stepper, min: 10, max: 300, step: 10, unit: 's'),
+        WorkoutOption(
+          label: 'Sets',
+          type: OptionType.stepper,
+          min: 1,
+          max: 20,
+          step: 1,
+          unit: '',
+        ),
+        WorkoutOption(
+          label: 'Reps',
+          type: OptionType.stepper,
+          min: 1,
+          max: 20,
+          step: 1,
+          unit: '',
+        ),
+        WorkoutOption(
+          label: 'Work time',
+          type: OptionType.stepper,
+          min: 3,
+          max: 60,
+          step: 1,
+          unit: 's',
+        ),
+        WorkoutOption(
+          label: 'Rest time',
+          type: OptionType.stepper,
+          min: 3,
+          max: 120,
+          step: 3,
+          unit: 's',
+        ),
+        WorkoutOption(
+          label: 'Set rest',
+          type: OptionType.stepper,
+          min: 10,
+          max: 300,
+          step: 10,
+          unit: 's',
+        ),
         WorkoutOption(label: 'Starting hand', type: OptionType.handInput),
-        WorkoutOption(label: 'Target intensity', type: OptionType.segmented, choices: ['Max', '80%', '70%', 'Custom']),
+        WorkoutOption(
+          label: 'Target intensity',
+          type: OptionType.segmented,
+          choices: ['Max', '80%', '70%', 'Custom'],
+        ),
       ],
       sessionBuilder: (values) {
         final startingHand = values[5] as Hand;
@@ -57,7 +98,7 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
           overrides: [repeaterConfigProvider.overrideWithValue(workoutState)],
           child: const RepeaterWorkoutPage(),
         );
-      }
+      },
     ),
     WorkoutType(
       name: 'Peak Load',
@@ -66,10 +107,17 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
       accentColor: const Color(0xFFFF6B6B),
       options: [
         WorkoutOption(label: 'Body weight', type: OptionType.weightInput),
-        WorkoutOption(label: 'Rest time', type: OptionType.stepper, min: 120, max: 300, step: 30, unit: 's'),
+        WorkoutOption(
+          label: 'Rest time',
+          type: OptionType.stepper,
+          min: 120,
+          max: 300,
+          step: 30,
+          unit: 's',
+        ),
         WorkoutOption(label: 'Starting hand', type: OptionType.handInput),
       ],
-      sessionBuilder: (values) { 
+      sessionBuilder: (values) {
         final bodyWeight = (values[0] as num).toDouble();
         final restSeconds = (values[1] as num).toInt();
         final startingHand = values[2] as Hand;
@@ -83,7 +131,7 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
           overrides: [peakLoadConfigProvider.overrideWithValue(config)],
           child: const PeakLoadSessionPage(),
         );
-      }
+      },
     ),
   ];
 
@@ -95,7 +143,7 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
       duration: const Duration(milliseconds: 1000),
     )..forward();
   }
-  
+
   // 4. Clean up the controller
   @override
   void dispose() {
@@ -105,14 +153,10 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
 
   void _openWorkout(BuildContext context, WorkoutType workout) {
     HapticFeedback.lightImpact();
-    
+
     // Push using rootNavigator so it covers the bottom nav bar
     Navigator.of(context, rootNavigator: true).push(
-      CupertinoPageRoute(
-        builder: (_) => _WorkoutDetailPage(
-          workout: workout
-        ),
-      ),
+      CupertinoPageRoute(builder: (_) => _WorkoutDetailPage(workout: workout)),
     );
   }
 
@@ -126,7 +170,7 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
         final workout = _workouts[index];
         return FadeSlide(
           animation: _controller,
-          intervalStart: 0.1 + (index * 0.1), 
+          intervalStart: 0.1 + (index * 0.1),
           intervalEnd: 0.6 + (index * 0.1),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -166,9 +210,10 @@ class _WorkoutCardState extends State<_WorkoutCard>
       duration: const Duration(milliseconds: 100),
       reverseDuration: const Duration(milliseconds: 200),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _press, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _press, curve: Curves.easeInOut));
   }
 
   @override
@@ -191,7 +236,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E2A), // Slightly lighter than sheet background
+            color: AppColors.cardBorder,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: w.accentColor.withOpacity(0.15),
@@ -219,7 +264,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFFF0F0F0),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -249,9 +294,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
 // ─── Workout Detail Page ──────────────────────────────────────────────────────
 
 class _WorkoutDetailPage extends ConsumerStatefulWidget {
-  const _WorkoutDetailPage({
-    required this.workout,
-  });
+  const _WorkoutDetailPage({required this.workout});
 
   final WorkoutType workout;
 
@@ -274,11 +317,15 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
     )..forward();
   }
 
-  dynamic _getCurrentValue(int index, WorkoutOption opt, UserSettings settings) {
+  dynamic _getCurrentValue(
+    int index,
+    WorkoutOption opt,
+    UserSettings settings,
+  ) {
     if (_overrides.containsKey(index)) {
       return _overrides[index];
     }
-    
+
     switch (opt.type) {
       case OptionType.toggle:
         return false;
@@ -305,7 +352,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
     final settings = ref.watch(userSettingsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -325,8 +372,11 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.arrow_back_ios_rounded,
-                            size: 14, color: w.accentColor.withOpacity(0.8)),
+                        Icon(
+                          Icons.arrow_back_ios_rounded,
+                          size: 14,
+                          color: w.accentColor.withOpacity(0.8),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Workouts',
@@ -349,7 +399,8 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                           color: w.accentColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: w.accentColor.withOpacity(0.25)),
+                            color: w.accentColor.withOpacity(0.25),
+                          ),
                         ),
                         child: Icon(w.icon, color: w.accentColor, size: 28),
                       ),
@@ -364,7 +415,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.5,
-                                color: Color(0xFFF0F0F0),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -389,23 +440,20 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final opt = w.options[index];
-                  final defaultValue = _getCurrentValue(index, opt, settings);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _OptionRow(
-                      option: opt,
-                      accentColor: w.accentColor,
-                      value: defaultValue,
-                      // onChange we store new value in the overrides.
-                      onChanged: (val) => setState(() => _overrides[index] = val),
-                    ),
-                  );
-                },
-                childCount: w.options.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final opt = w.options[index];
+                final defaultValue = _getCurrentValue(index, opt, settings);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _OptionRow(
+                    option: opt,
+                    accentColor: w.accentColor,
+                    value: defaultValue,
+                    // onChange we store new value in the overrides.
+                    onChanged: (val) => setState(() => _overrides[index] = val),
+                  ),
+                );
+              }, childCount: w.options.length),
             ),
           ),
 
@@ -423,12 +471,13 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                   HapticFeedback.mediumImpact();
                   // Before starting, unpack the overrides to send to the workout.
                   final finalValues = {
-                    for (int i=0; i < w.options.length; i++) 
-                      i: _getCurrentValue(i, w.options[i], settings)
+                    for (int i = 0; i < w.options.length; i++)
+                      i: _getCurrentValue(i, w.options[i], settings),
                   };
                   Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
-                      builder: (_) => widget.workout.sessionBuilder(finalValues),
+                      builder: (_) =>
+                          widget.workout.sessionBuilder(finalValues),
                     ),
                   );
                 },
@@ -452,7 +501,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.3,
-                        color: Color(0xFF0A0A0F),
+                        color: AppColors.background,
                       ),
                     ),
                   ),
@@ -483,60 +532,41 @@ class _OptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111118),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E1E2A), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            option.label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFFF0F0F0),
-            ),
-          ),
-          const SizedBox(height: 12),
-          switch (option.type) {
-            OptionType.toggle => ToggleControl(
-                value: value as bool,
-                accentColor: accentColor,
-                onChanged: onChanged,
-              ),
-            OptionType.stepper => StepperControl(
-                value: (value as num).toDouble(),
-                min: option.min!.toDouble(),
-                max: option.max!.toDouble(),
-                step: option.step!.toDouble(),
-                unit: option.unit ?? '',
-                accentColor: accentColor,
-                onChanged: onChanged,
-              ),
-            OptionType.segmented => SegmentedControl(
-                choices: option.choices!,
-                selectedIndex: value as int,
-                accentColor: accentColor,
-                onChanged: onChanged,
-              ),
-            OptionType.weightInput => WeightInput(
-                weightKg: (value as num).toDouble(), 
-                onChangedKg: onChanged, 
-                accentColor: accentColor
-              ),
-            OptionType.handInput => SegmentedControl(
-              choices: Hand.values.map((h) => h.label).toList(),
-              selectedIndex: (value as Hand).index, 
-              accentColor: accentColor, 
-              onChanged: (index) => onChanged(Hand.values[index]),
-            ),
-          },
-        ],
-      ),
+    return AppCard(
+      label: option.label,
+      child: switch (option.type) {
+        OptionType.toggle => ToggleControl(
+          value: value as bool,
+          accentColor: accentColor,
+          onChanged: onChanged,
+        ),
+        OptionType.stepper => StepperControl(
+          value: (value as num).toDouble(),
+          min: option.min!.toDouble(),
+          max: option.max!.toDouble(),
+          step: option.step!.toDouble(),
+          unit: option.unit ?? '',
+          accentColor: accentColor,
+          onChanged: onChanged,
+        ),
+        OptionType.segmented => SegmentedControl(
+          choices: option.choices!,
+          selectedIndex: value as int,
+          accentColor: accentColor,
+          onChanged: onChanged,
+        ),
+        OptionType.weightInput => WeightInput(
+          weightKg: (value as num).toDouble(),
+          onChangedKg: onChanged,
+          accentColor: accentColor,
+        ),
+        OptionType.handInput => SegmentedControl(
+          choices: Hand.values.map((h) => h.label).toList(),
+          selectedIndex: (value as Hand).index,
+          accentColor: accentColor,
+          onChanged: (index) => onChanged(Hand.values[index]),
+        ),
+      },
     );
   }
 }

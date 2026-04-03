@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
+import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import '../providers/user_settings_provider.dart';
@@ -62,7 +63,8 @@ class ProfilePage extends ConsumerWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // --- Metric Toggle ---
-                _SettingsCard(
+                AppCard(
+                  margin: const EdgeInsets.only(bottom: 12),
                   label: 'Measurement Unit',
                   child: SegmentedControl(
                     choices: const ['Metric (kg)', 'Imperial (lbs)'],
@@ -73,7 +75,8 @@ class ProfilePage extends ConsumerWidget {
                 ),
 
                 // --- Body Weight ---
-                _SettingsCard(
+                AppCard(
+                  margin: const EdgeInsets.only(bottom: 12),
                   label: 'Body Weight',
                   child: WeightInput(
                     weightKg: settings.bodyWeight,
@@ -83,7 +86,8 @@ class ProfilePage extends ConsumerWidget {
                 ),
 
                 // --- Preferred Hand ---
-                _SettingsCard(
+                AppCard(
+                  margin: const EdgeInsets.only(bottom: 12),
                   label: 'Preferred Starting Hand',
                   child: SegmentedControl(
                     choices: Hand.values.map((h) => h.label).toList(),
@@ -95,7 +99,8 @@ class ProfilePage extends ConsumerWidget {
                 ),
 
                 // --- Max Pulls ---
-                _SettingsCard(
+                AppCard(
+                  margin: const EdgeInsets.only(bottom: 12),
                   label: 'Personal Bests (Max Pull)',
                   child: Column(
                     children: [
@@ -146,36 +151,3 @@ class ProfilePage extends ConsumerWidget {
   }
 }
 
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.label, required this.child});
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111118),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E1E2A), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFFF0F0F0),
-            ),
-          ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
-    );
-  }
-}
