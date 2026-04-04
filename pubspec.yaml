@@ -43,6 +43,7 @@ dependencies:
   sqflite: ^2.3.0
   path: ^1.8.3
   wakelock_plus: ^1.5.1
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
