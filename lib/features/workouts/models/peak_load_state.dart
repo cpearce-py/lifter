@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 
 @immutable
@@ -20,6 +21,7 @@ class PeakLoadState {
   final double leftMax;
   final double rightMax;
   final double currentRepMax; // Tracks the max reading during the active 7-second window
+  final List<SetLog> completedSets;
   
   // --- Branching Logic (Skipped Hands) ---
   final bool isLeftStopped;
@@ -44,6 +46,7 @@ class PeakLoadState {
     this.isRightStopped = false,
     this.secondsRemaining = 0,
     this.currentPhaseDuration = 0,
+    this.completedSets = const [],
   });
 
   // --- UI Helpers ---
@@ -72,6 +75,7 @@ class PeakLoadState {
     bool? isRightStopped,
     int? secondsRemaining,
     int? currentPhaseDuration,
+    List<SetLog>? completedSets,
   }) {
     return PeakLoadState(
       phase: phase ?? this.phase,
@@ -88,6 +92,7 @@ class PeakLoadState {
       isRightStopped: isRightStopped ?? this.isRightStopped,
       secondsRemaining: secondsRemaining ?? this.secondsRemaining,
       currentPhaseDuration: currentPhaseDuration ?? this.currentPhaseDuration,
+      completedSets: completedSets ?? this.completedSets,
     );
   }
 }

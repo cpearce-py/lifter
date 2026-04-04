@@ -13,6 +13,7 @@ final peakLoadConfigProvider = Provider<PeakLoadState>((ref) {
 });
 
 class PeakLoadEngine extends BaseEngine<PeakLoadState> {
+  final DateTime _startTime = DateTime.now();
   
   @override
   Phase extractPhase(PeakLoadState state) => state.phase;
@@ -45,12 +46,14 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
 
   @override
   WorkoutLog buildSummary(PeakLoadState state) {
+    final duration = DateTime.now().difference(_startTime).inSeconds;
     return WorkoutLog(
+      id: 0,
       workoutTypeId: 2, 
       dateDone: DateTime.now(), 
-      duration: 11, 
-      workingTime: state.elapsedSeconds, 
-      sets:[],
+      duration: duration, 
+      workingTime: state.completedSets.length * 7 * 2, // TODO: bug.
+      sets: state.completedSets,
     );
   }
 

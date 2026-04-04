@@ -6,13 +6,14 @@ class DatabaseService {
   // 1. Singleton Boilerplate
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
+  static const dbName = "lifter_database.db";
 
   DatabaseService._init();
 
   // 2. The Database Getter
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('lifter_database.db');
+    _database = await _initDB(dbName);
     return _database!;
   }
 
@@ -49,6 +50,8 @@ class DatabaseService {
         first_name VARCHAR(45),
         last_name VARCHAR(45),
         email VARCHAR(255),
+        max_pull_left REAL DEFAULT 0.0,
+        max_pull_right REAL DEFAULT 0.0,
         create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         update_time DATETIME
       )
@@ -109,5 +112,18 @@ class DatabaseService {
   Future<void> close() async {
     final db = await instance.database;
     db.close();
+  }
+
+  Future<void> wipeDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, dbName);
+
+    if (_database != null) {
+      await _database!.close();
+    }
+
+    await deleteDatabase(path);
+    _database = null;
+    debugPrint("Database wiped clean!");
   }
 }

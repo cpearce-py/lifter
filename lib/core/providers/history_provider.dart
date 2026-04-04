@@ -78,7 +78,7 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
     await repo.saveWorkout(newWorkout);
     _invalidateProviders();
     ref.invalidateSelf();
-    }
+  }
 
   Future<void> deleteWorkout(int workoutId) async {
     final repo = await ref.read(workoutRepositoryProvider.future);
@@ -124,6 +124,20 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
     ref.invalidate(userStatsProvider);
     ref.invalidate(weekWorkoutsProvider);
   }
+
+  Future<void> injectDummyData() async {
+    state = const AsyncLoading<HistoryPaginationState>().copyWithPrevious(state);
+    
+    try {
+      final repo = await ref.read(workoutRepositoryProvider.future);
+      await repo.seedDummyData();
+      
+      _invalidateProviders();
+      ref.invalidateSelf();
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
+  } 
 }
 
 final workoutHistoryProvider =

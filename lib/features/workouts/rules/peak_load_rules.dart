@@ -1,3 +1,4 @@
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/peak_load_state.dart';
@@ -101,10 +102,22 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
           return _startSwitchingPhase(nextState, Hand.right);
         }
       }
+
+      final finishedSet = SetLog(
+        repetitions: [
+          RepetitionLog(
+            peakLoadLeft: nextState.leftMax, 
+            peakLoadRight: nextState.rightMax
+          )
+        ]
+      );
       
       // 4. Otherwise, both hands have gone (or the second hand is stopped). Time to rest!
       return nextState.copyWith(
         phase: Phase.resting,
+        completedSets: [...state.completedSets, finishedSet],
+        leftMax: 0,
+        rightMax: 0,
         secondsRemaining: state.restSeconds,
         currentPhaseDuration: state.restSeconds,
       );

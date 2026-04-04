@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/database/database_service.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
+import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/core/providers/repository_providers.dart';
+import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
@@ -146,6 +151,56 @@ class ProfilePage extends ConsumerWidget {
                     },
                   ),
                 ),
+
+            const SizedBox(height: 32),
+            Text(
+              'DEVELOPER TOOLS',
+              style: context.overline,
+            ),
+            const SizedBox(height: 8),
+            AppCard(
+              label: 'Database Management',
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: context.danger,
+                        side: BorderSide(color: context.danger.withOpacity(0.5)),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.heavyImpact();
+                        DatabaseService.instance.wipeDatabase();
+                        // Optional: Show a quick snackbar
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Database Wiped! Restart app.')),
+                        );
+                      },
+                      child: const Text('Nuke Database'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: context.success,
+                        side: BorderSide(color: context.success.withOpacity(0.5)),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        ref.read(workoutHistoryProvider.notifier).injectDummyData();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Dummy Data Injected!')),
+                        );
+                      },
+                      child: const Text('Seed Dummy Data'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
                 const SizedBox(height: 100), // Bottom padding for nav bar
               ]),
             ),

@@ -7,4 +7,5 @@ abstract class WorkoutRepository {
   Future<WorkoutLog?> getWorkoutById(int id);
   Future<void> deleteWorkout(int id);
   Future<void> updateWorkoutNote(int id, String note);
+  Future<void> seedDummyData(); 
 }
