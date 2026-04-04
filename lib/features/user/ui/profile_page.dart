@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
@@ -14,10 +15,10 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(userSettingsProvider);
     final notifier = ref.read(userSettingsProvider.notifier);
-    const accent = Color(0xFFE8FF47);
+    final accent = context.repeaterAccent;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.background,
       body: CustomScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const BouncingScrollPhysics(),
@@ -43,15 +44,9 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Your Data',
-                    style: TextStyle(
-                      fontSize: 38,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1,
-                      height: 1.1,
-                      color: Color(0xFFF0F0F0),
-                    ),
+                  Text(
+                    'Settings', 
+                    style: context.h1,
                   ),
                 ],
               ),
@@ -107,15 +102,15 @@ class ProfilePage extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             "Left Hand",
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: context.textPrimary),
                           ),
                           WeightText(
                             weightKg: settings.maxPullLeft,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: context.textPrimary,
                             ),
                           ),
                         ],
@@ -124,15 +119,15 @@ class ProfilePage extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             "Right Hand",
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: context.textPrimary),
                           ),
                           WeightText(
                             weightKg: settings.maxPullRight,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: context.textPrimary,
                             ),
                           ),
                         ],
@@ -140,7 +135,17 @@ class ProfilePage extends ConsumerWidget {
                     ],
                   ),
                 ),
-
+                AppCard(
+                  label: "Light Mode",
+                  child: SegmentedControl(
+                    choices: const ["System", "Light", "Dark"],
+                    selectedIndex: settings.themeMode.index,
+                    accentColor: accent,
+                    onChanged: (index) {
+                      notifier.updateThemeMode(ThemeMode.values[index]);
+                    },
+                  ),
+                ),
                 const SizedBox(height: 100), // Bottom padding for nav bar
               ]),
             ),
@@ -150,4 +155,3 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 }
-

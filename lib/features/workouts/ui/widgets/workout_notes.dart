@@ -1,4 +1,3 @@
-// features/workouts/ui/widgets/workout_notes_field.dart
 import 'package:flutter/material.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 
@@ -16,21 +15,28 @@ class WorkoutNotesField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: context.cardBorder),
+    );
+
     return TextField(
       controller: controller,
       onChanged: onChanged,
       maxLines: 4,
       minLines: 2,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
+      style: context.body,
+      cursorColor: context.textPrimary,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-        filled: true,
-        fillColor: AppColors.surfaceHighlight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+        hintStyle: context.body.copyWith(
+          color: context.textMuted.withValues(alpha: 0.6),
         ),
+        filled: true,
+        fillColor: context.inputBackground,
+        border: baseBorder,
+        enabledBorder: baseBorder,
+        focusedBorder: baseBorder,
         contentPadding: const EdgeInsets.all(16),
       ),
     );

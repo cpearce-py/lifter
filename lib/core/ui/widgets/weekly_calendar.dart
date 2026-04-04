@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/workouts/providers/weekly_provider.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 class WeeklyCalendar extends ConsumerStatefulWidget {
   const WeeklyCalendar({super.key});
@@ -35,9 +36,9 @@ class _WeeklyCalendarState extends ConsumerState<WeeklyCalendar> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF111118),
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E1E2A), width: 1),
+        border: Border.all(color: context.cardBorder, width: 1),
       ),
       // A PageView needs a constrained height. 70px perfectly fits our Day items.
       child: SizedBox(
@@ -73,7 +74,6 @@ class _WeekPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const accent = Color(0xFFE8FF47);
     final now = DateTime.now();
     
     // Calculate the dates for THIS specific page's week
@@ -101,7 +101,7 @@ class _WeekPage extends ConsumerWidget {
             label: label,
             isToday: isToday,
             hasWorkout: hasWorkout,
-            accentColor: accent,
+            accentColor: context.repeaterAccent,
           ),
         );
       }),
@@ -131,11 +131,10 @@ class _DayItem extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: TextStyle(
+          style: context.overline.copyWith(
             fontSize: 10,
-            fontWeight: FontWeight.w700,
             letterSpacing: 1.0,
-            color: isToday ? accentColor : Colors.white.withOpacity(0.35),
+            color: isToday ? accentColor : context.textMuted,
           ),
         ),
         const SizedBox(height: 12),
@@ -144,7 +143,7 @@ class _DayItem extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isToday ? Colors.white.withOpacity(0.1) : Colors.transparent,
+            color: isToday ? context.textPrimary.withOpacity(0.08) : Colors.transparent,
             border: hasWorkout
                 ? Border.all(color: accentColor, width: 1.5)
                 : Border.all(color: Colors.transparent, width: 1.5),
@@ -156,8 +155,8 @@ class _DayItem extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: isToday || hasWorkout ? FontWeight.bold : FontWeight.w500,
                 color: isToday || hasWorkout 
-                    ? Colors.white 
-                    : Colors.white.withOpacity(0.6),
+                    ? context.textPrimary 
+                    : context.textMuted,
               ),
             ),
           ),

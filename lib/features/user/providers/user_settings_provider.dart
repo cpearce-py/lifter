@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/shared_preferences_provider.dart';
 import 'package:lifter/features/user/models/user_profile.dart';
@@ -14,13 +15,20 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
   }
 
   UserSettings _loadFromDisk() {
+    final themeIndex = _prefs.getInt('themeMode') ?? ThemeMode.system.index;
     return UserSettings(
       bodyWeight: _prefs.getDouble('bodyWeight') ?? 70.0,
       preferredHand: Hand.values[_prefs.getInt('preferredHand') ?? 0],
       maxPullLeft: _prefs.getDouble('maxPullLeft') ?? 0.0,
       maxPullRight: _prefs.getDouble('maxPullRight') ?? 0.0,
       useLbs: _prefs.getBool('useLbs') ?? false,
+      themeMode: ThemeMode.values[themeIndex],
     );
+  }
+
+  void updateThemeMode(ThemeMode mode) {
+    state = state.copyWith(themeMode: mode);
+    _prefs.setInt('themeMode', mode.index);
   }
 
   void updateWeight(double weight) {

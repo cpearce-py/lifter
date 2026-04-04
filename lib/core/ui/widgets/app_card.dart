@@ -19,16 +19,16 @@ class AppCard extends StatelessWidget {
       margin: margin,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder, width: 1),
+        border: Border.all(color: context.cardBorder, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: AppTextStyles.cardTitle,
+            style: context.cardTitle,
           ),
           const SizedBox(height: 16),
           child,

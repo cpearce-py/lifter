@@ -5,6 +5,8 @@ import 'package:lifter/core/providers/shared_preferences_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
 import 'package:lifter/core/ui/screens/username_screen.dart';
 import 'package:lifter/core/ui/main_shell.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -34,28 +36,22 @@ class FitApp extends ConsumerStatefulWidget {
 }
 
 class _FitAppState extends ConsumerState<FitApp> {
-  // final _bleService = BleService();
 
   @override
   void dispose() {
-    // _bleService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final userProfile = ref.watch(userProfileProvider);
-
+    final themeMode = ref.watch(userSettingsProvider.select((s) => s.themeMode));
     return MaterialApp(
-      title: 'lifter',
+      title: 'Lifter',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0A0A0F),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFE8FF47),
-          surface: Color(0xFF0A0A0F),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: userProfile.when(
         loading: () => const Scaffold(
           body: Center(child: CircularProgressIndicator()),

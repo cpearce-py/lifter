@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 
 class UserProfile {
@@ -60,6 +61,7 @@ class UserSettings {
   final double maxPullLeft;
   final double maxPullRight;
   final bool useLbs; // true = lbs, false = kg
+  final ThemeMode themeMode;
 
   const UserSettings({
     this.bodyWeight = 70.0,
@@ -67,6 +69,7 @@ class UserSettings {
     this.maxPullLeft = 0.0,
     this.maxPullRight = 0.0,
     this.useLbs = false,
+    this.themeMode = ThemeMode.system,
   });
 
   UserSettings copyWith({
@@ -75,6 +78,7 @@ class UserSettings {
     double? maxPullLeft,
     double? maxPullRight,
     bool? useLbs,
+    ThemeMode? themeMode,
   }) {
     return UserSettings(
       bodyWeight: bodyWeight ?? this.bodyWeight,
@@ -82,6 +86,7 @@ class UserSettings {
       maxPullLeft: maxPullLeft ?? this.maxPullLeft,
       maxPullRight: maxPullRight ?? this.maxPullRight,
       useLbs: useLbs ?? this.useLbs,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 }

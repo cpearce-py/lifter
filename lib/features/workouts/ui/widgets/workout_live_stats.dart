@@ -1,16 +1,14 @@
-// features/workouts/ui/widgets/workout_live_stats.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/measurements/unit_converter.dart';
 import 'package:lifter/core/providers/ble_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
 
 class WorkoutLiveStats extends StatelessWidget {
   final int secondsRemaining;
 
-  const WorkoutLiveStats({
-    super.key,
-    required this.secondsRemaining,
-  });
+  const WorkoutLiveStats({super.key, required this.secondsRemaining});
 
   String _formatTime(int seconds) {
     final m = (seconds / 60).floor().toString().padLeft(2, '0');
@@ -26,16 +24,22 @@ class WorkoutLiveStats extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           CurrentWeight(),
-          
-          Container(width: 1, height: 50, color: Colors.white.withOpacity(0.1)),
-          
+
+          Container(width: 1, height: 50, color: context.cardBorder),
+
           Column(
             children: [
               Text(
                 _formatTime(secondsRemaining),
-                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0, letterSpacing: -1.5),
+                style: context.hero,
               ),
-              const Text('TIME LEFT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.5)),
+              Text(
+                'TIME LEFT',
+                style: context.overline.copyWith(
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                ),
+              ),
             ],
           ),
         ],
@@ -45,22 +49,31 @@ class WorkoutLiveStats extends StatelessWidget {
 }
 
 class CurrentWeight extends ConsumerWidget {
-  const CurrentWeight({
-    super.key,
-  });
+  const CurrentWeight({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weightAsync = ref.watch(liveWeightStreamProvider);
-    final currentWeight = weightAsync.value ?? 0.0;
+    final rawWeightKg = weightAsync.value ?? 0.0;
+    
+    final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
+    
+    final displayWeight = useLbs ? kgToLbs(rawWeightKg) : rawWeightKg;
+    final labelText = useLbs ? 'POUNDS' : 'KILOGRAMS';
 
     return Column(
       children: [
         Text(
-          currentWeight.toStringAsFixed(1),
-          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0, letterSpacing: -1.5),
+          displayWeight.toStringAsFixed(1),
+          style: context.hero,
         ),
-        const Text('KILOGRAMS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.5)),
+        Text(
+          labelText,
+          style: context.overline.copyWith(
+            fontSize: 12,
+            letterSpacing: 1.5,
+          ),
+        ),
       ],
     );
   }

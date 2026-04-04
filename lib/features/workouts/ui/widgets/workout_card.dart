@@ -1,8 +1,8 @@
-// features/workouts/ui/widgets/workout_card.dart
 import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/ui/workout_detail_page.dart';
 import 'package:lifter/features/history/ui/workout_theme_extension.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 class WorkoutCard extends StatelessWidget {
   final WorkoutLog workout;
@@ -25,7 +25,7 @@ class WorkoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = workout.uiAccentColor;
+    final color = workout.uiAccentColor(context);
     final title = workout.uiTitle;
     final icon = workout.uiIcon;
     final durationStr = '${(workout.duration / 60).floor()} min';
@@ -42,9 +42,9 @@ class WorkoutCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF111118),
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF1E1E2A), width: 1),
+          border: Border.all(color: context.cardBorder, width: 1),
         ),
         child: Row(
           children: [
@@ -67,18 +67,16 @@ class WorkoutCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: context.cardTitle.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFFF0F0F0),
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     durationStr,
-                    style: TextStyle(
+                    style: context.body.copyWith(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.35),
+                      color: context.textMuted,
                     ),
                   ),
                 ],
@@ -88,10 +86,9 @@ class WorkoutCard extends StatelessWidget {
             // Days Ago
             Text(
               daysAgoStr,
-              style: TextStyle(
+              style: context.body.copyWith(
                 fontSize: 11,
-                color: Colors.white.withOpacity(0.25),
-                fontWeight: FontWeight.w500,
+                color: context.textMuted,
               ),
             ),
           ],

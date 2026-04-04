@@ -18,16 +18,14 @@ extension WorkoutLogTheme on WorkoutLog {
     }
   }
 
-  // Dynamically returns the brand color based on the DB ID
-  Color get uiAccentColor {
+  Color uiAccentColor(BuildContext context) {
     switch (workoutTypeId) {
-      case WorkoutId.repeater: return AppColors.repeaterAccent;
-      case WorkoutId.peakLoad: return AppColors.peakLoadAccent;
-      default: return Colors.white;
+      case WorkoutId.repeater: return context.repeaterAccent;
+      case WorkoutId.peakLoad: return context.peakLoadAccent;
+      default: return context.textPrimary;
     }
   }
   
-  // You can even add icons!
   IconData get uiIcon {
     switch (workoutTypeId) {
       case WorkoutId.repeater: return Icons.repeat_rounded;

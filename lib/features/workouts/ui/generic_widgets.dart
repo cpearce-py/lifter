@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/workouts/ui/graph.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 // --- Helpers ---
 String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
@@ -18,13 +19,13 @@ String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
   Phase.setResting => "Skip Rest"
 };
 
-Color accentColorForPhase(Phase phase) => switch (phase) {
-  Phase.working    => const Color(0xFFE8FF47),
-  Phase.resting    => const Color(0xFF47C8FF),
-  Phase.setResting => const Color(0xFFB47FFF),
-  Phase.paused     => const Color(0xFFFF7F7F),
-  Phase.done       => const Color(0xFF81FF7F),
-  _                => const Color(0xFFE8FF47),
+Color accentColorForPhase(Phase phase, BuildContext context) => switch (phase) {
+  Phase.working    => context.repeaterAccent,
+  Phase.resting    => context.streakAccent,
+  Phase.setResting => context.setRestAccent,
+  Phase.paused     => context.danger,
+  Phase.done       => context.success,
+  _                => context.repeaterAccent,
 };
 
 class GenericWorkoutHeader extends StatelessWidget {
@@ -68,7 +69,8 @@ class GenericGraphArea extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accentColor = accentColorForPhase(phase);
+    final accentColor = accentColorForPhase(phase, context);
+
     final isGraphActive = phase != Phase.idle && 
                           phase != Phase.done && 
                           phase != Phase.cancelled &&
@@ -114,7 +116,7 @@ class GenericWorkoutControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = accentColorForPhase(phase);
+    final accentColor = accentColorForPhase(phase, context);
     final isRecording = phase == Phase.working;
 
     return Padding(
@@ -125,7 +127,6 @@ class GenericWorkoutControls extends StatelessWidget {
           GestureDetector(
             onTap: () {
               if (phase != Phase.idle) {
-                HapticFeedback.lightImpact();
                 onReset();
               }
             },
@@ -145,19 +146,16 @@ class GenericWorkoutControls extends StatelessWidget {
           // Start/Stop Button
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                onPrimaryAction();
-              },
+              onTap: onPrimaryAction,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 height: 52,
                 decoration: BoxDecoration(
-                  color: isRecording ? const Color(0xFFFF6B6B) : accentColor,
+                  color: isRecording ? context.danger : accentColor,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: (isRecording ? const Color(0xFFFF6B6B) : accentColor).withOpacity(0.25),
+                      color: (isRecording ? context.danger : accentColor).withOpacity(0.25),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -169,16 +167,16 @@ class GenericWorkoutControls extends StatelessWidget {
                     children: [
                       Icon(
                         isRecording ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                        color: const Color(0xFF0A0A0F),
+                        color: context.background,
                         size: 22,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         getPrimaryLabelForPhase(phase),
-                        style: const TextStyle(
+                        style: context.body.copyWith(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0A0A0F),
+                          color: context.background,
                         ),
                       ),
                     ],

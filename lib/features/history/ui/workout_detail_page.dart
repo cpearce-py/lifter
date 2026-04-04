@@ -5,7 +5,7 @@ import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
-import './helpers.dart';
+import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 
 class WorkoutDetailPage extends ConsumerStatefulWidget {
   final WorkoutLog workout;
@@ -20,11 +20,13 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
   late TextEditingController _notesController;
   bool _isDirty = false;
   bool _isSaving = false;
+  late String _oldNote;
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController(text: widget.workout.notes);
+    _oldNote = widget.workout.notes;
   }
 
   @override
@@ -47,13 +49,14 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
     setState(() {
       _isSaving = false;
       _isDirty = false; // Hide the save button again
+      _oldNote = _notesController.text.trim();
     });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Note updated!'),
-          backgroundColor: AppColors.success,
+          backgroundColor: context.success,
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 1),
         ),
@@ -82,7 +85,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
     );
     if (confirmed == true && widget.workout.id != null) {
       await ref.read(workoutHistoryProvider.notifier).deleteWorkout(widget.workout.id!);
-      // 2. Pop back to the History list!
+      // Pop back to the History list!
       if (context.mounted) {
         Navigator.of(context).pop();
       }
@@ -96,7 +99,10 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(getWorkoutName(workout.workoutTypeId)),
+        title: Text(
+          workout.uiTitle,
+          style: context.h1,
+        ),
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
@@ -129,12 +135,12 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Notes',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: context.textMuted,
                   ),
                 ),
                 // Save button, turn on if we're dirty.
@@ -154,10 +160,10 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2))
                           : TextButton(onPressed: _saveNote,
-                          child: const Text(
+                          child: Text(
                             "Save Note", 
                             style: TextStyle(
-                              color: AppColors.peakLoadAccent, 
+                              color: context.peakLoadAccent, 
                               fontWeight: FontWeight.bold))
                             )
                       ),
@@ -171,9 +177,10 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
               controller: _notesController,
               onChanged: (text) {
                 // If the text differs from the original DB string, show the save button
-                if (text.trim() != widget.workout.notes && !_isDirty) {
+                final isDifferent = text.trim() != _oldNote;
+                if (isDifferent && !_isDirty) {
                   setState(() => _isDirty = true);
-                } else if (text.trim() == widget.workout.notes && _isDirty) {
+                } else if (!isDifferent && _isDirty) {
                   setState(() => _isDirty = false);
                 }
               },
@@ -181,12 +188,12 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
             const SizedBox(height: 24),
 
             // --- 3. The Granular Set/Rep Data ---
-            const Text(
+            Text(
               'Performance',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: context.textMuted,
               ),
             ),
             const SizedBox(height: 12),
@@ -196,7 +203,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
               final setLog = entry.value;
 
               return Card(
-                color: Colors.white.withOpacity(0.03),
+                color: context.cardBackground,
                 margin: const EdgeInsets.only(bottom: 16),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -205,9 +212,9 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                     children: [
                       Text(
                         'SET ${setIndex + 1}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFFE8FF47),
+                          color: workout.uiAccentColor(context),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -225,7 +232,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                               Text(
                                 'Rep ${repIndex + 1}',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: context.textMuted,
                                 ),
                               ),
                               Row(
@@ -233,8 +240,8 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                                   WeightText(
                                     prefix: "L: ",
                                     weightKg: rep.peakLoadLeft,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: context.textPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -242,8 +249,8 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                                   WeightText(
                                     prefix: "R: ",
                                     weightKg: rep.peakLoadRight,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: context.textPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -277,16 +284,16 @@ class _StatCube extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+          style: TextStyle(fontSize: 12, color: context.textMuted),
         ),
       ],
     );

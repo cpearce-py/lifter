@@ -2,7 +2,11 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/measurements/unit_converter.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 // ─── LiveGraphController ──────────────────────────────────────────────────────
 
@@ -76,7 +80,7 @@ class LiveGraphController extends ChangeNotifier {
 
 // ─── LiveGraph ────────────────────────────────────────────────────────────────
 
-class LiveGraph extends StatefulWidget {
+class LiveGraph extends ConsumerStatefulWidget {
   const LiveGraph({
     super.key,
     required this.controller,
@@ -93,10 +97,10 @@ class LiveGraph extends StatefulWidget {
   final int targetFps;
 
   @override
-  State<LiveGraph> createState() => _LiveGraphState();
+  ConsumerState<LiveGraph> createState() => _LiveGraphState();
 }
 
-class _LiveGraphState extends State<LiveGraph>
+class _LiveGraphState extends ConsumerState<LiveGraph>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   
@@ -159,6 +163,7 @@ class _LiveGraphState extends State<LiveGraph>
 
   @override
   Widget build(BuildContext context) {
+    final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
     return VisibilityDetector(
       key: Key('live-graph-detector'),
       onVisibilityChanged: (info) {
@@ -170,7 +175,7 @@ class _LiveGraphState extends State<LiveGraph>
         },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF0D0D14),
+          color: context.inputBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: widget.accentColor.withOpacity(0.1), width: 1),
         ),
@@ -182,6 +187,11 @@ class _LiveGraphState extends State<LiveGraph>
               controller: widget.controller,
               accentColor: widget.accentColor,
               showPeakLine: widget.showPeakLine,
+              useLbs: useLbs,
+              textColor: context.textMuted,
+              gridColor: context.textPrimary.withValues(alpha: 0.05),
+              successColor: context.success, 
+              dangerColor: context.danger,
             ),
             child: const SizedBox.expand(),
           ),
@@ -199,11 +209,23 @@ class _GraphPainter extends CustomPainter {
     required this.controller,
     required this.accentColor,
     required this.showPeakLine,
+    required this.useLbs,
+    required this.textColor,
+    required this.gridColor,
+    required this.successColor,
+    required this.dangerColor,
   }) : super(repaint: repaint);
 
   final LiveGraphController controller;
   final Color accentColor;
   final bool showPeakLine;
+  
+  // New properties injected from the Widget's BuildContext
+  final bool useLbs;
+  final Color textColor;
+  final Color gridColor;
+  final Color successColor;
+  final Color dangerColor;
 
   double _timeToX(int tMs, double left, double width, int nowMs) {
     final ageSecs = (nowMs - tMs) / 1000.0;
@@ -214,7 +236,7 @@ class _GraphPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final nowMs = controller.currentGraphTimeMs;
-    final yMax = controller.yMax;
+    final yMax = controller.yMax; // Always in KG logically
     final peakValue = showPeakLine ? controller.peakValue : 0.0;
     final samples = controller.samples;
     final targetMin = controller.targetMin;
@@ -227,28 +249,33 @@ class _GraphPainter extends CustomPainter {
     final chartW = w - hPad * 2;
     final chartH = h - vPad * 2;
 
+    // Use the dynamic theme colors
     final colorBelow = accentColor;
-    const colorInRange = Color(0xFF4CAF50); 
-    const colorAbove = Color(0xFFFF6B6B);   
+    final colorInRange = successColor; 
+    final colorAbove = dangerColor;   
 
     // ── Grid ─────────────────────────────────────────────────────────────────
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = gridColor
       ..strokeWidth = 1;
 
     for (int i = 0; i <= 4; i++) {
       final y = vPad + chartH * (1 - i / 4);
       canvas.drawLine(Offset(hPad, y), Offset(w - hPad, y), gridPaint);
       
-      // Reverted to clean integers!
-      final labelText = (yMax * i / 4).toStringAsFixed(0);
+      // Calculate the raw KG value for this grid line
+      double rawValue = yMax * i / 4;
+      
+      // Convert it if the user wants LBS!
+      double displayValue = useLbs ? kgToLbs(rawValue) : rawValue;
+      final labelText = displayValue.toStringAsFixed(0);
 
       final tp = TextPainter(
         text: TextSpan(
           text: labelText,
           style: TextStyle(
             fontSize: 9,
-            color: Colors.white.withOpacity(0.2),
+            color: textColor, // Adaptive text color
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -273,7 +300,6 @@ class _GraphPainter extends CustomPainter {
 
     // ── Peak line ─────────────────────────────────────────────────────────────
     if (peakValue > 0) {
-      // Kept the clamp here so it doesn't float above the graph!
       final peakY = vPad + chartH * (1 - (peakValue / yMax).clamp(0.0, 1.0));
       
       final dashPath = Path();
@@ -309,7 +335,6 @@ class _GraphPainter extends CustomPainter {
       final value = sample.$2;
       
       final x = _timeToX(t, hPad, chartW, nowMs);
-      // Kept the clamp here so the line doesn't break out of the box!
       final y = vPad + chartH * (1 - (value / yMax).clamp(0.0, 1.0));
 
       if (isFirst) {
@@ -394,6 +419,8 @@ class _GraphPainter extends CustomPainter {
   bool shouldRepaint(_GraphPainter old) =>
       old.accentColor != accentColor ||
       old.showPeakLine != showPeakLine ||
+      old.useLbs != useLbs || // Repaint if the unit preference changes!
+      old.textColor != textColor || 
       old.controller.targetMin != controller.targetMin ||
       old.controller.targetMax != controller.targetMax ||
       old.controller != controller;

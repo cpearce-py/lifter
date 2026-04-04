@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
 
 class SaveWorkoutPage extends ConsumerStatefulWidget {
@@ -54,16 +56,17 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
   @override
   Widget build(BuildContext context) {
     final workoutLog = widget.workoutLog;
+    final accentColor = workoutLog.uiAccentColor(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text(
+        title: Text(
           'Save Workout',
-          style: TextStyle(color: Colors.white),
+          style: context.body.copyWith(fontWeight: FontWeight.bold),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: context.textPrimary),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -71,10 +74,11 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Generic Workout Summary Card
-            Card(
-              color: Colors.white.withOpacity(0.05),
-              shape: RoundedRectangleBorder(
+            Container(
+              decoration: BoxDecoration(
+                color: context.cardBackground,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.cardBorder),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -82,11 +86,9 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${workoutLog.workoutTypeId} Complete',
-                      style: const TextStyle(
+                      '${workoutLog.uiTitle} Complete',
+                      style: context.h1.copyWith(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -104,13 +106,11 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
             const SizedBox(height: 24),
 
             // Notes field
-            const Text(
+            Text(
               'Notes',
-              style: TextStyle(
+              style: context.cardTitle.copyWith(
                 fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              )
             ),
             const SizedBox(height: 8),
             WorkoutNotesField(controller: _notesController),
@@ -125,14 +125,14 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
                     onPressed: _isSaving ? null : _discard,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      side: BorderSide(color: context.cardBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Discard',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ),
                 ),
@@ -141,25 +141,28 @@ class _SaveWorkoutPageState extends ConsumerState<SaveWorkoutPage> {
                   child: FilledButton(
                     onPressed: _isSaving ? null : _save,
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFE8FF47),
-                      foregroundColor: Colors.black,
+                      backgroundColor: accentColor,
+                      foregroundColor: context.background,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: _isSaving
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              color: Colors.black,
+                              color: context.background,
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Save Workout',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: context.body.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: context.background,
+                            ),
                           ),
                   ),
                 ),
@@ -182,13 +185,10 @@ class _StatRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6))),
+        Text(label, style: TextStyle(color: context.textMuted)),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: context.body.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );

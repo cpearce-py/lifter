@@ -2,17 +2,17 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 
-// features/workouts/ui/widgets/workout_top_bar.dart
-
 class WorkoutTopBar extends StatelessWidget {
   final String phaseName;
   final VoidCallback onClose;
-  final Widget? trailing; // <-- THE MAGIC NEW PARAMETER
+  final Widget? trailing;
+  final Color accent;
 
   const WorkoutTopBar({
     super.key,
     required this.phaseName,
     required this.onClose,
+    required this.accent,
     this.trailing,
   });
 
@@ -23,24 +23,21 @@ class WorkoutTopBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 1. Back Button
+          // Back Button
           IconButton(
-            icon: const Icon(Icons.close_rounded, color: Colors.white),
+            icon: Icon(Icons.close_rounded, color: context.textPrimary),
             onPressed: onClose,
           ),
           
-          // 2. Phase Name
           Text(
             phaseName.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 18, 
-              fontWeight: FontWeight.w900, 
-              letterSpacing: 2.0, 
-              color: AppColors.repeaterAccent, // Note: You can also pass color in to make this dynamic!
+            style: context.h1.copyWith(
+              fontSize: 18,
+              color: accent,
             ),
           ),
           
-          // 3. Dynamic Trailing Content (or an empty box if null to keep the title centered)
+          // Dynamic Trailing Content
           trailing ?? const SizedBox(width: 48), 
         ],
       ),

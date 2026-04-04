@@ -4,6 +4,7 @@ import 'package:lifter/core/ui/home_page.dart';
 import 'package:lifter/features/history/ui/history_page.dart';
 import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_selection_sheet.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 
@@ -85,8 +86,8 @@ class _MainShellState extends State<MainShell> {
       builder: (context) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Color(0xFF111118),
+          decoration: BoxDecoration(
+            color: context.background,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -96,17 +97,14 @@ class _MainShellState extends State<MainShell> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.textPrimary.withValues(alpha: 0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Text(
+              Text(
                 "SELECT WORKOUT",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
+                style: context.body.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               Expanded(
@@ -133,7 +131,7 @@ class _MainShellState extends State<MainShell> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.background,
       body: IndexedStack(
         index: stackIndex,
         children: pages,
@@ -164,13 +162,15 @@ class _FitBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF111118),
-        border: const Border(
-          top: BorderSide(color: Color(0xFF1E1E2A), width: 1),
+        color: context.cardBackground,
+        border: Border(
+          top: BorderSide(color: context.cardBorder, width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: context.isDark 
+                ? Colors.black.withValues(alpha: 0.6) 
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 24,
             offset: const Offset(0, -8),
           ),
@@ -213,8 +213,8 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFFE8FF47);
-
+    final accent = context.repeaterAccent;
+ 
     if (destination.isAction) {
       return _ActionTabWidget(
         destination: destination,
@@ -271,7 +271,7 @@ class _ActionTabWidget extends StatelessWidget {
             child: Icon(
               destination.icon,
               size: 28,
-              color: const Color(0xFF111118),
+              color: context.cardBackground,
             ),
           ),
         ],
@@ -364,7 +364,7 @@ class _StandardTabWidgetState extends State<_StandardTabWidget>
                           : widget.destination.icon,
                       size: 22,
                       color: Color.lerp(
-                        Colors.white.withOpacity(0.35),
+                        context.textMuted,
                         widget.accent,
                         _glowAnim.value,
                       ),
@@ -381,7 +381,7 @@ class _StandardTabWidgetState extends State<_StandardTabWidget>
                   letterSpacing: 0.5,
                   color: widget.isActive
                       ? widget.accent
-                      : Colors.white.withOpacity(0.35),
+                      : context.textMuted,
                 ),
                 child: Text(widget.destination.label),
               ),
@@ -409,38 +409,4 @@ class _NavDestination {
   final IconData activeIcon;
   final Widget page;
   final bool isAction;
-}
-
-// ─── Placeholder pages ────────────────────────────────────────────────────────
-
-class _PagePlaceholder extends StatelessWidget {
-  const _PagePlaceholder({required this.label, required this.icon});
-
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 52, color: Colors.white10),
-            const SizedBox(height: 16),
-            Text(
-              label.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 3,
-                color: Colors.white12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

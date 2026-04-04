@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage>
     String month = DateFormat("MMMM").format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -113,20 +113,15 @@ class HomeHeaderSliver extends ConsumerWidget {
                   children: [
                     Text(
                       _greeting(),
-                      style: TextStyle(
+                      style: context.body.copyWith(
                         fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.45),
+                        color: context.textMuted,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       username,
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFFF0F0F0),
-                      ),
+                      style: context.h1,
                     ),
                   ],
                 ),
@@ -136,19 +131,19 @@ class HomeHeaderSliver extends ConsumerWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFE8FF47).withOpacity(0.12),
+                  color: context.repeaterAccent.withOpacity(0.12),
                   border: Border.all(
-                    color: const Color(0xFFE8FF47).withOpacity(0.3),
+                    color: context.repeaterAccent.withOpacity(0.3),
                     width: 1.5,
                   ),
                 ),
                 child: Center(
                   child: Text(
                     initial,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFFE8FF47),
+                      color: context.repeaterAccent,
                     ),
                   ),
                 ),
@@ -172,12 +167,7 @@ class SectionLabelSliver extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
         child: Text(
           text.toUpperCase(),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 2.5,
-            color: Colors.white.withOpacity(0.3),
-          ),
+          style: context.overline.copyWith(letterSpacing: 2.5),
         ),
       ),
     );
@@ -190,7 +180,6 @@ class RecentWorkoutsSliver extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Connect directly to our paginated DB provider!
     final historyAsync = ref.watch(workoutHistoryProvider);
 
     return historyAsync.when(
@@ -200,7 +189,6 @@ class RecentWorkoutsSliver extends ConsumerWidget {
       error: (e, _) =>
           SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
       data: (pagination) {
-        // 2. Grab only the 3 most recent workouts
         final recentWorkouts = pagination.workouts.take(3).toList();
 
         if (recentWorkouts.isEmpty) {
@@ -209,13 +197,12 @@ class RecentWorkoutsSliver extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Text(
                 "No workouts yet.",
-                style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                style: TextStyle(color: context.textMuted),
               ),
             ),
           );
         }
 
-        // 3. Render them using the animated list
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
@@ -228,7 +215,7 @@ class RecentWorkoutsSliver extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: WorkoutCard(
                     workout: recentWorkouts[index],
-                  ), // Use the unified card!
+                  ), 
                 ),
               );
             }, childCount: recentWorkouts.length),
@@ -264,21 +251,21 @@ class StatsGridSliver extends ConsumerWidget {
             unit: 'hrs',
             label: 'Worked out\nthis month',
             icon: Icons.timer_rounded,
-            accentColor: AppColors.peakLoadAccent,
+            accentColor: context.peakLoadAccent,
           ),
           _StatData(
             value: stats.totalWorkouts.toString(),
             unit: 'sessions',
             label: 'Workouts\ncompleted',
             icon: Icons.fitness_center_rounded,
-            accentColor: AppColors.repeaterAccent,
+            accentColor: context.repeaterAccent,
           ),
           _StatData(
             value: stats.currentStreak.toString(),
             unit: 'day streak',
             label: 'Current\nstreak',
             icon: Icons.local_fire_department_rounded,
-            accentColor: Color(0xFF47C8FF),
+            accentColor: context.streakAccent,
           ),
         ];
 
@@ -317,7 +304,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF111118),
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: data.accentColor.withOpacity(0.15), width: 1),
       ),
@@ -345,12 +332,9 @@ class _StatCard extends StatelessWidget {
                 children: [
                   Text(
                     data.value,
-                    style: TextStyle(
+                    style: context.h1.copyWith(
                       fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
                       color: data.accentColor,
-                      height: 1,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -358,10 +342,9 @@ class _StatCard extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 3),
                     child: Text(
                       data.unit,
-                      style: TextStyle(
+                      style: context.cardTitle.copyWith(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: data.accentColor.withOpacity(0.6),
+                        color: data.accentColor.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -373,7 +356,7 @@ class _StatCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11.5,
                   height: 1.4,
-                  color: Colors.white.withOpacity(0.4),
+                  color: context.textMuted,
                 ),
               ),
             ],

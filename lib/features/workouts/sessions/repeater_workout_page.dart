@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
@@ -29,13 +30,14 @@ class RepeaterWorkoutPage extends ConsumerWidget {
     final state = ref.watch(repeaterEngineProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.background,
       body: SafeArea(
         child: Column(
           children: [
             WorkoutTopBar(
               phaseName: state.phase.name,
               onClose: () => Navigator.of(context).pop(),
+              accent: context.repeaterAccent,
               trailing: Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: Column(
@@ -43,7 +45,10 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                   children: [
                     Text(
                       'SET ${state.currentSet} OF ${state.sets}',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.0),
+                      style: context.overline.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -56,7 +61,9 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                           width: isCurrent ? 12 : 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: isCompleted || isCurrent ? AppColors.repeaterAccent : Colors.white.withOpacity(0.1),
+                            color: isCompleted || isCurrent
+                                ? context.repeaterAccent
+                                : context.textPrimary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -66,31 +73,43 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                 ),
               ),
             ),
-            StatInfoBar(timeProvider: repeaterEngineProvider.select((s) => s.secondsRemaining)),
+            StatInfoBar(
+              timeProvider: repeaterEngineProvider.select(
+                (s) => s.secondsRemaining,
+              ),
+            ),
 
             const SizedBox(height: 16),
 
             Expanded(
               child: GenericGraphArea(
                 phase: state.phase,
-                overlay: 
-                  Text(
-                    'HAND: ${state.currentHand.name.toUpperCase()}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
+                overlay: Text(
+                  'HAND: ${state.currentHand.name.toUpperCase()}',
+                  style: context.body.copyWith(color: context.textMuted),
+                ),
               ),
             ),
             const SizedBox(height: 16),
 
             GenericWorkoutControls(
-              phase: state.phase, 
-              onReset: () => ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(Event.reset)),
+              phase: state.phase,
+              onReset: () {
+                HapticFeedback.lightImpact();
+                ref
+                  .read(repeaterEngineProvider.notifier)
+                  .dispatch(UserEventAction(Event.reset));
+                },
               onPrimaryAction: () {
-              final event = primaryButtonEvent(state.phase);
-              if (event != null) {
-                ref.read(repeaterEngineProvider.notifier).dispatch(UserEventAction(event));
-              }
-            })
+                final event = primaryButtonEvent(state.phase);
+                if (event != null) {
+                  HapticFeedback.mediumImpact();
+                  ref
+                      .read(repeaterEngineProvider.notifier)
+                      .dispatch(UserEventAction(event));
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -100,21 +119,13 @@ class RepeaterWorkoutPage extends ConsumerWidget {
 
 class StatInfoBar extends ConsumerWidget {
   final ProviderListenable<int> timeProvider;
-  const StatInfoBar({
-    super.key,
-    required this.timeProvider,
-  });
+  const StatInfoBar({super.key, required this.timeProvider});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    
-    final secondsRemaining = ref.watch(
-      timeProvider
-    );
+    final secondsRemaining = ref.watch(timeProvider);
 
-    return WorkoutLiveStats(
-      secondsRemaining: secondsRemaining,
-    );
+    return WorkoutLiveStats(secondsRemaining: secondsRemaining);
   }
 }
 
@@ -128,7 +139,7 @@ class _RepeaterOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = state.phaseProgress;
-    final accentColor = accentColorForPhase(state.phase);
+    final accentColor = accentColorForPhase(state.phase, context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -245,11 +256,9 @@ class _SetLabel extends ConsumerWidget {
     );
     return Text(
       'SET $currentSet/$sets',
-      style: TextStyle(
+      style: context.overline.copyWith(
         fontSize: 9,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.5,
-        color: accentColor.withOpacity(0.6),
+        color: accentColor.withValues(alpha: 0.6),
       ),
     );
   }

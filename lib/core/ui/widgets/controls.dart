@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:lifter/core/ui/themes/app_theme.dart';
+
 class ToggleControl extends StatelessWidget {
   const ToggleControl({
       super.key,
@@ -24,7 +26,7 @@ class ToggleControl extends StatelessWidget {
             width: 50,
             height: 28,
             decoration: BoxDecoration(
-              color: value ? accentColor : Colors.white.withOpacity(0.08),
+              color: value ? accentColor : context.textMuted.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(14),
             ),
             child: AnimatedAlign(
@@ -38,7 +40,7 @@ class ToggleControl extends StatelessWidget {
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
-                    color: value ? const Color(0xFF0A0A0F) : Colors.white38,
+                    color: value ? context.background : context.textPrimary.withValues(alpha: 0.38),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -95,7 +97,7 @@ class StepperControl extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: _formatted(value),
-                    style: TextStyle(
+                    style: context.h1.copyWith(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: accentColor,
@@ -107,7 +109,7 @@ class StepperControl extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: accentColor.withOpacity(0.55),
+                        color: context.textMuted,
                       ),
                     ),
                 ],
@@ -157,24 +159,25 @@ class StepButton extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: enabled
-              ? accentColor.withOpacity(0.12)
-              : Colors.white.withOpacity(0.04),
+              ? accentColor.withValues(alpha: .12)
+              : context.textPrimary.withValues(alpha: .04),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: enabled
-                ? accentColor.withOpacity(0.3)
-                : Colors.white.withOpacity(0.06),
+                ? accentColor.withValues(alpha: .3)
+                : context.textPrimary.withValues(alpha: .06),
           ),
         ),
         child: Icon(
           icon,
           size: 20,
-          color: enabled ? accentColor : Colors.white24,
+          color: enabled ? accentColor : context.textPrimary.withValues(alpha: 0.24),
         ),
       ),
     );
   }
 }
+
 class SegmentedControl extends StatelessWidget {
   const SegmentedControl({
     super.key,
@@ -205,12 +208,12 @@ class SegmentedControl extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? accentColor
-                      : Colors.white.withOpacity(0.05),
+                      : context.textPrimary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: selected
                         ? accentColor
-                        : Colors.white.withOpacity(0.08),
+                        : context.textPrimary.withValues(alpha: 0.08),
                   ),
                 ),
                 child: Center(
@@ -220,8 +223,8 @@ class SegmentedControl extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: selected
-                          ? const Color(0xFF0A0A0F)
-                          : Colors.white.withOpacity(0.45),
+                          ? context.background
+                          : context.textMuted,
                     ),
                   ),
                 ),

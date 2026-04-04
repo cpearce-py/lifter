@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/unit_converter.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 class WeightInput extends ConsumerStatefulWidget {
   final double weightKg;
@@ -92,7 +93,7 @@ class _SmartWeightInputState extends ConsumerState<WeightInput> {
       duration: const Duration(milliseconds: 200),
       height: 48,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2A),
+        color: context.inputBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _isEditing ? widget.accentColor : Colors.transparent,
@@ -106,10 +107,8 @@ class _SmartWeightInputState extends ConsumerState<WeightInput> {
               controller: _controller,
               focusNode: _focusNode,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(
-                fontSize: 16,
+              style: context.body.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
@@ -129,7 +128,7 @@ class _SmartWeightInputState extends ConsumerState<WeightInput> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               border: Border(
-                left: BorderSide(color: Colors.white.withOpacity(0.1)),
+                left: BorderSide(color: context.cardBorder),
               ),
             ),
             child: Row(
@@ -137,10 +136,8 @@ class _SmartWeightInputState extends ConsumerState<WeightInput> {
               children: [
                 Text(
                   unitLabel,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withOpacity(0.5),
+                  style: context.cardTitle.copyWith(
+                    color: context.textMuted,
                   ),
                 ),
                 

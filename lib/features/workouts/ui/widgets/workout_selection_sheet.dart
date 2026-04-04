@@ -29,12 +29,12 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
-  static final _workouts = [
+  List<WorkoutType> _getWorkouts(BuildContext context) => [
     WorkoutType(
       name: 'Repeaters',
       description: 'Timed hang sets with rest intervals',
       icon: Icons.repeat_rounded,
-      accentColor: const Color(0xFFE8FF47),
+      accentColor: context.repeaterAccent,
       options: [
         WorkoutOption(
           label: 'Sets',
@@ -104,7 +104,7 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
       name: 'Peak Load',
       description: 'Measure your maximum single effort',
       icon: Icons.arrow_upward_rounded,
-      accentColor: const Color(0xFFFF6B6B),
+      accentColor: context.peakLoadAccent,
       options: [
         WorkoutOption(label: 'Body weight', type: OptionType.weightInput),
         WorkoutOption(
@@ -162,12 +162,14 @@ class _WorkoutSelectionSheetState extends State<WorkoutSelectionSheet>
 
   @override
   Widget build(BuildContext context) {
+    final workouts = _getWorkouts(context);
+
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      itemCount: _workouts.length,
+      itemCount: workouts.length,
       itemBuilder: (context, index) {
-        final workout = _workouts[index];
+        final workout = workouts[index];
         return FadeSlide(
           animation: _controller,
           intervalStart: 0.1 + (index * 0.1),
@@ -236,7 +238,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.cardBorder,
+            color: context.cardBackground,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: w.accentColor.withOpacity(0.15),
@@ -261,10 +263,8 @@ class _WorkoutCardState extends State<_WorkoutCard>
                   children: [
                     Text(
                       w.name,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: context.body.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -272,7 +272,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
                       w.description,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.4),
+                        color: context.textMuted,
                       ),
                     ),
                   ],
@@ -352,7 +352,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
     final settings = ref.watch(userSettingsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -380,9 +380,8 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                         const SizedBox(width: 4),
                         Text(
                           'Workouts',
-                          style: TextStyle(
+                          style: context.cardTitle.copyWith(
                             fontSize: 13,
-                            fontWeight: FontWeight.w600,
                             color: w.accentColor.withOpacity(0.8),
                           ),
                         ),
@@ -411,11 +410,9 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                           children: [
                             Text(
                               w.name,
-                              style: const TextStyle(
+                              style: context.h1.copyWith(
                                 fontSize: 28,
-                                fontWeight: FontWeight.w900,
                                 letterSpacing: -0.5,
-                                color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -423,7 +420,7 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                               w.description,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white.withOpacity(0.4),
+                                color: context.textMuted,
                               ),
                             ),
                           ],
@@ -497,11 +494,11 @@ class _WorkoutDetailPageState extends ConsumerState<_WorkoutDetailPage>
                   child: Center(
                     child: Text(
                       'Start ${w.name}',
-                      style: const TextStyle(
+                      style: context.cardTitle.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.3,
-                        color: AppColors.background,
+                        color: context.background,
                       ),
                     ),
                   ),

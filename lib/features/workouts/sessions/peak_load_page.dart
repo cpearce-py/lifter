@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/workouts/engines/peak_load_engine.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
@@ -26,12 +27,13 @@ class PeakLoadSessionPage extends ConsumerWidget {
     final phase = state.phase;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.background,
       body: SafeArea(
         child: Column(
           children: [
           WorkoutTopBar(
             phaseName: phase.name, 
+            accent: context.peakLoadAccent,
             trailing: Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: Column(
@@ -39,18 +41,21 @@ class PeakLoadSessionPage extends ConsumerWidget {
                   children: [
                     Text(
                       'ROUND ${state.repCount}',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.0),
+                      style: context.overline.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.peakLoadAccent.withOpacity(0.2),
+                        color: context.peakLoadAccent.withValues(alpha: .2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         state.currentHand.name,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.peakLoadAccent),
+                        style: context.body.copyWith(color: context.textMuted),
                       ),
                     ),
                   ],
@@ -67,7 +72,7 @@ class PeakLoadSessionPage extends ConsumerWidget {
               overlay: 
               Text(
                 'HAND: ${state.currentHand.name.toUpperCase()}',
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: context.textPrimary),
               ),
             ),
           ),
@@ -83,6 +88,7 @@ class PeakLoadSessionPage extends ConsumerWidget {
               onPrimaryAction: () {
                 final event = primaryButtonEvent(phase);
                 if (event != null) {
+                  HapticFeedback.mediumImpact();
                   ref
                       .read(peakLoadEngineProvider.notifier)
                       .dispatch(UserEventAction(event));
