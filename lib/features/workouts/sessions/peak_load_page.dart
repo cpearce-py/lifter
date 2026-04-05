@@ -94,6 +94,12 @@ class PeakLoadSessionPage extends ConsumerWidget {
                       .dispatch(UserEventAction(event));
                 }
               },
+              onSecondaryAction: () {
+                HapticFeedback.mediumImpact();
+                ref
+                  .read(peakLoadEngineProvider.notifier)
+                  .dispatch(UserEventAction(Event.finish));
+                },
             ),
           ],
       )),

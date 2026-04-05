@@ -21,9 +21,11 @@ extension AppColorsExt on BuildContext {
   // ─── Accents ───
   Color get repeaterAccent => isDark ? Color(0xFFE8FF47) : Color.fromARGB(255, 36, 229, 55);
   Color get peakLoadAccent => isDark ? Color(0xFFFF6B6B) : Color(0xFFE04343);
-  // Color get streakAccent => isDark ? const Color(0xFF47C8FF) : const Color(0xFF008CC9);
   Color get streakAccent => isDark ? const Color(0xFF47C8FF) : const Color(0xFF0077AB); // Deep Blue
   Color get setRestAccent => isDark ? const Color(0xFFB47FFF) : const Color(0xFF6B24D6); // Deep Purple
+
+  // Cards
+  Color get buttonSecondary => isDark ? const Color(0xFF1E1E2A) : const Color(0xFFE5E5EA);
 }
 
 class AppTheme {

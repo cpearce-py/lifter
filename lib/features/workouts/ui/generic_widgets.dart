@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/workouts/ui/graph.dart';
@@ -7,59 +6,68 @@ import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 
 // --- Helpers ---
-String getPrimaryLabelForPhase(Phase phase) => switch (phase) {
-  Phase.idle => "Start",
-  Phase.starting => "Get ready!",
-  Phase.switching => "Swap Hands",
-  Phase.paused => "Resume",
-  Phase.cancelled => "Cancelled", 
-  Phase.working => "Pause",
-  Phase.done => "Finished!",
-  Phase.resting => "Skip Rest",
-  Phase.setResting => "Skip Rest"
-};
+({String label, Color color, IconData icon}) getPrimaryActionConfig(Phase phase, BuildContext context) {
+  return switch (phase) {
+
+    Phase.idle => (
+      label: "Start",
+      color: context.success,
+      icon: Icons.play_arrow_rounded,
+    ),
+
+    Phase.starting => (
+      label: "Get ready!",
+      color: context.repeaterAccent,
+      icon: Icons.timer_rounded,
+    ),
+
+    Phase.switching => (
+      label: "Swap Hands",
+      color: context.repeaterAccent,
+      icon: Icons.swap_horiz_rounded, // The new swap icon!
+    ),
+
+    Phase.working => (
+      label: "Pause",
+      color: context.danger,
+      icon: Icons.pause_rounded,
+    ),
+
+    Phase.paused => (
+      label: "Resume",
+      color: context.success,
+      icon: Icons.play_arrow_rounded,
+    ),
+
+    Phase.resting || Phase.setResting => ( // You can even combine identical states!
+      label: "Skip Rest",
+      color: phase == Phase.resting ? context.streakAccent : context.setRestAccent,
+      icon: Icons.skip_next_rounded,
+    ),
+
+    Phase.done => (
+      label: "Finished!",
+      color: context.success,
+      icon: Icons.check_circle_outline_rounded,
+    ),
+
+    Phase.cancelled => (
+      label: "Cancelled",
+      color: context.buttonSecondary,
+      icon: Icons.close_rounded,
+    ),
+  };
+}
 
 Color accentColorForPhase(Phase phase, BuildContext context) => switch (phase) {
-  Phase.working    => context.repeaterAccent,
-  Phase.resting    => context.streakAccent,
+  Phase.working => context.repeaterAccent,
+  Phase.resting => context.streakAccent,
   Phase.setResting => context.setRestAccent,
-  Phase.paused     => context.danger,
-  Phase.done       => context.success,
-  _                => context.repeaterAccent,
+  Phase.paused => context.danger,
+  Phase.done => context.success,
+  _ => context.repeaterAccent,
 };
 
-class GenericWorkoutHeader extends StatelessWidget {
-  final String title;
-  
-  const GenericWorkoutHeader({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 0),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Icon(Icons.arrow_back_ios_rounded, size: 20, color: Colors.white.withOpacity(0.6)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-                color: Color(0xFFF0F0F0),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class GenericGraphArea extends ConsumerWidget {
   final Phase phase;
@@ -71,12 +79,13 @@ class GenericGraphArea extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accentColor = accentColorForPhase(phase, context);
 
-    final isGraphActive = phase != Phase.idle && 
-                          phase != Phase.done && 
-                          phase != Phase.cancelled &&
-                          phase != Phase.paused;
-    
-    final controller = ref.watch(graphControllerProvider); 
+    final isGraphActive =
+        phase != Phase.idle &&
+        phase != Phase.done &&
+        phase != Phase.cancelled &&
+        phase != Phase.paused;
+
+    final controller = ref.watch(graphControllerProvider);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -90,12 +99,7 @@ class GenericGraphArea extends ConsumerWidget {
               isActive: isGraphActive,
             ),
           ),
-          if (overlay != null)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: overlay!,
-            ),
+          if (overlay != null) Positioned(top: 12, right: 12, child: overlay!),
         ],
       ),
     );
@@ -106,21 +110,31 @@ class GenericWorkoutControls extends StatelessWidget {
   final Phase phase;
   final VoidCallback onReset;
   final VoidCallback onPrimaryAction;
+  final VoidCallback onSecondaryAction;
 
   const GenericWorkoutControls({
     super.key,
     required this.phase,
     required this.onReset,
     required this.onPrimaryAction,
+    required this.onSecondaryAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = accentColorForPhase(phase, context);
-    final isRecording = phase == Phase.working;
+    final primaryConfig = getPrimaryActionConfig(phase, context);
+
+    final showSecondary = phase == Phase.paused || 
+                          phase == Phase.resting || 
+                          phase == Phase.setResting;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom + 24),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       child: Row(
         children: [
           // Reset Button
@@ -134,58 +148,100 @@ class GenericWorkoutControls extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: context.textMuted,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: context.textSubtle),
               ),
-              child: Icon(Icons.refresh_rounded, color: Colors.white.withOpacity(0.4), size: 22),
+              child: Icon(
+                Icons.refresh_rounded,
+                color: context.textMuted,
+                size: 22,
+              ),
             ),
           ),
           const SizedBox(width: 12),
-          
+
+          // Secondary button.
+          if (showSecondary) ...[
+            Expanded(
+              child: _WorkoutButton(
+                label: "Finish", 
+                icon: Icons.exit_to_app, 
+                backgroundColor: context.buttonSecondary, 
+                textColor: context.textPrimary, 
+                onTap: onSecondaryAction
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+
           // Start/Stop Button
           Expanded(
-            child: GestureDetector(
-              onTap: onPrimaryAction,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                height: 52,
-                decoration: BoxDecoration(
-                  color: isRecording ? context.danger : accentColor,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isRecording ? context.danger : accentColor).withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isRecording ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                        color: context.background,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        getPrimaryLabelForPhase(phase),
-                        style: context.body.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: context.background,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: _WorkoutButton(
+              label: primaryConfig.label, 
+              icon: primaryConfig.icon, 
+              backgroundColor: primaryConfig.color, 
+              textColor: context.textPrimary, 
+              onTap: onPrimaryAction
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WorkoutButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  const _WorkoutButton({
+    required this.label,
+    required this.icon,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        height: 52,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: backgroundColor.withOpacity(0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: textColor, size: 22),
+              const SizedBox(width: 6),
+              // Make sure to pull the base style from your theme context properly
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -109,6 +109,12 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                       .dispatch(UserEventAction(event));
                 }
               },
+              onSecondaryAction: () {
+                HapticFeedback.mediumImpact();
+                ref
+                  .read(repeaterEngineProvider.notifier)
+                  .dispatch(UserEventAction(Event.finish));
+                },
             ),
           ],
         ),
