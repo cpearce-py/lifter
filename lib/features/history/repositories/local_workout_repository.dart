@@ -230,6 +230,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
   }
 
   //TODO: delete after testing.
+  @override
   Future<void> seedDummyData() async {
     debugPrint("🌱 Seeding dummy workouts...");
 

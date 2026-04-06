@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lifter/core/ui/home_page.dart';
 import 'package:lifter/features/history/ui/history_page.dart';
+import 'package:lifter/features/telemetry/ui/pages/progression_page.dart';
 import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_selection_sheet.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
@@ -51,13 +52,13 @@ class _MainShellState extends State<MainShell> {
         label: 'History',
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart_rounded,
-        page: const HistoryPage(),
+        page: const ProgressionPage(),
       ),
       _NavDestination(
         label: 'Profile',
         icon: Icons.person_outline_rounded,
         activeIcon: Icons.person_rounded,
-        page: ProfilePage(),
+        page: const ProfilePage(),
       ),
     ];
   }
