@@ -2,170 +2,330 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/features/telemetry/models.dart';
+import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
+import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';
 
-// Data class (Keep this if it's in this file)
-class MaxPullPoint {
-  final DateTime date;
-  final double leftMax;
-  final double rightMax;
-  MaxPullPoint({required this.date, required this.leftMax, required this.rightMax});
+
+class MaxPullProgressionChart extends ConsumerStatefulWidget {
+  const MaxPullProgressionChart({super.key});
+
+  @override
+  ConsumerState<MaxPullProgressionChart> createState() =>
+      _MaxPullProgressionChartState();
 }
 
-class MaxPullProgressionChart extends StatelessWidget {
-  final List<MaxPullPoint> progressionData;
+class _MaxPullProgressionChartState
+    extends ConsumerState<MaxPullProgressionChart> {
+  String _selectedRange = '1Y';
 
-  const MaxPullProgressionChart({super.key, required this.progressionData});
+  String _getBottomLabel(double value, String range) {
+    final int index = value.toInt();
+    if (range == '1W' && index >= 0 && index < fullDays.length) {
+      return fullDays[index][0];
+    } else if (range == '1M') {
+      return 'W${index + 1}';
+    } else if (range == 'YTD') {
+      final currentMonth = DateTime.now().month;
+      if (index >= 0 && index < currentMonth) {
+        if (currentMonth > 6) {
+          return fullMonths[index][0];
+        } else {
+          return fullMonths[index].substring(0, 3);
+        }
+      }
+    } else if (range == '3M' || range == '6M' || range == '1Y') {
+      int maxIdx = range == '3M' ? 2 : (range == '6M' ? 5 : 11);
+      int monthsAgo = maxIdx - index;
+      int targetMonth = DateTime.now().month - monthsAgo;
+      while (targetMonth <= 0) {
+        targetMonth += 12;
+      }
+      return fullMonths[targetMonth - 1][0];
+    }
+    return '';
+  }
+
+  String _getTooltipLabel(double value, String range) {
+    final int index = value.toInt();
+    if (range == '1W' && index >= 0 && index < fullDays.length) {
+      return fullDays[index];
+    } else if (range == '1M') {
+      return 'W${index + 1}';
+    } else if (range == 'YTD') {
+      final currentMonth = DateTime.now().month;
+      if (index >= 0 && index < currentMonth) return fullMonths[index];
+    } else if (range == '3M' || range == '6M' || range == '1Y') {
+      int maxIdx = range == '3M' ? 2 : (range == '6M' ? 5 : 11);
+      int monthsAgo = maxIdx - index;
+      int targetMonth = DateTime.now().month - monthsAgo;
+      while (targetMonth <= 0) {
+        targetMonth += 12;
+      }
+      return fullMonths[targetMonth - 1];
+    }
+    return '';
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Safety check for empty state: Give it a fixed height so the ChartCard doesn't collapse!
-    if (progressionData.isEmpty) {
-      return SizedBox(
-        height: 220,
-        child: Center(
-          child: Text(
-            'Complete a Peak Load to see progress', 
-            style: context.body.copyWith(color: context.textMuted),
+    final chartDataAsync = ref.watch(chartWorkoutsProvider);
+
+    final leftColor = context.repeaterAccent;
+    final rightColor = context.setRestAccent;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        chartDataAsync.when(
+          loading: () => const SizedBox(
+            height: 220,
+            child: Center(child: CircularProgressIndicator()),
           ),
-        ),
-      );
-    }
+          error: (err, stack) =>
+              SizedBox(height: 220, child: Center(child: Text('Error: $err'))),
+          data: (allWorkouts) {
+            final now = DateTime.now();
 
-    final leftColor = context.repeaterAccent; 
-    final rightColor = context.setRestAccent; 
+            final timeframeWorkouts = allWorkouts.where((w) {
+              if (_selectedRange == '1W') {
+                final start = now.subtract(Duration(days: now.weekday - 1));
+                return w.dateDone.isAfter(start) ||
+                    w.dateDone.isAtSameMomentAs(start);
+              } else if (_selectedRange == '1M') {
+                return w.dateDone.year == now.year &&
+                    w.dateDone.month == now.month;
+              } else if (_selectedRange == '3M') {
+                final start = DateTime(now.year, now.month - 2, 1);
+                return w.dateDone.isAfter(start) ||
+                    w.dateDone.isAtSameMomentAs(start);
+              } else if (_selectedRange == '6M') {
+                final start = DateTime(now.year, now.month - 5, 1);
+                return w.dateDone.isAfter(start) ||
+                    w.dateDone.isAtSameMomentAs(start);
+              } else if (_selectedRange == 'YTD') {
+                return w.dateDone.year == now.year;
+              } else {
+                // 1Y
+                final start = DateTime(now.year - 1, now.month, now.day);
+                return w.dateDone.isAfter(start) ||
+                    w.dateDone.isAtSameMomentAs(start);
+              }
+            }).toList();
 
-    // 2. Safe Max Y calculation (compare both hands!)
-    double maxY = 10.0;
-    double maxLeft = progressionData.map((e) => e.leftMax).reduce(max);
-    double maxRight = progressionData.map((e) => e.rightMax).reduce(max);
-    double absoluteMax = max(maxLeft, maxRight);
-    
-    if (absoluteMax > 0) {
-      maxY = absoluteMax + (absoluteMax * 0.2); // Add 20% headroom
-    }
+            final peakWorkouts = timeframeWorkouts
+                .where((w) => w.workoutTypeId == 2)
+                .toList();
 
-    // 3. Safe Max X calculation (prevents divide-by-zero!)
-    double maxX = (progressionData.length - 1).toDouble();
-    if (maxX <= 0) maxX = 1.0;
-
-    // 4. Safe Y-Axis Interval (prevents getEfficientInterval crash!)
-    double yInterval = (maxY / 5).ceilToDouble();
-    if (yInterval <= 0) yInterval = 5.0;
-
-    // Map the spots
-    final leftSpots = progressionData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.leftMax)).toList();
-    final rightSpots = progressionData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.rightMax)).toList();
-
-    // 5. The bulletproof SizedBox constraint!
-    return SizedBox(
-      height: 220,
-      width: double.infinity, 
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: maxX,
-          minY: 0,
-          maxY: maxY,
-          
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: yInterval, // Safe interval
-            verticalInterval: 1.0,         // Safe interval
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: context.textPrimary.withOpacity(0.20), // Brighter lines!
-              strokeWidth: 1,
-              dashArray: [4, 4],
-            ),
-          ),
-          
-          lineTouchData: LineTouchData(
-            getTouchLineStart: (barData, spotIndex) => 0, 
-            getTouchLineEnd: (barData, spotIndex) => maxY, // Full height selection line!
-            getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
-              return spotIndexes.map((index) {
-                return TouchedSpotIndicatorData(
-                  FlLine(
-                    color: context.textPrimary.withOpacity(0.4), 
-                    strokeWidth: 2,
-                    dashArray: [4, 4], 
+            if (peakWorkouts.isEmpty) {
+              return SizedBox(
+                height: 220,
+                child: Center(
+                  child: Text(
+                    'Complete a Peak Load to see progress',
+                    style: context.body.copyWith(color: context.textMuted),
                   ),
-                  const FlDotData(show: true), 
-                );
-              }).toList();
-            },
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (touchedSpot) => context.textPrimary.withOpacity(0.8),
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) => LineTooltipItem(
-                  '${spot.y.toStringAsFixed(1)} kg', // Add units for clarity!
-                  TextStyle(color: context.background, fontWeight: FontWeight.bold),
-                )).toList();
-              },
-            ),
-          ),
-          
-          titlesData: FlTitlesData(
-            show: true,
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // Hide X axis labels for this graph
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: yInterval, // Safe interval
-                getTitlesWidget: (value, meta) {
-                  // Only show whole numbers on the axis to keep it clean
-                  if (value % 1 != 0) return const SizedBox();
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Text(
-                      value.toInt().toString(),
-                      style: context.overline.copyWith(
-                        color: context.textMuted,
-                        fontWeight: FontWeight.normal,
-                      ),
-                      textAlign: TextAlign.right,
-                    ),
+                ),
+              );
+            }
+
+            // ZOOM BOUNDARIES
+            double maxX = 1.0;
+            if (_selectedRange == '1W') {
+              maxX = 6.0;
+            } else if (_selectedRange == '1M') {
+              maxX = 3.0;
+            } else if (_selectedRange == '3M') {
+              maxX = 2.0;
+            } else if (_selectedRange == '6M') {
+              maxX = 5.0;
+            } else if (_selectedRange == 'YTD') {
+              maxX = (now.month > 1 ? now.month - 1 : 1).toDouble();
+            } else {
+              maxX = 11.0;
+            }
+
+            // AGGREGATE MAX PULLS
+            Map<int, double> maxLeftPerBucket = {};
+            Map<int, double> maxRightPerBucket = {};
+
+            for (final w in peakWorkouts) {
+              int xIndex = 0;
+              if (_selectedRange == '1W') {
+                xIndex = w.dateDone.weekday - 1;
+              } else if (_selectedRange == '1M') {
+                xIndex = (w.dateDone.day - 1) ~/ 7;
+                if (xIndex > 3) xIndex = 3;
+              } else if (_selectedRange == 'YTD') {
+                xIndex = w.dateDone.month - 1;
+              } else {
+                int monthsAgo =
+                    (now.year - w.dateDone.year) * 12 +
+                    now.month -
+                    w.dateDone.month;
+                if (_selectedRange == '3M') {
+                  xIndex = 2 - monthsAgo;
+                } else if (_selectedRange == '6M') {
+                  xIndex = 5 - monthsAgo;
+                } else {
+                  xIndex = 11 - monthsAgo;
+                }
+              }
+
+              if (xIndex < 0) continue;
+
+              double sessionMaxLeft = 0;
+              double sessionMaxRight = 0;
+              for (final set in w.sets) {
+                for (final rep in set.repetitions) {
+                  if (rep.peakLoadLeft > sessionMaxLeft) {
+                    sessionMaxLeft = rep.peakLoadLeft;
+                  }
+                  if (rep.peakLoadRight > sessionMaxRight) {
+                    sessionMaxRight = rep.peakLoadRight;
+                  }
+                }
+              }
+
+              if (sessionMaxLeft > (maxLeftPerBucket[xIndex] ?? 0)) {
+                maxLeftPerBucket[xIndex] = sessionMaxLeft;
+              }
+              if (sessionMaxRight > (maxRightPerBucket[xIndex] ?? 0)) {
+                maxRightPerBucket[xIndex] = sessionMaxRight;
+              }
+            }
+
+            List<FlSpot> leftSpots = [];
+            List<FlSpot> rightSpots = [];
+            for (int i = 0; i <= maxX.toInt(); i++) {
+              if (maxLeftPerBucket.containsKey(i)) {
+                leftSpots.add(FlSpot(i.toDouble(), maxLeftPerBucket[i]!));
+              }
+              if (maxRightPerBucket.containsKey(i)) {
+                rightSpots.add(FlSpot(i.toDouble(), maxRightPerBucket[i]!));
+              }
+            }
+
+            // Y-AXIS MATH
+            double absoluteMax = 10.0;
+            if (leftSpots.isNotEmpty || rightSpots.isNotEmpty) {
+              double maxL = leftSpots.isEmpty
+                  ? 0
+                  : leftSpots.map((e) => e.y).reduce(max);
+              double maxR = rightSpots.isEmpty
+                  ? 0
+                  : rightSpots.map((e) => e.y).reduce(max);
+              absoluteMax = max(maxL, maxR);
+            }
+
+            double maxWeight = 4.0;
+            if (absoluteMax > 0) {
+              double target = absoluteMax + (absoluteMax * 0.15);
+              maxWeight = (target / 4).ceil() * 4.0;
+            }
+            double yInterval = maxWeight / 4;
+
+            // DELEGATE TO BASE CHART!
+            return BaseProgressionChart(
+              maxX: maxX,
+              maxY: maxWeight,
+              yInterval: yInterval,
+
+              lineBarsData: [
+                BaseProgressionChart.createStandardLine(
+                  spots: leftSpots,
+                  color: leftColor,
+                  cardBackgroundColor: context.cardBackground,
+                ),
+                BaseProgressionChart.createStandardLine(
+                  spots: rightSpots,
+                  color: rightColor,
+                  cardBackgroundColor: context.cardBackground,
+                ),
+              ],
+
+              // Custom Labels
+              bottomLabelBuilder: (value) => Text(
+                _getBottomLabel(value, _selectedRange),
+                style: context.overline.copyWith(color: context.textMuted),
+              ),
+              leftLabelBuilder: (value) => Text(
+                value.toInt().toString(),
+                style: context.overline.copyWith(
+                  color: context.textMuted,
+                  fontWeight: FontWeight.normal,
+                ),
+                textAlign: TextAlign.right,
+              ),
+
+              // Dynamic Tooltips
+              tooltipBuilder: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  final isLeft = spot.barIndex == 0;
+                  final lineColor = isLeft ? leftColor : rightColor;
+                  final label = _getTooltipLabel(spot.x, _selectedRange);
+
+                  return LineTooltipItem(
+                    '${spot.y.toStringAsFixed(1)} kg ${isLeft ? "L" : "R"}',
+                    TextStyle(color: lineColor, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.left,
+                    children: [
+                      // Only show the date under the last touched spot to prevent duplicates
+                      if (spot == touchedSpots.last)
+                        TextSpan(
+                          text: '\n$label',
+                          style: TextStyle(
+                            color: context.textPrimaryInv.withValues(
+                              alpha: 0.8,
+                            ),
+                            fontSize: 10,
+                          ),
+                        ),
+                    ],
                   );
-                },
-              ),
-            ),
-          ),
-          
-          borderData: FlBorderData(show: false),
-          
-          lineBarsData: [
-            // Left Hand Line
-            LineChartBarData(
-              spots: leftSpots,
-              isCurved: true,
-              preventCurveOverShooting: true, // No dipping below zero!
-              color: leftColor,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: true), 
-              belowBarData: BarAreaData(
-                show: true,
-                color: leftColor.withOpacity(0.1),
-              ),
-            ),
-            // Right Hand Line
-            LineChartBarData(
-              spots: rightSpots,
-              isCurved: true,
-              preventCurveOverShooting: true, // No dipping below zero!
-              color: rightColor,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: true),
-            ),
-          ],
+                }).toList();
+              },
+            );
+          },
         ),
-      ),
+
+        const SizedBox(height: 24),
+
+        // Range Selector State
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: ranges.map((range) {
+            final isSelected = _selectedRange == range;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedRange = range),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? context.textPrimary.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  range,
+                  style: context.body.copyWith(
+                    color: isSelected ? context.textPrimary : context.textMuted,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

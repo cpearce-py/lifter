@@ -17,6 +17,8 @@ extension AppColorsExt on BuildContext {
   Color get textPrimary => isDark ? const Color(0xFFF0F0F0) : const Color(0xFF1C1C1E);
   Color get textMuted => isDark ? Colors.white54 : Colors.black54;
   Color get textSubtle => isDark ? Colors.white30 : Colors.black38;
+  Color get textPrimaryInv => isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF0F0F0);
+  Color get textMutedInv => isDark ? Colors.black54 : Colors.white54;
 
   // ─── Accents ───
   Color get repeaterAccent => isDark ? Color(0xFFE8FF47) : Color.fromARGB(255, 36, 229, 55);
