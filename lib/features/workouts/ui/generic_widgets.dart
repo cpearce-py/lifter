@@ -181,7 +181,7 @@ class GenericWorkoutControls extends StatelessWidget {
               label: primaryConfig.label, 
               icon: primaryConfig.icon, 
               backgroundColor: primaryConfig.color, 
-              textColor: context.textPrimary, 
+              textColor: context.textPrimaryInv, 
               onTap: onPrimaryAction
             ),
           ),
