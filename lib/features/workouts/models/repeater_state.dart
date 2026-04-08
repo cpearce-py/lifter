@@ -17,6 +17,8 @@ class RepeaterState {
   final int currentRep;
   final int secondsRemaining;
   final int currentPhaseDuration;
+  final double referenceWeight;
+  final double targetIntensity;
 
   final Hand startingHand;
   final Hand currentHand;
@@ -47,6 +49,8 @@ class RepeaterState {
     this.accumulatedWorkSeconds = 0,
     this.currentSetReps = const [],
     this.completedSets = const [],
+    required this.referenceWeight,
+    this.targetIntensity = 1,
   });
 
   int get elapsedSeconds => currentPhaseDuration - secondsRemaining;
@@ -75,6 +79,8 @@ class RepeaterState {
     int? accumulatedWorkSeconds,
     List<RepetitionLog>? currentSetReps,
     List<SetLog>? completedSets,
+    double? referenceWeight,
+    double? targetIntensity,
   }) {
     return RepeaterState(
       sets: sets ?? this.sets,
@@ -88,6 +94,8 @@ class RepeaterState {
       currentRep: currentRep ?? this.currentRep,
       secondsRemaining: secondsRemaining ?? this.secondsRemaining,
       currentPhaseDuration: currentPhaseDuration ?? this.currentPhaseDuration,
+      referenceWeight: referenceWeight ?? this.referenceWeight,
+      targetIntensity: targetIntensity ?? this.targetIntensity,
       startingHand: startingHand ?? this.startingHand,
       currentHand: currentHand ?? this.currentHand,
       currentPullMax: currentPullMax ?? this.currentPullMax,

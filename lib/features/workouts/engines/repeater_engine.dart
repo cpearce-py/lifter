@@ -22,6 +22,17 @@ class RepeaterEngine extends BaseEngine<RepeaterState> {
   @override
   RepeaterState build() {
     final config = ref.watch(repeaterConfigProvider);
+
+    final baseTarget = config.referenceWeight * config.targetIntensity;
+    final graphController = ref.read(graphControllerProvider);
+
+    if (config.targetIntensity >= 1.0) {
+      graphController.setTargets(min: baseTarget * 0.95, max: baseTarget); 
+    } else {
+      final minZone = baseTarget * 0.9;
+      final maxZone = baseTarget * 1.1;
+      graphController.setTargets(min: minZone, max: maxZone);
+    }
     
     rules = RepeaterRules(config);
     currentPhase = config.phase;
