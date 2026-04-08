@@ -5,8 +5,6 @@ import 'package:lifter/core/database/database_service.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
-import 'package:lifter/core/providers/repository_providers.dart';
-import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
@@ -19,7 +17,7 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(userSettingsProvider);
-    final notifier = ref.read(userSettingsProvider.notifier);
+    final notifier = ref.watch(userSettingsProvider.notifier);
     final accent = context.repeaterAccent;
 
     return Scaffold(

@@ -3,11 +3,19 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/stats_provider.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/telemetry/models.dart';
 import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
 import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
+
+double displayWeight(double weightInKg, bool useLbs) {
+  return useLbs ? weightInKg * 2.20462 : weightInKg;
+}
+
+String weightUnit(bool useLbs) => useLbs ? 'lbs' : 'kg';
 
 
 class MaxPullProgressionChart extends ConsumerStatefulWidget {
@@ -73,6 +81,7 @@ class _MaxPullProgressionChartState
   @override
   Widget build(BuildContext context) {
     final chartDataAsync = ref.watch(chartWorkoutsProvider);
+    final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
 
     final leftColor = context.repeaterAccent;
     final rightColor = context.setRestAccent;
@@ -252,8 +261,9 @@ class _MaxPullProgressionChartState
                 _getBottomLabel(value, _selectedRange),
                 style: context.overline.copyWith(color: context.textMuted),
               ),
+
               leftLabelBuilder: (value) => Text(
-                value.toInt().toString(),
+                displayWeight(value, useLbs).toInt().toString(),
                 style: context.overline.copyWith(
                   color: context.textMuted,
                   fontWeight: FontWeight.normal,
@@ -267,9 +277,11 @@ class _MaxPullProgressionChartState
                   final isLeft = spot.barIndex == 0;
                   final lineColor = isLeft ? leftColor : rightColor;
                   final label = _getTooltipLabel(spot.x, _selectedRange);
+                  // Change to lbs if we need.
+                  final displayVal = displayWeight(spot.y, useLbs);
 
                   return LineTooltipItem(
-                    '${spot.y.toStringAsFixed(1)} kg ${isLeft ? "L" : "R"}',
+                    '${displayVal.toStringAsFixed(1)} ${weightUnit(useLbs)} ${isLeft ? "L" : "R"}',
                     TextStyle(color: lineColor, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.left,
                     children: [
