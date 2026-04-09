@@ -23,7 +23,7 @@ import 'package:lifter/core/ui/themes/app_theme.dart';
 
     Phase.switching => (
       label: "Swap Hands",
-      color: context.repeaterAccent,
+      color: context.swapHandAccent,
       icon: Icons.swap_horiz_rounded, // The new swap icon!
     ),
 
@@ -65,6 +65,7 @@ Color accentColorForPhase(Phase phase, BuildContext context) => switch (phase) {
   Phase.setResting => context.setRestAccent,
   Phase.paused => context.danger,
   Phase.done => context.success,
+  Phase.switching => context.swapHandAccent,
   _ => context.repeaterAccent,
 };
 
@@ -148,7 +149,7 @@ class GenericWorkoutControls extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: context.textMuted,
+                color: context.buttonSecondary,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: context.textSubtle),
               ),
@@ -168,7 +169,7 @@ class GenericWorkoutControls extends StatelessWidget {
                 label: "Finish", 
                 icon: Icons.exit_to_app, 
                 backgroundColor: context.buttonSecondary, 
-                textColor: context.textPrimary, 
+                textColor: context.danger, 
                 onTap: onSecondaryAction
               ),
             ),

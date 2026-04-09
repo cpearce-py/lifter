@@ -12,11 +12,13 @@ import 'package:lifter/core/ui/themes/app_theme.dart';
 
 class LiveGraphController extends ChangeNotifier {
   LiveGraphController({
-    this.yMax = 100.0,
+    double initialMax = 100.0,
     this.windowDuration = const Duration(seconds: 10),
-  });
+  }) : _yMax = initialMax;
 
-  final double yMax;
+  double _yMax;
+  double get yMax => _yMax;
+
   double? _targetMin;
   double? _targetMax;
 
@@ -43,6 +45,9 @@ class LiveGraphController extends ChangeNotifier {
   void setTargets({double? min, double? max}) {
     _targetMin = min;
     _targetMax = max;
+    if (max != null && max > 0) {
+      _yMax = max * 1.2; 
+    }
     notifyListeners(); // Instantly update the graph zone
   }
 
@@ -236,7 +241,7 @@ class _GraphPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final nowMs = controller.currentGraphTimeMs;
-    final yMax = controller.yMax; // Always in KG logically
+    final yMax = controller._yMax; // Always in KG logically
     final peakValue = showPeakLine ? controller.peakValue : 0.0;
     final samples = controller.samples;
     final targetMin = controller.targetMin;

@@ -25,44 +25,52 @@ class PeakLoadSessionPage extends ConsumerWidget {
     );
     final state = ref.watch(peakLoadEngineProvider);
     final phase = state.phase;
+    final accentColor = accentColorForPhase(phase, context);
 
     return Scaffold(
       backgroundColor: context.background,
       body: SafeArea(
         child: Column(
           children: [
-          WorkoutTopBar(
-            phaseName: phase.name, 
-            accent: context.peakLoadAccent,
-            trailing: Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'ROUND ${state.repCount}',
-                      style: context.overline.copyWith(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: context.peakLoadAccent.withValues(alpha: .2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        state.currentHand.name,
-                        style: context.body.copyWith(color: context.textMuted),
-                      ),
-                    ),
-                  ],
-                ),
+            WorkoutTopBar(
+              onClose: () => Navigator.of(context).pop(),
+              title: Text(
+                "Peak Load",
+                style: context.h1.copyWith(fontSize: 18, color: accentColor),
               ),
-            onClose: () => Navigator.of(context).pop(),
-          ),
+            ),
+          // WorkoutTopBar(
+          //   phaseName: phase.name, 
+          //   accent: context.peakLoadAccent,
+          //   trailing: Padding(
+          //       padding: const EdgeInsets.only(right: 16.0),
+          //       child: Column(
+          //         crossAxisAlignment: CrossAxisAlignment.end,
+          //         children: [
+          //           Text(
+          //             'ROUND ${state.repCount}',
+          //             style: context.overline.copyWith(
+          //               fontSize: 10,
+          //               fontWeight: FontWeight.bold,
+          //             ),
+          //           ),
+          //           const SizedBox(height: 4),
+          //           Container(
+          //             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          //             decoration: BoxDecoration(
+          //               color: context.peakLoadAccent.withValues(alpha: .2),
+          //               borderRadius: BorderRadius.circular(8),
+          //             ),
+          //             child: Text(
+          //               state.currentHand.name,
+          //               style: context.body.copyWith(color: context.textMuted),
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //     ),
+          //   onClose: () => Navigator.of(context).pop(),
+          // ),
 
           StatInfoBar(timeProvider: peakLoadEngineProvider.select((s) => s.secondsRemaining)),
 
