@@ -1,9 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
 import 'package:lifter/features/workouts/providers/weekly_provider.dart';
+
+class WorkoutDatabaseSignal extends Notifier<int> {
+  @override 
+  int build() {
+    return 0;
+  }
+
+  void notifyChange() {
+    state++;
+  }
+}
+
+final workoutDatabaseSignalProvider = NotifierProvider<WorkoutDatabaseSignal, int>(
+  WorkoutDatabaseSignal.new,
+);
 
 // A custom state to hold the list AND the pagination status
 class HistoryPaginationState {
@@ -121,8 +137,9 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
 
   void _invalidateProviders() {
     // Invalidate required providers if a workout is Saved, or Deleted.
-    ref.invalidate(userStatsProvider);
-    ref.invalidate(weekWorkoutsProvider);
+    // ref.invalidate(userStatsProvider);
+    // ref.invalidate(weekWorkoutsProvider);
+    ref.read(workoutDatabaseSignalProvider.notifier).state++;
   }
 
   Future<void> injectDummyData() async {

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/history_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 
@@ -15,6 +16,10 @@ class UserStats {
 }
 
 final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
+
+  // Watch for the Database for changes.
+  ref.watch(workoutDatabaseSignalProvider);
+
   // Grab the raw database connection directly!
   final db = await ref.watch(databaseProvider.future);
 

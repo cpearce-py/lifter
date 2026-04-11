@@ -1,9 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
 
 // The .family modifier allows us to pass a 'weekOffset' integer into the provider
 final weekWorkoutsProvider = FutureProvider.family.autoDispose<List<DateTime>, int>((ref, weekOffset) async {
+
+  ref.watch(workoutDatabaseSignalProvider);
+
   final repo = await ref.watch(workoutRepositoryProvider.future);
   
   final now = DateTime.now();
