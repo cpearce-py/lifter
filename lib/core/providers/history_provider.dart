@@ -1,10 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
-import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
-import 'package:lifter/features/workouts/providers/weekly_provider.dart';
 
 class WorkoutDatabaseSignal extends Notifier<int> {
   @override 
@@ -25,8 +24,13 @@ final workoutDatabaseSignalProvider = NotifierProvider<WorkoutDatabaseSignal, in
 class HistoryPaginationState {
   final List<WorkoutLog> workouts;
   final bool hasMore; // True if there are more pages in the DB
+  final bool isFetchingNextPage;
 
-  HistoryPaginationState({required this.workouts, required this.hasMore});
+  HistoryPaginationState({
+    required this.workouts, 
+    required this.hasMore,
+    this.isFetchingNextPage = false,
+  });
 }
 
 class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
@@ -68,24 +72,39 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
   }
 
   Future<void> loadMore() async {
+    final currentState = state.value;
     // Prevent spam-clicking the button or fetching if we are already at the end
-    if (state.isLoading || !(state.value?.hasMore ?? false)) return;
+    if (currentState == null || currentState.isFetchingNextPage || !currentState.hasMore) return;
 
     // 1. Tell Riverpod we are loading, but KEEP the previous data visible
     // so the screen doesn't flash white!
-    state = const AsyncLoading<HistoryPaginationState>().copyWithPrevious(
-      state,
-    );
+    state = AsyncData(HistoryPaginationState(
+      workouts: currentState.workouts,
+      hasMore: currentState.hasMore,
+      isFetchingNextPage: true, 
+    ));
 
-    // 2. Increment the offset for the SQL query
-    _currentOffset += _limit;
-
-    // 3. Fetch and update the state
     try {
+      // 2. Increment the offset for the SQL query
+      _currentOffset += _limit;
+      // 3. Fetch and update the state
       final newState = await _fetchPage();
       state = AsyncData(newState);
+
     } catch (e, st) {
-      state = AsyncError(e, st);
+      log(
+        "Failed to load more", 
+        error: e, 
+        stackTrace: st, 
+        name: "WorkoutHistoryNotifier"
+      );
+
+      // Turn off the loading spinner so they can try again
+      state = AsyncData(HistoryPaginationState(
+        workouts: currentState.workouts,
+        hasMore: currentState.hasMore,
+        isFetchingNextPage: false,
+      ));
     }
   }
 
@@ -136,15 +155,10 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
   }
 
   void _invalidateProviders() {
-    // Invalidate required providers if a workout is Saved, or Deleted.
-    // ref.invalidate(userStatsProvider);
-    // ref.invalidate(weekWorkoutsProvider);
     ref.read(workoutDatabaseSignalProvider.notifier).state++;
   }
 
   Future<void> injectDummyData() async {
-    state = const AsyncLoading<HistoryPaginationState>().copyWithPrevious(state);
-    
     try {
       final repo = await ref.read(workoutRepositoryProvider.future);
       await repo.seedDummyData();
