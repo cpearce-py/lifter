@@ -272,7 +272,7 @@ class _ActionTabWidget extends StatelessWidget {
             child: Icon(
               destination.icon,
               size: 28,
-              color: context.cardBackground,
+              color: context.textPrimaryInv,
             ),
           ),
         ],
