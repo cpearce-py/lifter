@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
-import 'package:lifter/features/telemetry/models.dart';
 import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
 import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';
+import '../helpers.dart';
 
 class WorkoutsProgressionChart extends ConsumerStatefulWidget {
   const WorkoutsProgressionChart({super.key});

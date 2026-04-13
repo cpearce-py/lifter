@@ -3,19 +3,12 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/core/providers/stats_provider.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
-import 'package:lifter/features/telemetry/models.dart';
 import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
 import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
-
-double displayWeight(double weightInKg, bool useLbs) {
-  return useLbs ? weightInKg * 2.20462 : weightInKg;
-}
-
-String weightUnit(bool useLbs) => useLbs ? 'lbs' : 'kg';
+import '../helpers.dart';
 
 
 class MaxPullProgressionChart extends ConsumerStatefulWidget {
