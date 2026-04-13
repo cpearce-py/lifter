@@ -11,6 +11,58 @@ import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import '../providers/user_settings_provider.dart';
 
+Future<void> _confirmNukeDatabase(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context, 
+      // Forces me to actually tap a button instead of just tapping outside the box!
+      barrierDismissible: false, 
+      builder: (context) => AlertDialog(
+        backgroundColor: context.background,
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text("Nuke Database?", style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        content: Text(
+          'This will permanently delete ALL workouts, sets, and reps from your device. This action cannot be undone.\n\nAre you absolutely sure?', 
+          style: TextStyle(color: context.textPrimary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.redAccent, // Deep red for danger
+            ),
+            child: const Text('Nuke Everything', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      )
+    );
+
+    // If they hit cancel or dismissed it, stop right here.
+    if (confirmed != true) return;
+
+    HapticFeedback.heavyImpact();
+    DatabaseService.instance.wipeDatabase();
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Database wiped clean.'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
@@ -57,7 +109,7 @@ class ProfilePage extends ConsumerWidget {
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // --- Metric Toggle ---
@@ -168,12 +220,13 @@ class ProfilePage extends ConsumerWidget {
                         side: BorderSide(color: context.danger.withOpacity(0.5)),
                       ),
                       onPressed: () {
-                        HapticFeedback.heavyImpact();
-                        DatabaseService.instance.wipeDatabase();
-                        // Optional: Show a quick snackbar
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Database Wiped! Restart app.')),
-                        );
+                        _confirmNukeDatabase(context);
+                        // HapticFeedback.heavyImpact();
+                        // DatabaseService.instance.wipeDatabase();
+                        // // Optional: Show a quick snackbar
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   const SnackBar(content: Text('Database Wiped! Restart app.')),
+                        // );
                       },
                       child: const Text('Nuke Database'),
                     ),
