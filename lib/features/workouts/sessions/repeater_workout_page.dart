@@ -23,6 +23,8 @@ String getPhaseLabel(Phase phase, BuildContext context) {
     Phase.cancelled => "Cancelled",
   };
 }
+
+
 class RepeaterWorkoutPage extends ConsumerWidget {
   const RepeaterWorkoutPage({super.key});
 
@@ -40,6 +42,9 @@ class RepeaterWorkoutPage extends ConsumerWidget {
 
     final state = ref.watch(repeaterEngineProvider);
     final accentColor = accentColorForPhase(state.phase, context);
+
+    const double hPad = 15.0;
+    const double sectionSpacing = 18.0;
 
     return Scaffold(
       backgroundColor: context.background,
@@ -71,20 +76,22 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                   ),
                 ),
               ),
+
               LinearProgressIndicator(
                 value: state.secondsRemaining / state.currentPhaseDuration, // Will animate from 1.0 to 0.0
                 backgroundColor: context.textPrimary.withValues(alpha: 0.05),
                 valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                 minHeight: 4, // Keep it thin and elegant
               ),
-              const SizedBox(height: 8),
+
+              const SizedBox(height: sectionSpacing),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: hPad),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    WorkoutProgressIndicator(
+                    SetsAndRepsIndicator(
                       currentSet: state.currentSet,
                       totalSets: state.sets,
                       currentRep: state.currentRep,
@@ -96,7 +103,7 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: sectionSpacing),
 
               StatInfoBar(
                 timeProvider: repeaterEngineProvider.select(
@@ -104,44 +111,53 @@ class RepeaterWorkoutPage extends ConsumerWidget {
                 ),
               ),
 
+              const SizedBox(height: sectionSpacing),
+
               Expanded(
-                child: GenericGraphArea(
-                  phase: state.phase,
-                  overlay: Text(
-                    '${state.currentHand.name.toUpperCase()} HAND',
-                    style: context.body.copyWith(
-                      color: context.textMuted,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: hPad),
+                  child: GenericGraphArea(
+                    phase: state.phase,
+                    overlay: Text(
+                      '${state.currentHand.name.toUpperCase()} HAND',
+                      style: context.body.copyWith(
+                        color: context.textMuted,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
 
-              GenericWorkoutControls(
-                phase: state.phase,
-                onReset: () {
-                  HapticFeedback.lightImpact();
-                  ref
-                      .read(repeaterEngineProvider.notifier)
-                      .dispatch(UserEventAction(Event.reset));
-                },
-                onPrimaryAction: () {
-                  final event = primaryButtonEvent(state.phase);
-                  if (event != null) {
+              const SizedBox(height: sectionSpacing),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: hPad),
+                child: GenericWorkoutControls(
+                  phase: state.phase,
+                  onReset: () {
+                    HapticFeedback.lightImpact();
+                    ref
+                        .read(repeaterEngineProvider.notifier)
+                        .dispatch(UserEventAction(Event.reset));
+                  },
+                  onPrimaryAction: () {
+                    final event = primaryButtonEvent(state.phase);
+                    if (event != null) {
+                      HapticFeedback.mediumImpact();
+                      ref
+                          .read(repeaterEngineProvider.notifier)
+                          .dispatch(UserEventAction(event));
+                    }
+                  },
+                  onSecondaryAction: () {
                     HapticFeedback.mediumImpact();
                     ref
                         .read(repeaterEngineProvider.notifier)
-                        .dispatch(UserEventAction(event));
-                  }
-                },
-                onSecondaryAction: () {
-                  HapticFeedback.mediumImpact();
-                  ref
-                      .read(repeaterEngineProvider.notifier)
-                      .dispatch(UserEventAction(Event.finish));
-                },
+                        .dispatch(UserEventAction(Event.finish));
+                  },
+                ),
               ),
             ],
           ),
@@ -196,14 +212,14 @@ class StatInfoBar extends ConsumerWidget {
   }
 }
 
-class WorkoutProgressIndicator extends StatelessWidget {
+class SetsAndRepsIndicator extends StatelessWidget {
   final int currentSet;
   final int totalSets;
   final int currentRep;
   final int totalReps;
   final Color accentColor;
 
-  const WorkoutProgressIndicator({
+  const SetsAndRepsIndicator({
     super.key,
     required this.currentSet,
     required this.totalSets,
