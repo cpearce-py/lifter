@@ -15,24 +15,21 @@ class WorkoutTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Back Button
-          IconButton(
-            icon: Icon(Icons.close_rounded, color: context.textPrimary),
-            onPressed: onClose,
-            padding: EdgeInsets.zero,
-            alignment: Alignment.centerLeft,
-          ),
-
-          title ?? const SizedBox(),
-          // Dynamic Trailing Content (Used for the Hand indicator now)
-          trailing ?? const SizedBox(width: 48),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Back Button
+        IconButton(
+          icon: Icon(Icons.close_rounded, color: context.textPrimary),
+          onPressed: onClose,
+          padding: EdgeInsets.zero,
+          alignment: Alignment.centerLeft,
+        ),
+    
+        title ?? const SizedBox(),
+        // Dynamic Trailing Content (Used for the Hand indicator now)
+        trailing ?? const SizedBox(width: 48),
+      ],
     );
   }
 }

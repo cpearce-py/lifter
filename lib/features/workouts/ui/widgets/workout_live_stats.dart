@@ -18,32 +18,29 @@ class WorkoutLiveStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          CurrentWeight(),
-
-          Container(width: 1, height: 50, color: context.cardBorder),
-
-          Column(
-            children: [
-              Text(
-                _formatTime(secondsRemaining),
-                style: context.hero,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        CurrentWeight(),
+    
+        Container(width: 1, height: 50, color: context.cardBorder),
+    
+        Column(
+          children: [
+            Text(
+              _formatTime(secondsRemaining),
+              style: context.hero,
+            ),
+            Text(
+              'TIME LEFT',
+              style: context.overline.copyWith(
+                fontSize: 12,
+                letterSpacing: 1.5,
               ),
-              Text(
-                'TIME LEFT',
-                style: context.overline.copyWith(
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

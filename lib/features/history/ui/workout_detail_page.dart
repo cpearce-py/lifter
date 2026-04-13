@@ -4,6 +4,9 @@ import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/telemetry/models.dart';
+import 'package:lifter/features/telemetry/ui/charts/rep_progression_chart.dart';
+import 'package:lifter/features/telemetry/ui/widgets/asymmetry_balance_bar.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
 import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 
@@ -92,10 +95,62 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
     }
   }
 
+  // THE CARD FACTORY: Decides what graphs to show based on the workout type!
+  List<Widget> _buildWorkoutCards(BuildContext context, WorkoutStats stats) {
+    final List<Widget> cards = [];
+
+    // 1. Everyone gets the Asymmetry Balance Bar
+    cards.add(
+      Card(
+        elevation: 0,
+        color: context.cardBackground, // Use your app's surface color
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: AsymmetryBalanceBar(stats: stats),
+        ),
+      ),
+    );
+
+    cards.add(const SizedBox(height: 16));
+
+    // 2. Add specific charts based on what kind of workout this was!
+    if (widget.workout.workoutTypeId == 1) { // Example: 1 = Repeater
+      cards.add(
+        Card(
+          elevation: 0,
+          color: context.cardBackground,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: RepProgressionChart(stats: stats),
+          ),
+        ),
+      );
+    } else if (widget.workout.workoutTypeId == 2) { // Example: 2 = Max Pull
+      cards.add(
+        Card(
+          elevation: 0,
+          color: context.cardBackground,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: RepProgressionChart(stats: stats), 
+            // Note: A line chart still looks great for Max Pulls to see warm-up progression!
+          ),
+        ),
+      );
+    }
+
+    return cards;
+  }
+
   @override
   Widget build(BuildContext context) {
     final workout = widget.workout;
     final dateStr = workout.dateDone.toLocal().toString().split(' ')[0];
+
+    final stats = WorkoutStats.fromWorkout(workout);
 
     return Scaffold(
       appBar: AppBar(
@@ -185,6 +240,21 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                 }
               },
             ),
+            const SizedBox(height: 24),
+
+            Text(
+              'Analytics',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: context.textMuted,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // This cleanly unpacks the balance bar and line charts!
+            ..._buildWorkoutCards(context, stats),
+            
             const SizedBox(height: 24),
 
             // --- 3. The Granular Set/Rep Data ---

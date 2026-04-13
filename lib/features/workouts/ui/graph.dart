@@ -46,7 +46,9 @@ class LiveGraphController extends ChangeNotifier {
     _targetMin = min;
     _targetMax = max;
     if (max != null && max > 0) {
-      _yMax = max * 1.2; 
+      final weightFactor = (max / 100.0).clamp(0.0, 1.0);
+      final multiplier = 1.20 - (0.10 * weightFactor);
+      _yMax = max * multiplier; 
     }
     notifyListeners(); // Instantly update the graph zone
   }

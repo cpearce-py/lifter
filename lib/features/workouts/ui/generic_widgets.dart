@@ -88,21 +88,18 @@ class GenericGraphArea extends ConsumerWidget {
 
     final controller = ref.watch(graphControllerProvider);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: LiveGraph(
-              controller: controller,
-              accentColor: accentColor,
-              showPeakLine: true,
-              isActive: isGraphActive,
-            ),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: LiveGraph(
+            controller: controller,
+            accentColor: accentColor,
+            showPeakLine: true,
+            isActive: isGraphActive,
           ),
-          if (overlay != null) Positioned(top: 12, right: 12, child: overlay!),
-        ],
-      ),
+        ),
+        if (overlay != null) Positioned(top: 12, right: 12, child: overlay!),
+      ],
     );
   }
 }
@@ -129,65 +126,57 @@ class GenericWorkoutControls extends StatelessWidget {
                           phase == Phase.resting || 
                           phase == Phase.setResting;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        8,
-        16,
-        MediaQuery.of(context).padding.bottom + 24,
-      ),
-      child: Row(
-        children: [
-          // Reset Button
-          GestureDetector(
-            onTap: () {
-              if (phase != Phase.idle) {
-                onReset();
-              }
-            },
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: context.buttonSecondary,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: context.textSubtle),
-              ),
-              child: Icon(
-                Icons.refresh_rounded,
-                color: context.textMuted,
-                size: 22,
-              ),
+    return Row(
+      children: [
+        // Reset Button
+        GestureDetector(
+          onTap: () {
+            if (phase != Phase.idle) {
+              onReset();
+            }
+          },
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: context.buttonSecondary,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.textSubtle),
+            ),
+            child: Icon(
+              Icons.refresh_rounded,
+              color: context.textMuted,
+              size: 22,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+    
+        // Secondary button.
+        if (showSecondary) ...[
+          Expanded(
+            child: _WorkoutButton(
+              label: "Finish", 
+              icon: Icons.exit_to_app, 
+              backgroundColor: context.buttonSecondary, 
+              textColor: context.danger, 
+              onTap: onSecondaryAction
             ),
           ),
           const SizedBox(width: 12),
-
-          // Secondary button.
-          if (showSecondary) ...[
-            Expanded(
-              child: _WorkoutButton(
-                label: "Finish", 
-                icon: Icons.exit_to_app, 
-                backgroundColor: context.buttonSecondary, 
-                textColor: context.danger, 
-                onTap: onSecondaryAction
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-
-          // Start/Stop Button
-          Expanded(
-            child: _WorkoutButton(
-              label: primaryConfig.label, 
-              icon: primaryConfig.icon, 
-              backgroundColor: primaryConfig.color, 
-              textColor: context.textPrimaryInv, 
-              onTap: onPrimaryAction
-            ),
-          ),
         ],
-      ),
+    
+        // Start/Stop Button
+        Expanded(
+          child: _WorkoutButton(
+            label: primaryConfig.label, 
+            icon: primaryConfig.icon, 
+            backgroundColor: primaryConfig.color, 
+            textColor: context.textPrimaryInv, 
+            onTap: onPrimaryAction
+          ),
+        ),
+      ],
     );
   }
 }
