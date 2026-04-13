@@ -77,17 +77,20 @@ class RepProgressionChart extends ConsumerWidget {
           maxY: maxWeight,
           yInterval: yInterval,
           xInterval: xInterval,
+          verticalDividers: stats.setBoundaries,
 
           lineBarsData: [
             BaseProgressionChart.createStandardLine(
               spots: leftSpots,
               color: leftColor,
               cardBackgroundColor: context.cardBackground,
+              areaOpacity: 0.03,
             ),
             BaseProgressionChart.createStandardLine(
               spots: rightSpots,
               color: rightColor,
               cardBackgroundColor: context.cardBackground,
+              areaOpacity: 0.03,
             ),
           ],
 

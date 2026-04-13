@@ -96,53 +96,34 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
   }
 
   // THE CARD FACTORY: Decides what graphs to show based on the workout type!
-  List<Widget> _buildWorkoutCards(BuildContext context, WorkoutStats stats) {
-    final List<Widget> cards = [];
+  Widget _buildAnalytics(BuildContext context, WorkoutStats stats) {
+    return Card(
+      elevation: 0,
+      color: context.cardBackground, 
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Everyone gets the Asymmetry Balance Bar
+            AsymmetryBalanceBar(stats: stats),
 
-    // 1. Everyone gets the Asymmetry Balance Bar
-    cards.add(
-      Card(
-        elevation: 0,
-        color: context.cardBackground, // Use your app's surface color
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: AsymmetryBalanceBar(stats: stats),
+            // 2. Add specific charts based on the workout type!
+            if (widget.workout.workoutTypeId == 1 || widget.workout.workoutTypeId == 2) ...[
+              const SizedBox(height: 24),
+              
+              // A subtle divider to separate the bar from the line chart
+              Divider(color: context.textPrimary.withOpacity(0.1)), 
+              
+              const SizedBox(height: 24),
+              
+              RepProgressionChart(stats: stats),
+            ],
+          ],
         ),
       ),
     );
-
-    cards.add(const SizedBox(height: 16));
-
-    // 2. Add specific charts based on what kind of workout this was!
-    if (widget.workout.workoutTypeId == 1) { // Example: 1 = Repeater
-      cards.add(
-        Card(
-          elevation: 0,
-          color: context.cardBackground,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: RepProgressionChart(stats: stats),
-          ),
-        ),
-      );
-    } else if (widget.workout.workoutTypeId == 2) { // Example: 2 = Max Pull
-      cards.add(
-        Card(
-          elevation: 0,
-          color: context.cardBackground,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: RepProgressionChart(stats: stats), 
-            // Note: A line chart still looks great for Max Pulls to see warm-up progression!
-          ),
-        ),
-      );
-    }
-
-    return cards;
   }
 
   @override
@@ -166,7 +147,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -253,7 +234,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
             const SizedBox(height: 12),
             
             // This cleanly unpacks the balance bar and line charts!
-            ..._buildWorkoutCards(context, stats),
+            _buildAnalytics(context, stats),
             
             const SizedBox(height: 24),
 

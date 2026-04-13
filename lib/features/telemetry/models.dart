@@ -8,6 +8,7 @@ class WorkoutStats {
   final double balanceLeftPct;
   final double balanceRightPct;
   final List<RepetitionLog> flatReps; // Flattens all sets into one timeline
+  final List<double> setBoundaries;
 
   WorkoutStats({
     required this.maxLeft,
@@ -17,16 +18,23 @@ class WorkoutStats {
     required this.balanceLeftPct,
     required this.balanceRightPct,
     required this.flatReps,
+    required this.setBoundaries,
   });
 
   factory WorkoutStats.fromWorkout(WorkoutLog workout) {
     List<RepetitionLog> reps = [];
+    List<double> boundaries = [];
     double totalLeft = 0;
     double totalRight = 0;
     double mxLeft = 0;
     double mxRight = 0;
 
-    for (final set in workout.sets) {
+    for (final (index, set) in workout.sets.indexed) {
+
+      if (index > 0 && set.repetitions.isNotEmpty) {
+        boundaries.add(reps.length - 0.5); 
+      }
+
       for (final rep in set.repetitions) {
         reps.add(rep);
         totalLeft += rep.peakLoadLeft;
@@ -45,6 +53,7 @@ class WorkoutStats {
       avgLeft: totalLeft / count,
       avgRight: totalRight / count,
       flatReps: reps,
+      setBoundaries: boundaries,
       // If no weight was pulled, default to 50/50 balance
       balanceLeftPct: totalCombined > 0 ? (totalLeft / totalCombined) : 0.5,
       balanceRightPct: totalCombined > 0 ? (totalRight / totalCombined) : 0.5,

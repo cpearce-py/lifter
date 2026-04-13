@@ -18,7 +18,7 @@ class ProgressionPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(4),
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
