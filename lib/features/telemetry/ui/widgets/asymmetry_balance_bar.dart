@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/features/telemetry/models.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 
 class AsymmetryBalanceBar extends StatelessWidget {
   final WorkoutStats stats;
@@ -8,8 +9,8 @@ class AsymmetryBalanceBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final leftColor = Colors.blueAccent.shade100; 
-    final rightColor = Colors.orangeAccent.shade100;
+    final leftColor = context.leftHandAccent; 
+    final rightColor = context.rightHandAccent;
     
     final leftPct = (stats.balanceLeftPct * 100).toStringAsFixed(1);
     final rightPct = (stats.balanceRightPct * 100).toStringAsFixed(1);

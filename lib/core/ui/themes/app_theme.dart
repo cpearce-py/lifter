@@ -27,6 +27,10 @@ extension AppColorsExt on BuildContext {
   Color get setRestAccent => isDark ? const Color(0xFFB47FFF) : const Color(0xFF6B24D6); // Deep Purple
   Color get swapHandAccent => isDark ? Colors.purpleAccent.shade100 : Colors.purpleAccent.shade100;
 
+  // Hands 
+  Color get rightHandAccent => isDark ? Color(0xFF4FACFE) : Color(0xFF0077B6);
+  Color get leftHandAccent => isDark ? Color(0xFFFF7E67) : Color(0xFFE85D04);
+
   // Cards
   Color get buttonSecondary => isDark ? const Color(0xFF1E1E2A) : const Color(0xFFE5E5EA);
 }

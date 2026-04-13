@@ -76,8 +76,8 @@ class _MaxPullProgressionChartState
     final chartDataAsync = ref.watch(chartWorkoutsProvider);
     final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
 
-    final leftColor = context.repeaterAccent;
-    final rightColor = context.setRestAccent;
+    final leftColor = context.leftHandAccent;
+    final rightColor = context.rightHandAccent;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

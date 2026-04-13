@@ -16,8 +16,8 @@ class RepProgressionChart extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final leftColor = context.repeaterAccent;
-    final rightColor = context.setRestAccent;
+    final leftColor = context.leftHandAccent;
+    final rightColor = context.rightHandAccent;
     final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
 
     // 1. If there's no data, show a friendly empty state
