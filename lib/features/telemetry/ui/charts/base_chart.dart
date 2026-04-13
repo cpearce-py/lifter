@@ -7,6 +7,7 @@ class BaseProgressionChart extends StatelessWidget {
   final double maxX;
   final double maxY;
   final double yInterval;
+  final double xInterval;
   final List<LineChartBarData> lineBarsData;
   final Widget Function(double value) bottomLabelBuilder;
   final Widget Function(double value) leftLabelBuilder;
@@ -17,6 +18,7 @@ class BaseProgressionChart extends StatelessWidget {
     required this.maxX,
     required this.maxY,
     required this.yInterval,
+    this.xInterval = 1.0,
     required this.lineBarsData,
     required this.bottomLabelBuilder,
     required this.leftLabelBuilder,
@@ -138,7 +140,7 @@ class BaseProgressionChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: 1,
+                interval: xInterval,
                 getTitlesWidget: (value, meta) {
                   return Padding(
                     padding: const EdgeInsets.only(top: 10.0),

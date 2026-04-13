@@ -46,6 +46,12 @@ class RepProgressionChart extends ConsumerWidget {
     double maxX = (stats.flatReps.length - 1).toDouble();
     if (maxX <= 0) maxX = 1.0; // Safety fallback if only 1 rep exists
 
+    double xInterval = 1.0;
+    if (stats.flatReps.length > 10) {
+      // Divides the total reps by 5 and rounds up to the nearest clean integer
+      xInterval = (stats.flatReps.length / 5).ceil().toDouble(); 
+    }
+
     // 4. Y-Axis Math: Add 15% headroom above the absolute max, snap to multiples of 4
     double absoluteMax = max(stats.maxLeft, stats.maxRight);
     double maxWeight = 4.0;
@@ -70,6 +76,7 @@ class RepProgressionChart extends ConsumerWidget {
           maxX: maxX,
           maxY: maxWeight,
           yInterval: yInterval,
+          xInterval: xInterval,
 
           lineBarsData: [
             BaseProgressionChart.createStandardLine(
