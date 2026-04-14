@@ -83,7 +83,7 @@ class BleManager {
     // Weight: 16-bit big-endian at offset 10, unit is 0.01 kg
     final rawWeight =
         ((bytes[_weightOffset] & 0xff) << 8) | (bytes[_weightOffset + 1] & 0xff);
-    final weightKg = rawWeight / 100.0;
+    double weightKg = rawWeight / 100.0;
 
     // Status byte: upper nibble = stable, lower nibble = unit
     final statusByte = bytes[_statusOffset];
@@ -96,6 +96,13 @@ class BleManager {
       4 => WeightUnit.jin,
       _ => WeightUnit.unknown,
     };
+
+    // 3. Normalize the value to standard Kilograms
+    if (unit == WeightUnit.lb) {
+      weightKg = weightKg * 0.453592; // Convert Lb to Kg
+    } else if (unit == WeightUnit.jin) {
+      weightKg = weightKg * 0.5;      // 1 Jin is exactly 0.5 Kg
+    }
 
     return WeightReading(
       weightKg: weightKg,
