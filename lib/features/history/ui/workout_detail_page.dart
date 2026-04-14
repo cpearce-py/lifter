@@ -44,10 +44,9 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
     setState(() {
       _isSaving = true;
     });
-    await ref.read(workoutHistoryProvider.notifier).updateWorkoutNote(
-      widget.workout.id!,
-      _notesController.text.trim(),
-    );
+    await ref
+        .read(workoutHistoryProvider.notifier)
+        .updateWorkoutNote(widget.workout.id!, _notesController.text.trim());
 
     setState(() {
       _isSaving = false;
@@ -69,11 +68,17 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
 
   Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
-    context: context, 
-    builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF1E1E24),
-      title: const Text("Delete workout?", style: TextStyle(color: Colors.white)),
-      content: const Text('This will permanently delete this workout and all of its sets. This cannot be undone.', style: TextStyle(color: Colors.white70)),
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E24),
+        title: const Text(
+          "Delete workout?",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'This will permanently delete this workout and all of its sets. This cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -81,49 +86,23 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.redAccent),
+            ),
           ),
         ],
-      )
+      ),
     );
     if (confirmed == true && widget.workout.id != null) {
-      await ref.read(workoutHistoryProvider.notifier).deleteWorkout(widget.workout.id!);
+      await ref
+          .read(workoutHistoryProvider.notifier)
+          .deleteWorkout(widget.workout.id!);
       // Pop back to the History list!
       if (context.mounted) {
         Navigator.of(context).pop();
       }
     }
-  }
-
-  // THE CARD FACTORY: Decides what graphs to show based on the workout type!
-  Widget _buildAnalytics(BuildContext context, WorkoutStats stats) {
-    return Card(
-      elevation: 0,
-      color: context.cardBackground, 
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 1. Everyone gets the Asymmetry Balance Bar
-            AsymmetryBalanceBar(stats: stats),
-
-            // 2. Add specific charts based on the workout type!
-            if (widget.workout.workoutTypeId == 1 || widget.workout.workoutTypeId == 2) ...[
-              const SizedBox(height: 24),
-              
-              // A subtle divider to separate the bar from the line chart
-              Divider(color: context.textPrimary.withOpacity(0.1)), 
-              
-              const SizedBox(height: 24),
-              
-              RepProgressionChart(stats: stats),
-            ],
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -135,15 +114,13 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          workout.uiTitle,
-          style: context.h1,
-        ),
+        title: Text(workout.uiTitle, style: context.h1),
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            onPressed: () => _confirmDelete(context), 
-            icon: Icon(Icons.delete_outline, color: Colors.redAccent))
+            onPressed: () => _confirmDelete(context),
+            icon: Icon(Icons.delete_outline, color: Colors.redAccent),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -152,6 +129,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- 1. Top Level Stats ---
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -184,28 +162,33 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                   height: 48,
                   width: 100,
                   child: AnimatedOpacity(
-                    opacity: _isDirty ? 1.0 : 0.0, 
+                    opacity: _isDirty ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 200),
                     child: IgnorePointer(
                       ignoring: !_isDirty,
                       child: Center(
-                        child:
-                        _isSaving
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                          : TextButton(onPressed: _saveNote,
-                          child: Text(
-                            "Save Note", 
-                            style: TextStyle(
-                              color: context.peakLoadAccent, 
-                              fontWeight: FontWeight.bold))
-                            )
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : TextButton(
+                                onPressed: _saveNote,
+                                child: Text(
+                                  "Save Note",
+                                  style: TextStyle(
+                                    color: context.peakLoadAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                   ),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -232,10 +215,32 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
               ),
             ),
             const SizedBox(height: 12),
-            
-            // This cleanly unpacks the balance bar and line charts!
-            _buildAnalytics(context, stats),
-            
+
+            Card(
+              elevation: 0,
+              color: context.cardBackground,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.workout.workoutTypeId == 1 ||
+                        widget.workout.workoutTypeId == 2) ...[
+
+                      RepProgressionChart(stats: stats),
+
+                      // A subtle divider to separate the bar from the line chart
+                      Divider(color: context.textPrimary.withOpacity(0.1)),
+                      const SizedBox(height: 24),
+
+                      AsymmetryBalanceBar(stats: stats),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
             const SizedBox(height: 24),
 
             // --- 3. The Granular Set/Rep Data ---
@@ -282,9 +287,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                             children: [
                               Text(
                                 'Rep ${repIndex + 1}',
-                                style: TextStyle(
-                                  color: context.textMuted,
-                                ),
+                                style: TextStyle(color: context.textMuted),
                               ),
                               Row(
                                 children: [
@@ -333,6 +336,8 @@ class _StatCube extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        Text(label, style: TextStyle(fontSize: 12, color: context.textMuted)),
+        const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
@@ -340,11 +345,6 @@ class _StatCube extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: context.textPrimary,
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: context.textMuted),
         ),
       ],
     );

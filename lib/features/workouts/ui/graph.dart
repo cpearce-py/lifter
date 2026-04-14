@@ -293,8 +293,8 @@ class _GraphPainter extends CustomPainter {
 
     // ── Target Zone Background ───────────────────────────────────────────────
     if (targetMin != null && targetMax != null) {
-      final targetTopY = vPad + chartH * (1 - (targetMax! / yMax).clamp(0.0, 1.0));
-      final targetBottomY = vPad + chartH * (1 - (targetMin! / yMax).clamp(0.0, 1.0));
+      final targetTopY = vPad + chartH * (1 - (targetMax / yMax).clamp(0.0, 1.0));
+      final targetBottomY = vPad + chartH * (1 - (targetMin / yMax).clamp(0.0, 1.0));
       
       final zoneRect = Rect.fromLTRB(hPad, targetTopY, w - hPad, targetBottomY);
       canvas.drawRect(
@@ -384,8 +384,8 @@ class _GraphPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
 
     if (targetMin != null && targetMax != null) {
-      final stopMax = (1 - targetMax! / yMax).clamp(0.0, 1.0);
-      final stopMin = (1 - targetMin! / yMax).clamp(0.0, 1.0);
+      final stopMax = (1 - targetMax / yMax).clamp(0.0, 1.0);
+      final stopMin = (1 - targetMin / yMax).clamp(0.0, 1.0);
 
       linePaint.shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -413,8 +413,8 @@ class _GraphPainter extends CustomPainter {
     Color currentDotColor = accentColor;
     if (targetMin != null && targetMax != null) {
       final lastValue = samples.last.$2;
-      if (lastValue > targetMax!) {currentDotColor = colorAbove;}
-      else if (lastValue >= targetMin!) {currentDotColor = colorInRange;}
+      if (lastValue > targetMax) {currentDotColor = colorAbove;}
+      else if (lastValue >= targetMin) {currentDotColor = colorInRange;}
       else {currentDotColor = colorBelow;}
     }
 

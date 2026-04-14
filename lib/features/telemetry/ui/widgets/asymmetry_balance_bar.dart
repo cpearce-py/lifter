@@ -15,45 +15,51 @@ class AsymmetryBalanceBar extends StatelessWidget {
     final leftPct = (stats.balanceLeftPct * 100).toStringAsFixed(1);
     final rightPct = (stats.balanceRightPct * 100).toStringAsFixed(1);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'L/R Balance', 
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        
-        // The visual bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 24,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: (stats.balanceLeftPct * 1000).toInt(),
-                  child: Container(color: leftColor),
-                ),
-                Expanded(
-                  flex: (stats.balanceRightPct * 1000).toInt(),
-                  child: Container(color: rightColor),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        
-        // The text readouts
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        height: 28,
+        child: Row(
           children: [
-            Text('Left: $leftPct%', style: TextStyle(color: leftColor, fontWeight: FontWeight.bold)),
-            Text('Right: $rightPct%', style: TextStyle(color: rightColor, fontWeight: FontWeight.bold)),
+            if (stats.balanceLeftPct > 0)
+              Expanded(
+                flex: (stats.balanceLeftPct * 1000).toInt(),
+                child: Container(
+                  color: leftColor,
+                  alignment: Alignment.center,
+                  child: Text(
+                    'L: $leftPct%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.clip, // Prevents errors if the bar gets too tiny
+                  ),
+                ),
+              ),
+            if (stats.balanceRightPct > 0)
+              Expanded(
+                flex: (stats.balanceRightPct * 1000).toInt(),
+                child: Container(
+                  color: rightColor,
+                  alignment: Alignment.center,
+                  child: Text(
+                    'R: $rightPct%',
+                    style: const TextStyle(
+                      color: Colors.white, 
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                  ),
+                ),
+              ),
           ],
         ),
-      ],
+      ),
     );
   }
 }
