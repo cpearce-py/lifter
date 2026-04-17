@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/telemetry/models.dart';
 import 'package:lifter/features/telemetry/ui/charts/rep_progression_chart.dart';
 import 'package:lifter/features/telemetry/ui/widgets/asymmetry_balance_bar.dart';
+import 'package:lifter/features/workouts/ui/static_graph.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
 import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 
@@ -25,11 +27,35 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
   bool _isSaving = false;
   late String _oldNote;
 
+  late WorkoutLog _displayWorkout;
+  bool _isLoadingGraph = true;
+
   @override
   void initState() {
     super.initState();
+    _displayWorkout = widget.workout;
     _notesController = TextEditingController(text: widget.workout.notes);
     _oldNote = widget.workout.notes;
+    _fetchWorkout();
+  }
+
+  Future<void> _fetchWorkout() async {
+    if (widget.workout.id == null) {
+      if (mounted) setState(() => _isLoadingGraph = false);
+        return;
+    }
+    final fullWorkout = await ref
+        .read(workoutHistoryProvider.notifier) 
+        .getWorkoutById(widget.workout.id!); // Or ref.read(localRepositoryProvider).getWorkoutById(...)
+
+    if (mounted && fullWorkout != null) {
+      setState(() {
+        _displayWorkout = fullWorkout; // Overwrite with the BLOB-infused workout
+        _isLoadingGraph = false;
+      });
+    } else {
+      if (mounted) setState(() => _isLoadingGraph = false);
+    }
   }
 
   @override
@@ -107,8 +133,17 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final workout = widget.workout;
+    final workout = _displayWorkout;
     final dateStr = workout.dateDone.toLocal().toString().split(' ')[0];
+
+    // 1. Calculate the absolute max weight from the workout for the Y-Axis scaling
+    double maxWeight = 0;
+    for (final set in workout.sets) {
+      for (final rep in set.repetitions) {
+        if (rep.peakLoadLeft > maxWeight) maxWeight = rep.peakLoadLeft;
+        if (rep.peakLoadRight > maxWeight) maxWeight = rep.peakLoadRight;
+      }
+    }
 
     final stats = WorkoutStats.fromWorkout(workout);
 
@@ -204,7 +239,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                 }
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             Text(
               'Analytics',
@@ -214,7 +249,35 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                 color: context.textMuted,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+
+            if (_isLoadingGraph) ...[
+              // Show a skeleton or loading spinner that takes up the exact same height
+              Container(
+                height: 240,
+                decoration: BoxDecoration(
+                  color: context.inputBackground,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: workout.uiAccentColor(context).withOpacity(0.5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ] 
+            else if (workout.graphData != null && workout.graphData!.isNotEmpty) ...[
+              SizedBox(
+                height: 240,
+                child: HistoricalGraph(
+                  graphData: workout.graphData,
+                  accentColor: workout.uiAccentColor(context), 
+                  maxWeight: maxWeight,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             Card(
               elevation: 0,

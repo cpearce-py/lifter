@@ -19,8 +19,6 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
     };
   }
 
-  // --- Input Handlers ---
-
   PeakLoadState _handleTick(PeakLoadState state) {
     if (state.secondsRemaining > 1) {
       return state.copyWith(secondsRemaining: state.secondsRemaining - 1);
@@ -30,8 +28,16 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
 
   PeakLoadState _handleWeight(PeakLoadState state, double weight) {
     // We only care about tracking weight if they are actively pulling (Phase.working)
-    if (state.phase == Phase.working && weight > state.currentRepMax) {
-      return state.copyWith(currentRepMax: weight);
+    if (state.phase == Phase.working) {
+      final newMax = weight > state.currentRepMax ? weight : state.currentRepMax;
+      final newSum = state.currentRepSum + weight;
+      final newCount = state.currentRepCount + 1;
+
+      return state.copyWith(
+        currentRepMax: newMax,
+        currentRepSum: newSum,
+        currentRepCount: newCount,
+      );
     }
     return state;
   }
@@ -83,12 +89,13 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
   // --- Phase Advancement Logic ---
 
   PeakLoadState _advancePhase(PeakLoadState state) {
-    if (state.phase == Phase.starting) {
+if (state.phase == Phase.starting) {
       return _startWorkingPhase(state, state.currentHand);
     }
+    
     if (state.phase == Phase.working) {
-      // 1. Save the max value achieved during this 7-second window
-      var nextState = _saveRepMax(state);
+      // 1. Save the max and average values achieved during this 7-second window
+      var nextState = _saveRepStats(state);
 
       // 2. Figure out what hand goes next
       final nextHand = state.currentHand == Hand.left ? Hand.right : Hand.left;
@@ -103,21 +110,25 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
         }
       }
 
+      // 4. Otherwise, both hands have gone (or the second hand is stopped).
+      // Package the RepetitionLog!
       final finishedSet = SetLog(
         repetitions: [
           RepetitionLog(
             peakLoadLeft: nextState.leftMax, 
-            peakLoadRight: nextState.rightMax
+            peakLoadRight: nextState.rightMax,
+            averageLoadLeft: nextState.leftAvg,
+            averageLoadRight: nextState.rightAvg,
           )
         ]
       );
       
-      // 4. Otherwise, both hands have gone (or the second hand is stopped). Time to rest!
+      // Time to rest!
       return nextState.copyWith(
         phase: Phase.resting,
         completedSets: [...state.completedSets, finishedSet],
-        leftMax: 0,
-        rightMax: 0,
+        leftMax: 0.0, rightMax: 0.0,
+        leftAvg: 0.0, rightAvg: 0.0, // Clear the saved averages
         secondsRemaining: state.restSeconds,
         currentPhaseDuration: state.restSeconds,
       );
@@ -168,22 +179,49 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
       phase: Phase.working,
       currentHand: hand,
       currentRepMax: 0.0,  // Reset the max tracker for this new 7s window
+      currentRepSum: 0.0,   // Reset running sum
+      currentRepCount: 0,   // Reset running count
       secondsRemaining: 7, // Hardcoded 7-second work window
       currentPhaseDuration: 7,
     );
   }
 
-  PeakLoadState _saveRepMax(PeakLoadState state) {
+  PeakLoadState _saveRepStats(PeakLoadState state) {
+    final avg = state.currentRepCount > 0 
+        ? state.currentRepSum / state.currentRepCount 
+        : 0.0;
+
     if (state.currentHand == Hand.left) {
-      return state.copyWith(leftMax: state.currentRepMax);
+      return state.copyWith(leftMax: state.currentRepMax, leftAvg: avg);
     } else {
-      return state.copyWith(rightMax: state.currentRepMax);
+      return state.copyWith(rightMax: state.currentRepMax, rightAvg: avg);
     }
   }
 
   PeakLoadState _finishWorkout(PeakLoadState state) {
-    // If they click finish mid-rep, make sure we save that final reading
-    final finalState = state.phase == Phase.working ? _saveRepMax(state) : state;
-    return finalState.copyWith(phase: Phase.done);
+    // Save the final reading if they clicked finish mid-pull
+    final nextState = state.phase == Phase.working ? _saveRepStats(state) : state;
+    
+    // Package any dangling rep data into a final set
+    if (nextState.leftMax > 0 || nextState.rightMax > 0) {
+      final finalSet = SetLog(
+        repetitions: [
+          RepetitionLog(
+            peakLoadLeft: nextState.leftMax, 
+            peakLoadRight: nextState.rightMax,
+            averageLoadLeft: nextState.leftAvg,
+            averageLoadRight: nextState.rightAvg,
+          )
+        ]
+      );
+      return nextState.copyWith(
+        phase: Phase.done,
+        completedSets: [...nextState.completedSets, finalSet],
+        leftMax: 0.0, rightMax: 0.0,
+        leftAvg: 0.0, rightAvg: 0.0,
+      );
+    }
+    
+    return nextState.copyWith(phase: Phase.done);
   }
 }

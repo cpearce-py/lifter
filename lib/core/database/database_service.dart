@@ -25,9 +25,10 @@ class DatabaseService {
     debugPrint("DB Path: $path");
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onConfigure: _onConfigure,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -112,6 +113,19 @@ class DatabaseService {
   Future<void> close() async {
     final db = await instance.database;
     db.close();
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    debugPrint('Upgrading database from V$oldVersion to V$newVersion...');
+
+    if (oldVersion < 2) {
+      // 1. Add the BLOB column to the existing workout table
+      await db.execute('ALTER TABLE workout ADD COLUMN graph_data BLOB;');
+      
+      // 2. Add the average columns to the existing repetition table
+      await db.execute('ALTER TABLE repetition ADD COLUMN average_load_left REAL DEFAULT 0.0;');
+      await db.execute('ALTER TABLE repetition ADD COLUMN average_load_right REAL DEFAULT 0.0;');
+    }
   }
 
   Future<void> wipeDatabase() async {

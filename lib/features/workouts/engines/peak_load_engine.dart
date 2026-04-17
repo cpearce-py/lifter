@@ -1,12 +1,16 @@
 // features/workouts/orchestrators/peak_load_orchestrator.dart
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/telemetry/graph_encoder.dart';
 import 'package:lifter/features/workouts/engines/base_engine.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/peak_load_state.dart';
 import 'package:lifter/features/workouts/models/base_models.dart'; // For Phase
 import 'package:lifter/features/workouts/rules/peak_load_rules.dart';
+import 'package:lifter/features/workouts/ui/graph.dart';
 
 final peakLoadConfigProvider = Provider<PeakLoadState>((ref) {
   throw UnimplementedError('peakLoadConfigProvider must be overridden in a ProviderScope');
@@ -45,15 +49,25 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
   }
 
   @override
-  WorkoutLog buildSummary(PeakLoadState state) {
+  WorkoutLog buildSummary(PeakLoadState state, LiveGraphController graphController) {
     final duration = DateTime.now().difference(_startTime).inSeconds;
+    final Uint8List graphBlob = encode(graphController.fullSessionHistory);
+
+    int actualWorkingTime = 0;
+    for (final setLog in state.completedSets) {
+      for (final rep in setLog.repetitions) {
+        if (rep.peakLoadLeft > 0) actualWorkingTime += 7;
+        if (rep.peakLoadRight > 0) actualWorkingTime += 7;
+      }
+    }
+
     return WorkoutLog(
-      id: 0,
       workoutTypeId: 2, 
       dateDone: DateTime.now(), 
       duration: duration, 
-      workingTime: state.completedSets.length * 7 * 2, // TODO: bug.
+      workingTime: actualWorkingTime,
       sets: state.completedSets,
+      graphData: graphBlob,
     );
   }
 

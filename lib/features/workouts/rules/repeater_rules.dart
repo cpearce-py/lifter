@@ -20,10 +20,18 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
   }
 
   RepeaterState _handleWeight(RepeaterState state, double weight) {
-    if (state.phase == Phase.working && weight > state.currentPullMax) {
-      return state.copyWith(currentPullMax: weight);
+    if (state.phase == Phase.working) {
+      final newMax = weight > state.currentPullMax ? weight : state.currentPullMax;
+      final newSum = state.currentPullSum + weight;
+      final newCount = state.currentPullCount + 1;
+
+      return state.copyWith(
+        currentPullMax: newMax,
+        currentPullSum: newSum, 
+        currentPullCount: newCount,
+      );
     }
-    return state; 
+    return state;
   }
 
   RepeaterState _handleTick(RepeaterState state) {
@@ -81,17 +89,37 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
           phase: Phase.switching,
           currentHand: nextHand,
           savedFirstHandMax: state.currentPullMax, // Save hand 1's max!
+          savedFirstHandSum: state.currentPullSum,
+          savedFirstHandCount: state.currentPullCount,
+
           currentPullMax: 0.0,                     // Reset the scale for hand 2
+          currentPullSum: 0.0,
+          currentPullCount: 0,
+
           secondsRemaining: state.switchSeconds,
           currentPhaseDuration: state.switchSeconds,
         );
       }
 
+      final firstHandAvg = state.savedFirstHandCount > 0 
+          ? state.savedFirstHandSum / state.savedFirstHandCount : 0.0;
+      final secondHandAvg = state.currentPullCount > 0 
+          ? state.currentPullSum / state.currentPullCount : 0.0;
+
       // B. If we are here, BOTH hands have finished. Package the RepetitionLog!
       final leftMax = state.startingHand == Hand.left ? state.savedFirstHandMax : state.currentPullMax;
       final rightMax = state.startingHand == Hand.right ? state.savedFirstHandMax : state.currentPullMax;
+
+      final leftAvg = state.startingHand == Hand.left ? firstHandAvg : secondHandAvg;
+      final rightAvg = state.startingHand == Hand.right ? firstHandAvg : secondHandAvg;
       
-      final newRep = RepetitionLog(peakLoadLeft: leftMax, peakLoadRight: rightMax);
+      final newRep = RepetitionLog(
+        peakLoadLeft: leftMax, 
+        peakLoadRight: rightMax,
+        averageLoadLeft: leftAvg,
+        averageLoadRight: rightAvg,
+      );
+
       final updatedRepsList = [...state.currentSetReps, newRep];
 
       final isLastRep = state.currentRep >= state.reps;
@@ -106,8 +134,8 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
           phase: Phase.done,
           completedSets: [...state.completedSets, finalSet],
           currentSetReps: [], // Clear it out
-          currentPullMax: 0.0,
-          savedFirstHandMax: 0.0,
+          currentPullMax: 0.0, currentPullSum: 0.0, currentPullCount: 0,
+          savedFirstHandMax: 0.0, savedFirstHandSum: 0.0, savedFirstHandCount: 0,
         );
       } 
       
@@ -118,12 +146,12 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
         return state.copyWith(
           phase: Phase.setResting,
           completedSets: [...state.completedSets, completedSet],
-          currentSetReps: [], // Clear it out for the next set
+          currentSetReps: [], 
           currentSet: state.currentSet + 1,
           currentRep: 1,
           currentHand: resetHand,
-          currentPullMax: 0.0,
-          savedFirstHandMax: 0.0,
+          currentPullMax: 0.0, currentPullSum: 0.0, currentPullCount: 0,
+          savedFirstHandMax: 0.0, savedFirstHandSum: 0.0, savedFirstHandCount: 0,
           secondsRemaining: state.setRestSeconds,
           currentPhaseDuration: state.setRestSeconds,
         );
@@ -132,11 +160,11 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
       // E. Otherwise, just a normal Rep Rest
       return state.copyWith(
         phase: Phase.resting,
-        currentSetReps: updatedRepsList, // Keep the running list of reps
+        currentSetReps: updatedRepsList, 
         currentRep: state.currentRep + 1,
         currentHand: resetHand,
-        currentPullMax: 0.0,
-        savedFirstHandMax: 0.0,
+        currentPullMax: 0.0, currentPullSum: 0.0, currentPullCount: 0,
+        savedFirstHandMax: 0.0, savedFirstHandSum: 0.0, savedFirstHandCount: 0,
         secondsRemaining: state.restSeconds,
         currentPhaseDuration: state.restSeconds,
       );
@@ -162,10 +190,24 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
     List<SetLog> finalSets = List.from(state.completedSets);
     List<RepetitionLog> finalReps = List.from(state.currentSetReps);
     if (state.currentPullMax > 0 || state.savedFirstHandMax > 0) {
+      // Calculate dangling averages safely
+      final firstHandAvg = state.savedFirstHandCount > 0 
+          ? state.savedFirstHandSum / state.savedFirstHandCount : 0.0;
+      final secondHandAvg = state.currentPullCount > 0 
+          ? state.currentPullSum / state.currentPullCount : 0.0;
+
       final leftMax = state.startingHand == Hand.left ? state.savedFirstHandMax : state.currentPullMax;
       final rightMax = state.startingHand == Hand.right ? state.savedFirstHandMax : state.currentPullMax;
       
-      finalReps.add(RepetitionLog(peakLoadLeft: leftMax, peakLoadRight: rightMax));
+      final leftAvg = state.startingHand == Hand.left ? firstHandAvg : secondHandAvg;
+      final rightAvg = state.startingHand == Hand.right ? firstHandAvg : secondHandAvg;
+
+      finalReps.add(RepetitionLog(
+        peakLoadLeft: leftMax, 
+        peakLoadRight: rightMax,
+        averageLoadLeft: leftAvg,
+        averageLoadRight: rightAvg,
+      )); 
     }
 
     // Are there any reps floating around that haven't been packaged into a set yet?
@@ -177,9 +219,9 @@ class RepeaterRules implements WorkoutRules<RepeaterState> {
     return state.copyWith(
       phase: Phase.done,
       completedSets: finalSets,
-      currentSetReps: [], // Clear out the temp list
-      currentPullMax: 0.0,
-      savedFirstHandMax: 0.0,
+      currentSetReps: [], 
+      currentPullMax: 0.0, currentPullSum: 0.0, currentPullCount: 0,
+      savedFirstHandMax: 0.0, savedFirstHandSum: 0.0, savedFirstHandCount: 0,
     );
   }
 }

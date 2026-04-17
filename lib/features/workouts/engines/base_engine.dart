@@ -9,6 +9,7 @@ import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/rules/workout_rules.dart';
+import 'package:lifter/features/workouts/ui/graph.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 abstract class BaseEngine<T> extends Notifier<T> {
@@ -23,7 +24,7 @@ abstract class BaseEngine<T> extends Notifier<T> {
   Phase extractPhase(T state);
 
   // Every engine must know how to build a workout summary.
-  WorkoutLog buildSummary(T state);
+  WorkoutLog buildSummary(T state, LiveGraphController graphController);
 
   void dispatch(WorkoutAction action) {
     // 1. Calculate the new state using the pure rules
@@ -58,7 +59,8 @@ abstract class BaseEngine<T> extends Notifier<T> {
   }
 
   WorkoutLog getFinalSummary() {
-    return buildSummary(state);
+    final graphController = ref.read(graphControllerProvider);
+    return buildSummary(state, graphController);
   }
 
   void startTimer() {

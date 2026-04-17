@@ -29,15 +29,17 @@ class LiveGraphController extends ChangeNotifier {
   final Duration windowDuration;
 
   final Queue<(int, double)> _samples = Queue();
+  /// Expose the queue directly. No .toList() overhead!
+  Queue<(int, double)> get samples => _samples;
+
+  final List<(int, double)> _fullSessionHistory = [];
+  List<(int, double)> get fullSessionHistory => _fullSessionHistory;
 
   double _peakValue = 0;
   double get peakValue => _peakValue;
 
   double get currentValue =>
       _samples.isEmpty ? 0 : _samples.last.$2;
-
-  /// Expose the queue directly. No .toList() overhead!
-  Queue<(int, double)> get samples => _samples;
 
   final Stopwatch _stopwatch = Stopwatch();
   int get currentGraphTimeMs => _stopwatch.elapsedMilliseconds;
@@ -65,12 +67,15 @@ class LiveGraphController extends ChangeNotifier {
   void addSample(double value) {
     if (!_stopwatch.isRunning) return;
     if (value > _peakValue) _peakValue = value;
-    _samples.addLast((currentGraphTimeMs, value));
+    final sample = (currentGraphTimeMs, value);
+    _samples.addLast(sample);
+    _fullSessionHistory.add(sample);
     _pruneOld();
   }
 
   void reset({bool resetPeak = false}) {
     _samples.clear();
+    _fullSessionHistory.clear();
     _stopwatch.reset();
     if (resetPeak) _peakValue = 0;
     notifyListeners(); // structural reset — tell graph to clear

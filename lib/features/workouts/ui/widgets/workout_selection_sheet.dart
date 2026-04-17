@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/models/workout_session.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
+import 'package:lifter/features/workouts/sessions/live_graph_page.dart';
 import 'package:lifter/features/workouts/ui/config_pages/peak_load_config_page.dart';
 import 'package:lifter/features/workouts/ui/config_pages/repeater_config_page.dart';
 
@@ -22,6 +23,15 @@ class _WorkoutSelectionSheetState extends ConsumerState<WorkoutSelectionSheet>
   late final AnimationController _controller;
 
   List<WorkoutType> _getWorkouts(BuildContext context) => [
+
+    WorkoutType(
+      name: 'Live Graph',
+      description: 'Mess with the live graph.',
+      icon: Icons.timeline_rounded,
+      accentColor: context.streakAccent,
+      setupPageBuilder: (context) => const LiveGraphPage(),
+    ),
+
     WorkoutType(
       name: 'Repeaters',
       description: 'Timed hang sets with rest intervals',

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
@@ -22,6 +24,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
           'duration': log.duration,
           'working_time': log.workingTime,
           'notes': log.notes,
+          'graph_data': log.graphData,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -48,6 +51,8 @@ class LocalWorkoutRepository implements WorkoutRepository {
               'set_id': setId, // Link back to the parent set
               'peak_load_left': repLog.peakLoadLeft,
               'peak_load_right': repLog.peakLoadRight,
+              'average_load_left': repLog.averageLoadLeft,
+              'average_load_right': repLog.averageLoadRight,
             },
           );
         }
@@ -129,6 +134,10 @@ class LocalWorkoutRepository implements WorkoutRepository {
     // --- STEP 2: Fetch the paginated Workouts ---
     final List<Map<String, dynamic>> workoutRows = await db.query(
       'workout',
+      columns: [
+        'workout_id', 'workout_type_id', 'date_done', 
+        'duration', 'working_time', 'notes'
+      ],
       where: whereClause,
       whereArgs: whereArgs,
       orderBy: 'date_done DESC',
@@ -149,6 +158,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
         duration: row['duration'] as int,
         workingTime: row['working_time'] as int,
         notes: row['notes'] as String? ?? '',
+        graphData: null,
         sets: [], // Empty for now
       );
     }
@@ -161,7 +171,8 @@ class LocalWorkoutRepository implements WorkoutRepository {
     final List<Map<String, dynamic>> childrenRows = await db.rawQuery('''
       SELECT 
         s.workout_id, s.set_id,
-        r.rep_id, r.peak_load_left, r.peak_load_right
+        r.rep_id, r.peak_load_left, r.peak_load_right,
+        r.average_load_left, r.average_load_right
       FROM "set" s
       LEFT JOIN repetition r ON s.set_id = r.set_id
       WHERE s.workout_id IN ($placeholders)
@@ -182,8 +193,11 @@ class LocalWorkoutRepository implements WorkoutRepository {
       if (repLeft != null) {
         setsByWorkout[wId]![sId]!.add(
           RepetitionLog(
+            setLogId: sId,
             peakLoadLeft: repLeft,
             peakLoadRight: row['peak_load_right'] as double,
+            averageLoadLeft: row['average_load_left'] as double? ?? 0.0,
+            averageLoadRight: row['average_load_right'] as double? ?? 0.0,
           ),
         );
       }
@@ -210,7 +224,59 @@ class LocalWorkoutRepository implements WorkoutRepository {
 
   @override
   Future<WorkoutLog?> getWorkoutById(int id) async {
-    throw UnimplementedError();
+    // 1. Fetch the single workout, this time INLCUDING the BLOB
+    final List<Map<String, dynamic>> workoutRows = await db.query(
+      'workout',
+      where: 'workout_id = ?',
+      whereArgs: [id],
+    );
+
+    if (workoutRows.isEmpty) return null;
+    final row = workoutRows.first;
+
+    // 2. Fetch all sets and reps for this specific workout
+    final List<Map<String, dynamic>> childrenRows = await db.rawQuery('''
+      SELECT 
+        s.set_id,
+        r.rep_id, r.peak_load_left, r.peak_load_right,
+        r.average_load_left, r.average_load_right
+      FROM "set" s
+      LEFT JOIN repetition r ON s.set_id = r.set_id
+      WHERE s.workout_id = ?
+      ORDER BY s.set_id ASC, r.rep_id ASC
+    ''', [id]);
+
+    final Map<int, List<RepetitionLog>> setsMap = {};
+    for (final child in childrenRows) {
+      final sId = child['set_id'] as int;
+      final repLeft = child['peak_load_left'] as double?;
+
+      setsMap.putIfAbsent(sId, () => []);
+
+      if (repLeft != null) {
+        setsMap[sId]!.add(
+          RepetitionLog(
+            peakLoadLeft: repLeft,
+            peakLoadRight: child['peak_load_right'] as double,
+            averageLoadLeft: child['average_load_left'] as double? ?? 0.0,
+            averageLoadRight: child['average_load_right'] as double? ?? 0.0,
+          ),
+        );
+      }
+    }
+
+    final assembledSets = setsMap.values.map((reps) => SetLog(repetitions: reps)).toList();
+
+    return WorkoutLog(
+      id: id,
+      workoutTypeId: row['workout_type_id'] as int,
+      dateDone: DateTime.parse(row['date_done'] as String),
+      duration: row['duration'] as int,
+      workingTime: row['working_time'] as int,
+      notes: row['notes'] as String? ?? '',
+      graphData: row['graph_data'] as Uint8List?, // Load the heavy graph data!
+      sets: assembledSets,
+    );
   }
 
   @override
@@ -234,6 +300,8 @@ class LocalWorkoutRepository implements WorkoutRepository {
   Future<void> seedDummyData() async {
     debugPrint("🌱 Seeding dummy workouts...");
 
+    final emptyBlob = Uint8List(0); // Dummy blob
+
     // 1. A Peak Load from 5 days ago (To establish a baseline PR!)
     final peakLoadDummy = WorkoutLog(
       id: 0, // Ignored by DB
@@ -242,11 +310,17 @@ class LocalWorkoutRepository implements WorkoutRepository {
       duration: 120,
       workingTime: 14,
       notes: 'Felt pretty strong. Baseline established.',
+      graphData: emptyBlob,
       sets: [
         SetLog(
           repetitions: [
             // Let's say their previous max was 25kg Left, 26kg Right
-            RepetitionLog(peakLoadLeft: 25.0, peakLoadRight: 26.0),
+            RepetitionLog(
+              peakLoadLeft: 25.0, 
+              peakLoadRight: 26.0,
+              averageLoadLeft: 22.1,
+              averageLoadRight: 23.5,
+            ),
           ],
         ),
       ],
@@ -260,19 +334,20 @@ class LocalWorkoutRepository implements WorkoutRepository {
       duration: 600, // 10 mins total
       workingTime: 300, // 5 mins of hanging
       notes: 'Skin was thin, but got through the sets.',
+      graphData: emptyBlob,
       sets: [
         SetLog(
-          repetitions: [
-            RepetitionLog(peakLoadLeft: 0, peakLoadRight: 0),
-            RepetitionLog(peakLoadLeft: 0, peakLoadRight: 0),
-            RepetitionLog(peakLoadLeft: 0, peakLoadRight: 0),
-          ],
+          repetitions: List.generate(4, (index) => RepetitionLog(
+            peakLoadLeft: 15.0, peakLoadRight: 15.0, 
+            averageLoadLeft: 12.0, averageLoadRight: 13.0
+          )),
         ),
         SetLog(
-          repetitions: [
-            RepetitionLog(peakLoadLeft: 0, peakLoadRight: 0),
-            RepetitionLog(peakLoadLeft: 0, peakLoadRight: 0),
-          ],
+          repetitions: List.generate(2, (index) => RepetitionLog(
+            peakLoadLeft: 14.5, 
+            peakLoadRight: 14.0, 
+            averageLoadLeft: 11.5, 
+            averageLoadRight: 11.0))
         ),
       ],
     );

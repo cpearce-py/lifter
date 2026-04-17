@@ -153,6 +153,21 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
       ));
     }
   }
+  
+  Future<WorkoutLog?> getWorkoutById(int workoutId) async {
+    try {
+      final repo = await ref.read(workoutRepositoryProvider.future);
+      return await repo.getWorkoutById(workoutId);
+    } catch (e, st) {
+      log(
+        "Failed to fetch full workout by ID: $workoutId", 
+        error: e, 
+        stackTrace: st, 
+        name: "WorkoutHistoryNotifier"
+      );
+      return null;
+    }
+  }
 
   void _invalidateProviders() {
     ref.read(workoutDatabaseSignalProvider.notifier).state++;
