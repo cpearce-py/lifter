@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
@@ -36,11 +37,17 @@ class RepeaterSetupNotifier extends Notifier<RepeaterConfig> {
   /// Called right before pushing the workout screen.
   RepeaterState buildActiveState() {
     final settings = ref.read(userSettingsProvider);
+
+    final maxPull = [
+      settings.maxPullLeft, 
+      settings.maxPullRight, 
+      settings.bodyWeight
+    ].whereType<double>().reduce(math.max);
     
     // Resolve the dropdown selection to a concrete weight
     final referenceWt = switch (state.relativeTo) {
       0 => settings.bodyWeight,
-      1 => 100.0, // Replace with settings.maxLift if you have it!
+      1 => maxPull,
       2 => state.customWeight,
       _ => settings.bodyWeight,
     };
