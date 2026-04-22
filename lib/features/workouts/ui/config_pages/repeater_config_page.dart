@@ -63,7 +63,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 24),
                       waveItem(
-                        0,
                         Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -93,7 +92,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     waveItem(
-                      1,
                       AppCard(
                         label: "Sets",
                         child: StepperControl(
@@ -110,7 +108,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      2,
                       AppCard(
                         label: "Reps",
                         child: StepperControl(
@@ -127,7 +124,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      3,
                       AppCard(
                         label: "Work time",
                         child: StepperControl(
@@ -144,7 +140,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      4,
                       AppCard(
                         label: "Rest time",
                         child: StepperControl(
@@ -161,7 +156,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      5,
                       AppCard(
                         label: "Set rest",
                         child: StepperControl(
@@ -178,7 +172,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      6,
                       AppCard(
                         label: "Starting hand",
                         child: SegmentedControl(
@@ -195,7 +188,6 @@ class RepeaterSetupPage extends ConsumerWidget {
                     ), // Extra spacing before the intensity group
                     // 3. Our Bespoke Intensity Group!
                     waveItem(
-                      7,
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 // Defines the signature for the function we will hand back to your UI
-typedef WaveItemBuilder = Widget Function(int index, Widget child);
+typedef NextWaveBuilderItem = Widget Function(Widget child);
 
 class WaveAnimator extends StatefulWidget {
-  final Widget Function(BuildContext context, WaveItemBuilder waveItem) builder;
+  final Widget Function(BuildContext context, NextWaveBuilderItem waveItem) builder;
   final Duration duration;
   final Duration delay;
   final Offset beginOffset;
@@ -64,7 +64,14 @@ class _WaveAnimatorState extends State<WaveAnimator> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    int currentIndex = 0;
+    
+    Widget nextWave(Widget child) {
+      final widget = _buildWaveItem(currentIndex, child);
+      currentIndex++;
+      return widget;
+      }
     // Hand the context and the helper function back to whatever UI is using this widget
-    return widget.builder(context, _buildWaveItem);
+    return widget.builder(context, nextWave);
   }
 }

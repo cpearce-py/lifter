@@ -64,7 +64,6 @@ class PeakLoadSetupPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 24),
                       waveItem(
-                        0,
                         Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -94,7 +93,6 @@ class PeakLoadSetupPage extends ConsumerWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     waveItem(
-                      1,
                       AppCard(
                         label: "Body weight",
                         child: WeightInput(
@@ -107,7 +105,6 @@ class PeakLoadSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      2,
                       AppCard(
                         label: "Rest time",
                         child: StepperControl(
@@ -124,7 +121,6 @@ class PeakLoadSetupPage extends ConsumerWidget {
                     const SizedBox(height: 10),
 
                     waveItem(
-                      3,
                       AppCard(
                         label: "Starting hand",
                         child: SegmentedControl(
@@ -168,7 +164,6 @@ class PeakLoadSetupPage extends ConsumerWidget {
                       );
                     },
                     child: waveItem(
-                      4,
                       Container(
                         height: 58,
                         decoration: BoxDecoration(
