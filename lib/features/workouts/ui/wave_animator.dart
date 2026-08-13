@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Defines the signature for the function we will hand back to your UI
+// Defines the signature for the function we will hand back to the UI
 typedef NextWaveBuilderItem = Widget Function(Widget child);
 
 class WaveAnimator extends StatefulWidget {
