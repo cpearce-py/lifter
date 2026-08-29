@@ -4,9 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
+import 'package:lifter/core/ui/main_shell.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/core/ui/widgets/weekly_calendar.dart';
+import 'package:lifter/features/user/models/user_profile.dart';
+import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
 
 // ─── Data models ──────────────────────────────────────────────────────────────
@@ -119,10 +122,7 @@ class HomeHeaderSliver extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      username,
-                      style: context.h1,
-                    ),
+                    Text(username, style: context.h1),
                   ],
                 ),
               ),
@@ -137,13 +137,18 @@ class HomeHeaderSliver extends ConsumerWidget {
                     width: 1.5,
                   ),
                 ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: context.repeaterAccent,
+                child: GestureDetector(
+                onTap: () {
+                  ref.read(mainTabProvider.notifier).state = 3;
+                  },
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: context.repeaterAccent,
+                      ),
                     ),
                   ),
                 ),
@@ -213,9 +218,7 @@ class RecentWorkoutsSliver extends ConsumerWidget {
                 intervalEnd: 0.75 + index * 0.08,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: WorkoutCard(
-                    workout: recentWorkouts[index],
-                  ), 
+                  child: WorkoutCard(workout: recentWorkouts[index]),
                 ),
               );
             }, childCount: recentWorkouts.length),

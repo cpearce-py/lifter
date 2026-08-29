@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:lifter/core/ui/home_page.dart';
-import 'package:lifter/features/history/ui/history_page.dart';
 import 'package:lifter/features/telemetry/ui/pages/progression_page.dart';
 import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_selection_sheet.dart';
@@ -9,29 +10,21 @@ import 'package:lifter/core/ui/themes/app_theme.dart';
 
 // ─── Drop-in Bottom Nav Shell ─────────────────────────────────────────────────
 
-class MainShell extends StatefulWidget {
+final mainTabProvider = StateProvider<int>((ref) => 0);
+
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  final _tabNotifier = ValueNotifier<int>(0);
-  int _currentIndex = 0;
-
+class _MainShellState extends ConsumerState<MainShell> {
   late final List<_NavDestination> _destinations;
 
   @override
   void initState() {
     super.initState();
-
-    _tabNotifier.addListener(() {
-      if (_tabNotifier.value != _currentIndex) {
-        HapticFeedback.selectionClick();
-        setState(() => _currentIndex = _tabNotifier.value);
-      }
-    });
 
     _destinations = [
       _NavDestination(
@@ -63,19 +56,13 @@ class _MainShellState extends State<MainShell> {
     ];
   }
 
-  @override
-  void dispose() {
-    _tabNotifier.dispose();
-    super.dispose();
-  }
-
   void _onTap(int index) {
     if (_destinations[index].isAction) {
       HapticFeedback.lightImpact();
       _showWorkoutSheet(context);
       return; // Stop here so the active tab DOES NOT change
     }
-    _tabNotifier.value = index;
+    ref.read(mainTabProvider.notifier).state = index;
   }
 
   // ─── The Slide-up Window ───────────────────────────────────────────────────
@@ -122,12 +109,18 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(mainTabProvider);
+
+    ref.listen(mainTabProvider, (previous, next) {
+      if (previous != next) HapticFeedback.selectionClick();
+    });
+
     // Filter out the action page from the IndexedStack so indices align
     final pages = _destinations.where((d) => !d.isAction).map((d) => d.page).toList();
 
     // Calculate the actual index for IndexedStack by ignoring the action button
-    int stackIndex = _currentIndex;
-    if (_currentIndex > _destinations.indexWhere((d) => d.isAction)) {
+    int stackIndex = currentIndex;
+    if (currentIndex > _destinations.indexWhere((d) => d.isAction)) {
       stackIndex -= 1;
     }
 
@@ -139,7 +132,7 @@ class _MainShellState extends State<MainShell> {
       ),
       bottomNavigationBar: _FitBottomNav(
         destinations: _destinations,
-        currentIndex: _currentIndex,
+        currentIndex: currentIndex,
         onTap: _onTap,
       ),
     );
