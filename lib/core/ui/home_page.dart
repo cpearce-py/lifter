@@ -8,8 +8,6 @@ import 'package:lifter/core/ui/main_shell.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/core/ui/widgets/weekly_calendar.dart';
-import 'package:lifter/features/user/models/user_profile.dart';
-import 'package:lifter/features/user/ui/profile_page.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
 
 // ─── Data models ──────────────────────────────────────────────────────────────

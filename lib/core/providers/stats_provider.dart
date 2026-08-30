@@ -23,14 +23,19 @@ final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
   // Grab the raw database connection directly!
   final db = await ref.watch(databaseProvider.future);
 
-  // --- 1. Total Workouts Completed ---
-  final countResult = await db.rawQuery('SELECT COUNT(*) FROM workout');
-  final totalWorkouts = Sqflite.firstIntValue(countResult) ?? 0;
-
-  // --- 2. Hours This Month ---
   final now = DateTime.now();
   // Get the 1st day of the current month in ISO format
   final startOfMonth = DateTime(now.year, now.month, 1).toIso8601String();
+  final startOfNextMonth = DateTime(now.year, now.month+1, 1).toIso8601String();
+
+  final countResult = await db.rawQuery(
+    '''
+    SELECT COUNT(*) FROM workout
+    WHERE date_done >= ? AND date_done < ?
+    ''',
+    [startOfMonth, startOfNextMonth],
+  );
+  final totalWorkouts = Sqflite.firstIntValue(countResult) ?? 0;
   
   final sumResult = await db.rawQuery('''
     SELECT SUM(duration) 
@@ -41,7 +46,6 @@ final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
   final totalSecondsThisMonth = Sqflite.firstIntValue(sumResult) ?? 0;
   final hoursThisMonth = totalSecondsThisMonth / 3600.0;
 
-  // --- 3. Current Streak (Days) ---
   // We grab just the unique dates (ignoring time of day) sorted newest to oldest
   final datesResult = await db.rawQuery('''
     SELECT DISTINCT date(date_done) as date_string
