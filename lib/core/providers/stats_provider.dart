@@ -24,7 +24,6 @@ final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
   final db = await ref.watch(databaseProvider.future);
 
   final now = DateTime.now();
-  // Get the 1st day of the current month in ISO format
   final startOfMonth = DateTime(now.year, now.month, 1).toIso8601String();
   final startOfNextMonth = DateTime(now.year, now.month+1, 1).toIso8601String();
 
