@@ -5,13 +5,14 @@ import 'package:lifter/core/database/database_service.dart';
 import 'package:lifter/core/measurements/widgets/weight_input.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
+import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import '../providers/user_settings_provider.dart';
 
-Future<void> _confirmNukeDatabase(BuildContext context) async {
+Future<void> _confirmNukeDatabase(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context, 
       // Forces me to actually tap a button instead of just tapping outside the box!
@@ -49,7 +50,13 @@ Future<void> _confirmNukeDatabase(BuildContext context) async {
     if (confirmed != true) return;
 
     HapticFeedback.heavyImpact();
-    DatabaseService.instance.wipeDatabase();
+    await DatabaseService.instance.wipeDatabase();
+
+    // The cached connection is now closed. Rebuilding the database provider
+    // reopens (and recreates) it, and everything that watches it follows.
+    ref.invalidate(databaseProvider);
+    ref.read(workoutDatabaseSignalProvider.notifier).notifyChange();
+    ref.invalidate(workoutHistoryProvider);
     
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,7 +227,7 @@ class ProfilePage extends ConsumerWidget {
                         side: BorderSide(color: context.danger.withOpacity(0.5)),
                       ),
                       onPressed: () {
-                        _confirmNukeDatabase(context);
+                        _confirmNukeDatabase(context, ref);
                         // HapticFeedback.heavyImpact();
                         // DatabaseService.instance.wipeDatabase();
                         // // Optional: Show a quick snackbar
@@ -239,11 +246,18 @@ class ProfilePage extends ConsumerWidget {
                         foregroundColor: context.success,
                         side: BorderSide(color: context.success.withOpacity(0.5)),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         HapticFeedback.mediumImpact();
-                        ref.read(workoutHistoryProvider.notifier).injectDummyData();
+                        final seeded = await ref
+                            .read(workoutHistoryProvider.notifier)
+                            .injectDummyData();
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Dummy Data Injected!')),
+                          SnackBar(
+                            content: Text(seeded
+                                ? 'Dummy Data Injected!'
+                                : 'Seeding failed, check the logs.'),
+                          ),
                         );
                       },
                       child: const Text('Seed Dummy Data'),

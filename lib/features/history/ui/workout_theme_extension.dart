@@ -5,6 +5,7 @@ import 'package:lifter/core/ui/themes/app_theme.dart';
 class WorkoutId {
   static const int repeater = 1;
   static const int peakLoad = 2;
+  static const int custom = 3;
 }
 
 extension WorkoutLogTheme on WorkoutLog {
@@ -14,6 +15,7 @@ extension WorkoutLogTheme on WorkoutLog {
     switch (workoutTypeId) {
       case WorkoutId.repeater: return 'Repeater';
       case WorkoutId.peakLoad: return 'Peak Load';
+      case WorkoutId.custom: return templateName ?? 'Custom Workout';
       default: return 'Workout';
     }
   }
@@ -22,6 +24,7 @@ extension WorkoutLogTheme on WorkoutLog {
     switch (workoutTypeId) {
       case WorkoutId.repeater: return context.repeaterAccent;
       case WorkoutId.peakLoad: return context.peakLoadAccent;
+      case WorkoutId.custom: return context.customAccent;
       default: return context.textPrimary;
     }
   }
@@ -30,6 +33,7 @@ extension WorkoutLogTheme on WorkoutLog {
     switch (workoutTypeId) {
       case WorkoutId.repeater: return Icons.repeat_rounded;
       case WorkoutId.peakLoad: return Icons.monitor_weight_rounded;
+      case WorkoutId.custom: return Icons.playlist_play_rounded;
       default: return Icons.fitness_center_rounded;
     }
   }

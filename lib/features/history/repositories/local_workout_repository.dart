@@ -25,6 +25,8 @@ class LocalWorkoutRepository implements WorkoutRepository {
           'working_time': log.workingTime,
           'notes': log.notes,
           'graph_data': log.graphData,
+          'template_id': log.templateId,
+          'template_name': log.templateName,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -38,6 +40,9 @@ class LocalWorkoutRepository implements WorkoutRepository {
           {
             'workout_id': workoutId, // Link back to the parent workout
             // ERD Note: If Arnaud adds a 'set_number' column, we pass `s + 1` here!
+            'is_warmup': setLog.isWarmup ? 1 : 0,
+            'block_name': setLog.blockName,
+            'block_index': setLog.blockIndex,
           },
         );
 
@@ -136,7 +141,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
       'workout',
       columns: [
         'workout_id', 'workout_type_id', 'date_done', 
-        'duration', 'working_time', 'notes'
+        'duration', 'working_time', 'notes', 'template_id', 'template_name'
       ],
       where: whereClause,
       whereArgs: whereArgs,
@@ -160,6 +165,8 @@ class LocalWorkoutRepository implements WorkoutRepository {
         notes: row['notes'] as String? ?? '',
         graphData: null,
         sets: [], // Empty for now
+        templateId: row['template_id'] as int?,
+        templateName: row['template_name'] as String?,
       );
     }
 
@@ -170,7 +177,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
 
     final List<Map<String, dynamic>> childrenRows = await db.rawQuery('''
       SELECT 
-        s.workout_id, s.set_id,
+        s.workout_id, s.set_id, s.is_warmup, s.block_name, s.block_index,
         r.rep_id, r.peak_load_left, r.peak_load_right,
         r.average_load_left, r.average_load_right
       FROM "set" s
@@ -180,7 +187,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
     ''', workoutIds);
 
     // --- STEP 4: Assemble the Nested Objects ---
-    final Map<int, Map<int, List<RepetitionLog>>> setsByWorkout = {};
+    final Map<int, Map<int, SetLog>> setsByWorkout = {};
 
     for (final row in childrenRows) {
       final wId = row['workout_id'] as int;
@@ -188,10 +195,10 @@ class LocalWorkoutRepository implements WorkoutRepository {
       final repLeft = row['peak_load_left'] as double?;
 
       setsByWorkout.putIfAbsent(wId, () => {});
-      setsByWorkout[wId]!.putIfAbsent(sId, () => []);
+      setsByWorkout[wId]!.putIfAbsent(sId, () => _setFromRow(row));
 
       if (repLeft != null) {
-        setsByWorkout[wId]![sId]!.add(
+        setsByWorkout[wId]![sId]!.repetitions.add(
           RepetitionLog(
             setLogId: sId,
             peakLoadLeft: repLeft,
@@ -212,9 +219,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
       var workout = workoutsMap[wId]!;
 
       final setsForThisWorkout = setsByWorkout[wId] ?? {};
-      final assembledSets = setsForThisWorkout.values
-          .map((reps) => SetLog(repetitions: reps))
-          .toList();
+      final assembledSets = setsForThisWorkout.values.toList();
 
       finalResults.add(workout.copyWith(sets: assembledSets));
     }
@@ -237,7 +242,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
     // 2. Fetch all sets and reps for this specific workout
     final List<Map<String, dynamic>> childrenRows = await db.rawQuery('''
       SELECT 
-        s.set_id,
+        s.set_id, s.is_warmup, s.block_name, s.block_index,
         r.rep_id, r.peak_load_left, r.peak_load_right,
         r.average_load_left, r.average_load_right
       FROM "set" s
@@ -246,15 +251,15 @@ class LocalWorkoutRepository implements WorkoutRepository {
       ORDER BY s.set_id ASC, r.rep_id ASC
     ''', [id]);
 
-    final Map<int, List<RepetitionLog>> setsMap = {};
+    final Map<int, SetLog> setsMap = {};
     for (final child in childrenRows) {
       final sId = child['set_id'] as int;
       final repLeft = child['peak_load_left'] as double?;
 
-      setsMap.putIfAbsent(sId, () => []);
+      setsMap.putIfAbsent(sId, () => _setFromRow(child));
 
       if (repLeft != null) {
-        setsMap[sId]!.add(
+        setsMap[sId]!.repetitions.add(
           RepetitionLog(
             peakLoadLeft: repLeft,
             peakLoadRight: child['peak_load_right'] as double,
@@ -265,7 +270,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
       }
     }
 
-    final assembledSets = setsMap.values.map((reps) => SetLog(repetitions: reps)).toList();
+    final assembledSets = setsMap.values.toList();
 
     return WorkoutLog(
       id: id,
@@ -276,6 +281,18 @@ class LocalWorkoutRepository implements WorkoutRepository {
       notes: row['notes'] as String? ?? '',
       graphData: row['graph_data'] as Uint8List?, // Load the heavy graph data!
       sets: assembledSets,
+      templateId: row['template_id'] as int?,
+      templateName: row['template_name'] as String?,
+    );
+  }
+
+  // Builds an empty, growable SetLog from a joined set/repetition row.
+  SetLog _setFromRow(Map<String, dynamic> row) {
+    return SetLog(
+      repetitions: [],
+      isWarmup: (row['is_warmup'] as int? ?? 0) == 1,
+      blockName: row['block_name'] as String?,
+      blockIndex: row['block_index'] as int?,
     );
   }
 
@@ -352,10 +369,45 @@ class LocalWorkoutRepository implements WorkoutRepository {
       ],
     );
 
+    // 3. A custom workout from today: a ramping warm-up, then max hangs
+    RepetitionLog hang(double left, double right) => RepetitionLog(
+          peakLoadLeft: left,
+          peakLoadRight: right,
+          averageLoadLeft: left * 0.9,
+          averageLoadRight: right * 0.9,
+        );
+
+    final customDummy = WorkoutLog(
+      id: 0,
+      workoutTypeId: 3,
+      dateDone: DateTime.now(),
+      duration: 1500, // 25 mins total
+      workingTime: 160,
+      notes: 'Warm-up felt good, last max hang was a fight.',
+      graphData: emptyBlob,
+      templateName: 'Max Hangs',
+      sets: [
+        for (final kg in [10.0, 14.0, 17.5])
+          SetLog(
+            repetitions: [hang(kg, kg + 0.5), hang(kg, kg)],
+            isWarmup: true,
+            blockName: 'Warm-up',
+            blockIndex: 0,
+          ),
+        for (final kg in [23.0, 23.5, 22.5, 22.0, 21.0])
+          SetLog(
+            repetitions: [hang(kg, kg + 1)],
+            blockName: 'Max hangs',
+            blockIndex: 1,
+          ),
+      ],
+    );
+
     // Run them through your exact same save logic so foreign keys,
     // PR checks, and transactions are all tested!
     await saveWorkout(peakLoadDummy);
     await saveWorkout(repeaterDummy);
+    await saveWorkout(customDummy);
 
     debugPrint("✅ Dummy data seeded!");
   }

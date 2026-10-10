@@ -173,15 +173,19 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
     ref.read(workoutDatabaseSignalProvider.notifier).state++;
   }
 
-  Future<void> injectDummyData() async {
+  /// Returns false if seeding failed. The error is logged rather than put
+  /// in [state], so a failed seed doesn't take down the history list.
+  Future<bool> injectDummyData() async {
     try {
       final repo = await ref.read(workoutRepositoryProvider.future);
       await repo.seedDummyData();
       
       _invalidateProviders();
       ref.invalidateSelf();
+      return true;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      log("Failed to seed dummy data", error: e, stackTrace: st, name: "WorkoutHistoryNotifier");
+      return false;
     }
   } 
 }

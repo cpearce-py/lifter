@@ -95,6 +95,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              // Keeps scrolled cards from butting up against the title.
+              const SizedBox(height: 12),
               Expanded(
                 child: Center(
                   child: WorkoutSelectionSheet()

@@ -1,8 +1,8 @@
-import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/configs/repeater_config.dart';
+import 'package:lifter/features/workouts/models/intensity.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
 
 final repeaterSetupProvider = NotifierProvider<RepeaterSetupNotifier, RepeaterConfig>(
@@ -38,19 +38,12 @@ class RepeaterSetupNotifier extends Notifier<RepeaterConfig> {
   RepeaterState buildActiveState() {
     final settings = ref.read(userSettingsProvider);
 
-    final maxPull = [
-      settings.maxPullLeft, 
-      settings.maxPullRight, 
-      settings.bodyWeight
-    ].whereType<double>().reduce(math.max);
-    
     // Resolve the dropdown selection to a concrete weight
-    final referenceWt = switch (state.relativeTo) {
-      0 => settings.bodyWeight,
-      1 => maxPull,
-      2 => state.customWeight,
-      _ => settings.bodyWeight,
-    };
+    final referenceWt = resolveReferenceWeight(
+      relativeTo: state.relativeTo,
+      settings: settings,
+      customWeight: state.customWeight,
+    );
 
     final intensityMultiplier = state.targetPercentage / 100.0;
 

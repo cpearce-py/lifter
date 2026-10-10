@@ -26,6 +26,8 @@ extension AppColorsExt on BuildContext {
   Color get streakAccent => isDark ? const Color(0xFF47C8FF) : const Color(0xFF0077AB); // Deep Blue
   Color get setRestAccent => isDark ? const Color(0xFFB47FFF) : const Color(0xFF6B24D6); // Deep Purple
   Color get swapHandAccent => isDark ? Colors.purpleAccent.shade100 : Colors.purpleAccent.shade100;
+  Color get customAccent => isDark ? const Color(0xFF4FE3C1) : const Color(0xFF0F9D7A); // Teal
+  Color get warmupAccent => isDark ? const Color(0xFFFFB347) : const Color(0xFFD97706); // Amber
 
   // Hands 
   Color get rightHandAccent => isDark ? Color(0xFF4FACFE) : Color(0xFF0077B6);

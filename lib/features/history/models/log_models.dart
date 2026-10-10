@@ -26,9 +26,31 @@ class RepetitionLog {
 class SetLog {
   final List<RepetitionLog> repetitions;
 
+  // Only set for custom workouts, so sets can be grouped by block.
+  final bool isWarmup;
+  final String? blockName;
+  final int? blockIndex;
+
   SetLog({
     required this.repetitions,
+    this.isWarmup = false,
+    this.blockName,
+    this.blockIndex,
   });
+
+  SetLog copyWith({
+    List<RepetitionLog>? repetitions,
+    bool? isWarmup,
+    String? blockName,
+    int? blockIndex,
+  }) {
+    return SetLog(
+      repetitions: repetitions ?? this.repetitions,
+      isWarmup: isWarmup ?? this.isWarmup,
+      blockName: blockName ?? this.blockName,
+      blockIndex: blockIndex ?? this.blockIndex,
+    );
+  }
 }
 
 class WorkoutLog {
@@ -41,6 +63,11 @@ class WorkoutLog {
   final String notes;
   Uint8List? graphData;
 
+  // Only set for custom workouts. The name is a snapshot, so history still
+  // reads correctly if the template is later renamed or deleted.
+  final int? templateId;
+  final String? templateName;
+
   WorkoutLog({
     this.id,
     required this.workoutTypeId,
@@ -50,6 +77,8 @@ class WorkoutLog {
     required this.sets,
     this.notes = "",
     required this.graphData,
+    this.templateId,
+    this.templateName,
   });
 
   WorkoutLog copyWith({
@@ -61,6 +90,8 @@ class WorkoutLog {
     List<SetLog>? sets,
     String? notes,
     Uint8List? graphData,
+    int? templateId,
+    String? templateName,
   }) {
     return WorkoutLog(
       id: id ?? this.id,
@@ -71,6 +102,8 @@ class WorkoutLog {
       sets: sets ?? this.sets,
       notes: notes ?? this.notes,
       graphData: graphData ?? this.graphData,
+      templateId: templateId ?? this.templateId,
+      templateName: templateName ?? this.templateName,
     );
   }
 }

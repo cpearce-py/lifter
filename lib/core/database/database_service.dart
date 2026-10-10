@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lifter/features/workouts/repositories/local_template_repository.dart';
 
 class DatabaseService {
   // 1. Singleton Boilerplate
@@ -25,7 +26,7 @@ class DatabaseService {
     debugPrint("DB Path: $path");
     return await openDatabase(
       path,
-      version: 2,
+      version: 4,
       onConfigure: _onConfigure,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
@@ -67,7 +68,8 @@ class DatabaseService {
         date_done TEXT NOT NULL,
         duration INTEGER NOT NULL,
         working_time INTEGER NOT NULL,
-        notes TEXT
+        notes TEXT,
+        graph_data BLOB
       )
     ''');
 
@@ -89,6 +91,8 @@ class DatabaseService {
         set_id INTEGER NOT NULL,
         peak_load_left REAL NOT NULL,
         peak_load_right REAL NOT NULL,
+        average_load_left REAL DEFAULT 0.0,
+        average_load_right REAL DEFAULT 0.0,
         FOREIGN KEY (set_id) REFERENCES "set" (set_id) ON DELETE CASCADE
       )
     ''');
@@ -105,6 +109,8 @@ class DatabaseService {
     // Seed the types so we have them ready
     await db.insert('workout_type', {'workout_type_id': 1, 'workout_name': 'Repeater'});
     await db.insert('workout_type', {'workout_type_id': 2, 'workout_name': 'Peak Load'});
+
+    await _createCustomWorkoutTables(db);
 
     debugPrint('Database tables created successfully!');
   }
@@ -126,6 +132,80 @@ class DatabaseService {
       await db.execute('ALTER TABLE repetition ADD COLUMN average_load_left REAL DEFAULT 0.0;');
       await db.execute('ALTER TABLE repetition ADD COLUMN average_load_right REAL DEFAULT 0.0;');
     }
+
+    if (oldVersion < 3) {
+      await _createCustomWorkoutTables(db);
+    }
+
+    if (oldVersion < 4) {
+      // Before V3, _createDB left out the V2 columns, so databases created
+      // fresh at V2 never got them. Add them if they're missing.
+      await _addColumnIfMissing(db, 'workout', 'graph_data', 'BLOB');
+      await _addColumnIfMissing(db, 'repetition', 'average_load_left', 'REAL DEFAULT 0.0');
+      await _addColumnIfMissing(db, 'repetition', 'average_load_right', 'REAL DEFAULT 0.0');
+    }
+  }
+
+  Future<void> _addColumnIfMissing(
+    Database db,
+    String table,
+    String column,
+    String definition,
+  ) async {
+    final columns = await db.rawQuery('PRAGMA table_info("$table")');
+    if (columns.any((c) => c['name'] == column)) return;
+
+    debugPrint('Adding missing column $table.$column');
+    await db.execute('ALTER TABLE "$table" ADD COLUMN $column $definition;');
+  }
+
+  // V3: user-built workout templates, and tagging logged sets by block.
+  Future<void> _createCustomWorkoutTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE workout_template (
+        template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        notes TEXT,
+        starting_hand TEXT,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_time DATETIME
+      )
+    ''');
+
+    // Blocks belong to a template and are deleted with it.
+    await db.execute('''
+      CREATE TABLE template_block (
+        block_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        template_id INTEGER NOT NULL,
+        position INTEGER NOT NULL,
+        name TEXT,
+        kind TEXT NOT NULL,
+        sets INTEGER NOT NULL,
+        reps INTEGER NOT NULL,
+        work_seconds INTEGER NOT NULL,
+        rest_seconds INTEGER NOT NULL,
+        set_rest_seconds INTEGER NOT NULL,
+        rest_after_seconds INTEGER NOT NULL,
+        relative_to INTEGER NOT NULL,
+        start_pct INTEGER NOT NULL,
+        end_pct INTEGER NOT NULL,
+        custom_weight REAL DEFAULT 0.0,
+        FOREIGN KEY (template_id) REFERENCES workout_template (template_id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.insert('workout_type', {'workout_type_id': 3, 'workout_name': 'Custom'});
+
+    // No foreign key on template_id: history should outlive its template.
+    await db.execute('ALTER TABLE workout ADD COLUMN template_id INTEGER;');
+    await db.execute('ALTER TABLE workout ADD COLUMN template_name TEXT;');
+
+    await db.execute('ALTER TABLE "set" ADD COLUMN is_warmup INTEGER DEFAULT 0;');
+    await db.execute('ALTER TABLE "set" ADD COLUMN block_name TEXT;');
+    await db.execute('ALTER TABLE "set" ADD COLUMN block_index INTEGER;');
+
+    await LocalTemplateRepository.seedStarterTemplates(db);
   }
 
   Future<void> wipeDatabase() async {

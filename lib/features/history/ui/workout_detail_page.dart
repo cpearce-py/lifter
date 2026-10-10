@@ -92,6 +92,19 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
     }
   }
 
+  /// "SET 3" for plain workouts, "WARM-UP · SET 2" for custom ones, where
+  /// sets are numbered within their block.
+  String _setLabel(List<SetLog> sets, int index) {
+    final set = sets[index];
+    if (set.blockName == null) return 'SET ${index + 1}';
+
+    final setInBlock = sets
+        .take(index + 1)
+        .where((s) => s.blockIndex == set.blockIndex)
+        .length;
+    return '${set.blockName!.toUpperCase()} · SET $setInBlock';
+  }
+
   Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -145,7 +158,12 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
       }
     }
 
-    final stats = WorkoutStats.fromWorkout(workout);
+    // Warm-ups would drag the averages down, so chart the working sets only
+    // (unless the workout ended before any working sets).
+    final workingSets = workout.sets.where((s) => !s.isWarmup).toList();
+    final stats = WorkoutStats.fromWorkout(
+      workingSets.isEmpty ? workout : workout.copyWith(sets: workingSets),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -288,8 +306,9 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (widget.workout.workoutTypeId == 1 ||
-                        widget.workout.workoutTypeId == 2) ...[
+                    if (widget.workout.workoutTypeId == WorkoutId.repeater ||
+                        widget.workout.workoutTypeId == WorkoutId.peakLoad ||
+                        widget.workout.workoutTypeId == WorkoutId.custom) ...[
 
                       RepProgressionChart(stats: stats),
 
@@ -320,6 +339,10 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
             ...workout.sets.asMap().entries.map((entry) {
               final setIndex = entry.key;
               final setLog = entry.value;
+              final setLabel = _setLabel(workout.sets, setIndex);
+              final setColor = setLog.isWarmup
+                  ? context.warmupAccent
+                  : workout.uiAccentColor(context);
 
               return Card(
                 color: context.cardBackground,
@@ -330,10 +353,10 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SET ${setIndex + 1}',
+                        setLabel,
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: workout.uiAccentColor(context),
+                          color: setColor,
                           letterSpacing: 1.2,
                         ),
                       ),
