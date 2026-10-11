@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 import 'package:lifter/features/workouts/models/configs/repeater_config.dart';
 import 'package:lifter/features/workouts/models/intensity.dart';
 import 'package:lifter/features/workouts/models/repeater_state.dart';
@@ -32,6 +33,7 @@ class RepeaterSetupNotifier extends Notifier<RepeaterConfig> {
   void updateRelativeTo(int val) => state = state.copyWith(relativeTo: val);
   void updateTargetPercentage(int val) => state = state.copyWith(targetPercentage: val);
   void updateCustomWeight(double val) => state = state.copyWith(customWeight: val);
+  void updateGrip(GripSetup grip) => state = state.copyWith(grip: grip);
 
   // --- Final Assembly ---
   /// Called right before pushing the workout screen.
@@ -55,6 +57,7 @@ class RepeaterSetupNotifier extends Notifier<RepeaterConfig> {
       setRestSeconds: state.setRestSeconds,
       startingHand: state.startingHand,
       currentHand: state.startingHand,
+      grip: state.grip,
       referenceWeight: referenceWt,
       targetIntensity: intensityMultiplier,
     );

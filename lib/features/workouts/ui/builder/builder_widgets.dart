@@ -11,7 +11,7 @@ String formatEstimate(int seconds) {
   return '~${(seconds / 60).round()} min';
 }
 
-/// One-line summary of a block, e.g. "3×2 · 7s/3s · 30→60% Max Lift".
+/// One-line summary of a block, e.g. "3×2 · 7s/3s · 30→60% Max Lift · 20mm · Half crimp".
 String blockSummary(WorkoutBlock block) {
   final intensity = block.isRamped
       ? '${block.startPercentage}→${block.endPercentage}%'
@@ -19,8 +19,10 @@ String blockSummary(WorkoutBlock block) {
   final reference = block.relativeTo == RelativeTo.custom
       ? 'custom'
       : relativeToLabels[block.relativeTo];
-  return '${block.sets}×${block.reps} · ${block.workSeconds}s/${block.restSeconds}s'
+  final summary =
+      '${block.sets}×${block.reps} · ${block.workSeconds}s/${block.restSeconds}s'
       ' · $intensity $reference';
+  return block.grip.isSet ? '$summary · ${block.grip.label}' : summary;
 }
 
 /// Page shell shared by the builder screens: back link, title, a scrolling

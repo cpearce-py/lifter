@@ -69,7 +69,7 @@ class RepeaterEngine extends BaseEngine<RepeaterState> {
       workingTime: state.accumulatedWorkSeconds, 
       sets: state.completedSets,
       graphData: graphBlob,
-    );
+    ).withGrip(state.grip);
   }
 }
 

@@ -202,7 +202,8 @@ class _LiveGraphState extends ConsumerState<LiveGraph>
               useLbs: useLbs,
               textColor: context.textMuted,
               gridColor: context.textPrimary.withValues(alpha: 0.05),
-              successColor: context.success, 
+              belowColor: context.textMuted,
+              successColor: context.success,
               dangerColor: context.danger,
             ),
             child: const SizedBox.expand(),
@@ -224,6 +225,7 @@ class _GraphPainter extends CustomPainter {
     required this.useLbs,
     required this.textColor,
     required this.gridColor,
+    required this.belowColor,
     required this.successColor,
     required this.dangerColor,
   }) : super(repaint: repaint);
@@ -236,6 +238,7 @@ class _GraphPainter extends CustomPainter {
   final bool useLbs;
   final Color textColor;
   final Color gridColor;
+  final Color belowColor;
   final Color successColor;
   final Color dangerColor;
 
@@ -261,10 +264,12 @@ class _GraphPainter extends CustomPainter {
     final chartW = w - hPad * 2;
     final chartH = h - vPad * 2;
 
-    // Use the dynamic theme colors
-    final colorBelow = accentColor;
-    final colorInRange = successColor; 
-    final colorAbove = dangerColor;   
+    // Reads like a traffic light against the target zone: neutral until
+    // the pull reaches it, green inside it, red over it. The workout's
+    // accent stays on the fill, so it never competes with the green.
+    final colorBelow = belowColor;
+    final colorInRange = successColor;
+    final colorAbove = dangerColor;
 
     // ── Grid ─────────────────────────────────────────────────────────────────
     final gridPaint = Paint()
@@ -304,7 +309,7 @@ class _GraphPainter extends CustomPainter {
       final zoneRect = Rect.fromLTRB(hPad, targetTopY, w - hPad, targetBottomY);
       canvas.drawRect(
         zoneRect, 
-        Paint()..color = colorInRange.withOpacity(0.333),
+        Paint()..color = colorInRange.withValues(alpha: 0.14),
       );
     }
 
@@ -432,7 +437,10 @@ class _GraphPainter extends CustomPainter {
       old.accentColor != accentColor ||
       old.showPeakLine != showPeakLine ||
       old.useLbs != useLbs || // Repaint if the unit preference changes!
-      old.textColor != textColor || 
+      old.textColor != textColor ||
+      old.belowColor != belowColor ||
+      old.successColor != successColor ||
+      old.dangerColor != dangerColor ||
       old.controller.targetMin != controller.targetMin ||
       old.controller.targetMax != controller.targetMax ||
       old.controller != controller;

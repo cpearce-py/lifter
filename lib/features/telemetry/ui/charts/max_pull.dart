@@ -5,14 +5,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
+import 'package:lifter/features/telemetry/providers/grip_filter_provider.dart';
 import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import '../helpers.dart';
 
 
+/// Best load per hand over time, from the working sets of [workoutTypeIds]
+/// that match the Progression page's grip filter.
 class MaxPullProgressionChart extends ConsumerStatefulWidget {
-  const MaxPullProgressionChart({super.key});
+  const MaxPullProgressionChart({
+    super.key,
+    this.workoutTypeIds = const {WorkoutId.peakLoad},
+    this.useAverage = false,
+    this.emptyMessage = 'Complete a Peak Load to see progress',
+  });
+
+  final Set<int> workoutTypeIds;
+
+  /// Chart each rep's average load rather than its peak.
+  final bool useAverage;
+  final String emptyMessage;
 
   @override
   ConsumerState<MaxPullProgressionChart> createState() =>
@@ -75,6 +90,7 @@ class _MaxPullProgressionChartState
   Widget build(BuildContext context) {
     final chartDataAsync = ref.watch(chartWorkoutsProvider);
     final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
+    final gripFilter = ref.watch(gripFilterProvider);
 
     final leftColor = context.leftHandAccent;
     final rightColor = context.rightHandAccent;
@@ -118,16 +134,26 @@ class _MaxPullProgressionChartState
               }
             }).toList();
 
-            final peakWorkouts = timeframeWorkouts
-                .where((w) => w.workoutTypeId == 2)
-                .toList();
+            final sessionBests = [
+              for (final w in timeframeWorkouts)
+                if (widget.workoutTypeIds.contains(w.workoutTypeId))
+                  if (bestLoadOnGrip(
+                    w,
+                    gripFilter,
+                    useAverage: widget.useAverage,
+                  ) case final best?)
+                    (date: w.dateDone, left: best.left, right: best.right),
+            ];
 
-            if (peakWorkouts.isEmpty) {
+            if (sessionBests.isEmpty) {
               return SizedBox(
                 height: 220,
                 child: Center(
                   child: Text(
-                    'Complete a Peak Load to see progress',
+                    gripFilter.isAll
+                        ? widget.emptyMessage
+                        : 'Nothing logged on this grip yet',
+                    textAlign: TextAlign.center,
                     style: context.body.copyWith(color: context.textMuted),
                   ),
                 ),
@@ -154,20 +180,19 @@ class _MaxPullProgressionChartState
             Map<int, double> maxLeftPerBucket = {};
             Map<int, double> maxRightPerBucket = {};
 
-            for (final w in peakWorkouts) {
+            for (final session in sessionBests) {
+              final date = session.date;
               int xIndex = 0;
               if (_selectedRange == '1W') {
-                xIndex = w.dateDone.weekday - 1;
+                xIndex = date.weekday - 1;
               } else if (_selectedRange == '1M') {
-                xIndex = (w.dateDone.day - 1) ~/ 7;
+                xIndex = (date.day - 1) ~/ 7;
                 if (xIndex > 3) xIndex = 3;
               } else if (_selectedRange == 'YTD') {
-                xIndex = w.dateDone.month - 1;
+                xIndex = date.month - 1;
               } else {
                 int monthsAgo =
-                    (now.year - w.dateDone.year) * 12 +
-                    now.month -
-                    w.dateDone.month;
+                    (now.year - date.year) * 12 + now.month - date.month;
                 if (_selectedRange == '3M') {
                   xIndex = 2 - monthsAgo;
                 } else if (_selectedRange == '6M') {
@@ -179,18 +204,8 @@ class _MaxPullProgressionChartState
 
               if (xIndex < 0) continue;
 
-              double sessionMaxLeft = 0;
-              double sessionMaxRight = 0;
-              for (final set in w.sets) {
-                for (final rep in set.repetitions) {
-                  if (rep.peakLoadLeft > sessionMaxLeft) {
-                    sessionMaxLeft = rep.peakLoadLeft;
-                  }
-                  if (rep.peakLoadRight > sessionMaxRight) {
-                    sessionMaxRight = rep.peakLoadRight;
-                  }
-                }
-              }
+              final sessionMaxLeft = session.left;
+              final sessionMaxRight = session.right;
 
               if (sessionMaxLeft > (maxLeftPerBucket[xIndex] ?? 0)) {
                 maxLeftPerBucket[xIndex] = sessionMaxLeft;

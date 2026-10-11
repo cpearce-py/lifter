@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
@@ -11,6 +10,7 @@ import 'package:lifter/features/telemetry/ui/widgets/asymmetry_balance_bar.dart'
 import 'package:lifter/features/workouts/ui/static_graph.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_notes.dart';
 import 'package:lifter/features/history/ui/workout_theme_extension.dart';
+import 'package:lifter/features/history/ui/set_tree.dart';
 
 class WorkoutDetailPage extends ConsumerStatefulWidget {
   final WorkoutLog workout;
@@ -90,19 +90,6 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
         ),
       );
     }
-  }
-
-  /// "SET 3" for plain workouts, "WARM-UP · SET 2" for custom ones, where
-  /// sets are numbered within their block.
-  String _setLabel(List<SetLog> sets, int index) {
-    final set = sets[index];
-    if (set.blockName == null) return 'SET ${index + 1}';
-
-    final setInBlock = sets
-        .take(index + 1)
-        .where((s) => s.blockIndex == set.blockIndex)
-        .length;
-    return '${set.blockName!.toUpperCase()} · SET $setInBlock';
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -195,6 +182,11 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                 _StatCube(label: 'Sets', value: '${workout.sets.length}'),
               ],
             ),
+
+            if (workout.grips.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _GripChips(workout: workout),
+            ],
 
             const SizedBox(height: 24),
 
@@ -336,75 +328,10 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
             ),
             const SizedBox(height: 12),
 
-            ...workout.sets.asMap().entries.map((entry) {
-              final setIndex = entry.key;
-              final setLog = entry.value;
-              final setLabel = _setLabel(workout.sets, setIndex);
-              final setColor = setLog.isWarmup
-                  ? context.warmupAccent
-                  : workout.uiAccentColor(context);
-
-              return Card(
-                color: context.cardBackground,
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        setLabel,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: setColor,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Loop through the reps in this set
-                      ...setLog.repetitions.asMap().entries.map((repEntry) {
-                        final repIndex = repEntry.key;
-                        final rep = repEntry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Rep ${repIndex + 1}',
-                                style: TextStyle(color: context.textMuted),
-                              ),
-                              Row(
-                                children: [
-                                  WeightText(
-                                    prefix: "L: ",
-                                    weightKg: rep.peakLoadLeft,
-                                    style: TextStyle(
-                                      color: context.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  WeightText(
-                                    prefix: "R: ",
-                                    weightKg: rep.peakLoadRight,
-                                    style: TextStyle(
-                                      color: context.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              );
-            }),
+            SetTree(
+              sets: workout.sets,
+              accentColor: workout.uiAccentColor(context),
+            ),
           ],
         ),
       ),
@@ -413,6 +340,47 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
 }
 
 // A cute little helper widget for the top stats
+/// What the workout was pulled on. Custom workouts list each block, since
+/// blocks can use different grips.
+class _GripChips extends StatelessWidget {
+  final WorkoutLog workout;
+  const _GripChips({required this.workout});
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = <String>{
+      for (final set in workout.sets)
+        if (set.grip.isSet)
+          set.blockName == null
+              ? set.grip.label
+              : '${set.blockName} · ${set.grip.label}',
+    };
+    final color = workout.uiAccentColor(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Grip & Edge',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: context.textMuted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final label in labels) GripChip(label: label, color: color),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _StatCube extends StatelessWidget {
   final String label;
   final String value;

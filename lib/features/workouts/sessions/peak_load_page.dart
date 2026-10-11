@@ -26,7 +26,9 @@ class PeakLoadSessionPage extends ConsumerWidget {
     );
     final state = ref.watch(peakLoadEngineProvider);
     final phase = state.phase;
-    final accentColor = accentColorForPhase(phase, context);
+    final workingAccent = context.peakLoadAccent;
+    final accentColor =
+        accentColorForPhase(phase, context, working: workingAccent);
 
     const double hPad = 15.0;
     const double sectionSpacing = 18.0;
@@ -92,6 +94,7 @@ class PeakLoadSessionPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: hPad),
                 child: GenericGraphArea(
                   phase: phase,
+                  workingAccent: workingAccent,
                   overlay: Text(
                     'HAND: ${state.currentHand.name.toUpperCase()}',
                     style: context.body.copyWith(
@@ -170,8 +173,8 @@ class _PeakLoadRestControls extends ConsumerWidget {
           onPressed: () => ref
               .read(peakLoadEngineProvider.notifier)
               .dispatch(UserEventAction(Event.finish)),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-          child: const Text('Finish', style: TextStyle(color: Colors.white)),
+          style: ElevatedButton.styleFrom(backgroundColor: context.danger),
+          child: Text('Finish', style: TextStyle(color: context.background)),
         ),
       ],
     );

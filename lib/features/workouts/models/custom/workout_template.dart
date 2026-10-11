@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 import 'package:lifter/features/workouts/models/intensity.dart';
 
 enum BlockKind {
@@ -34,6 +35,9 @@ class WorkoutBlock {
   final int endPercentage;
   final double customWeight;
 
+  /// What every set in this block is pulled on.
+  final GripSetup grip;
+
   const WorkoutBlock({
     required this.name,
     this.kind = BlockKind.working,
@@ -47,6 +51,7 @@ class WorkoutBlock {
     this.startPercentage = 80,
     this.endPercentage = 80,
     this.customWeight = 0,
+    this.grip = GripSetup.none,
   });
 
   /// A sensible default warm-up: ramp from 30% to 60% of max pull.
@@ -96,6 +101,7 @@ class WorkoutBlock {
     int? startPercentage,
     int? endPercentage,
     double? customWeight,
+    GripSetup? grip,
   }) {
     return WorkoutBlock(
       name: name ?? this.name,
@@ -110,6 +116,7 @@ class WorkoutBlock {
       startPercentage: startPercentage ?? this.startPercentage,
       endPercentage: endPercentage ?? this.endPercentage,
       customWeight: customWeight ?? this.customWeight,
+      grip: grip ?? this.grip,
     );
   }
 
@@ -129,6 +136,7 @@ class WorkoutBlock {
       'start_pct': startPercentage,
       'end_pct': endPercentage,
       'custom_weight': customWeight,
+      ...grip.toMap(),
     };
   }
 
@@ -146,6 +154,7 @@ class WorkoutBlock {
       startPercentage: map['start_pct'] as int,
       endPercentage: map['end_pct'] as int,
       customWeight: (map['custom_weight'] as num?)?.toDouble() ?? 0.0,
+      grip: GripSetup.fromMap(map),
     );
   }
 }

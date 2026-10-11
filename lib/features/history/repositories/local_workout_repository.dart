@@ -3,8 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
+import 'package:lifter/features/history/repositories/dummy_workouts.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:lifter/features/history/repositories/workout_repository.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 
 class LocalWorkoutRepository implements WorkoutRepository {
   final Database db;
@@ -43,6 +45,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
             'is_warmup': setLog.isWarmup ? 1 : 0,
             'block_name': setLog.blockName,
             'block_index': setLog.blockIndex,
+            ...setLog.grip.toMap(),
           },
         );
 
@@ -178,6 +181,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
     final List<Map<String, dynamic>> childrenRows = await db.rawQuery('''
       SELECT 
         s.workout_id, s.set_id, s.is_warmup, s.block_name, s.block_index,
+        s.grip, s.edge_mm,
         r.rep_id, r.peak_load_left, r.peak_load_right,
         r.average_load_left, r.average_load_right
       FROM "set" s
@@ -242,7 +246,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
     // 2. Fetch all sets and reps for this specific workout
     final List<Map<String, dynamic>> childrenRows = await db.rawQuery('''
       SELECT 
-        s.set_id, s.is_warmup, s.block_name, s.block_index,
+        s.set_id, s.is_warmup, s.block_name, s.block_index, s.grip, s.edge_mm,
         r.rep_id, r.peak_load_left, r.peak_load_right,
         r.average_load_left, r.average_load_right
       FROM "set" s
@@ -293,6 +297,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
       isWarmup: (row['is_warmup'] as int? ?? 0) == 1,
       blockName: row['block_name'] as String?,
       blockIndex: row['block_index'] as int?,
+      grip: GripSetup.fromMap(row),
     );
   }
 
@@ -317,98 +322,13 @@ class LocalWorkoutRepository implements WorkoutRepository {
   Future<void> seedDummyData() async {
     debugPrint("🌱 Seeding dummy workouts...");
 
-    final emptyBlob = Uint8List(0); // Dummy blob
+    // Run them through the same save logic so foreign keys, PR checks and
+    // transactions are all exercised.
+    final workouts = dummyWorkouts(DateTime.now());
+    for (final workout in workouts) {
+      await saveWorkout(workout);
+    }
 
-    // 1. A Peak Load from 5 days ago (To establish a baseline PR!)
-    final peakLoadDummy = WorkoutLog(
-      id: 0, // Ignored by DB
-      workoutTypeId: 2,
-      dateDone: DateTime.now().subtract(const Duration(days: 5)),
-      duration: 120,
-      workingTime: 14,
-      notes: 'Felt pretty strong. Baseline established.',
-      graphData: emptyBlob,
-      sets: [
-        SetLog(
-          repetitions: [
-            // Let's say their previous max was 25kg Left, 26kg Right
-            RepetitionLog(
-              peakLoadLeft: 25.0, 
-              peakLoadRight: 26.0,
-              averageLoadLeft: 22.1,
-              averageLoadRight: 23.5,
-            ),
-          ],
-        ),
-      ],
-    );
-
-    // 2. A Repeater from yesterday
-    final repeaterDummy = WorkoutLog(
-      id: 0,
-      workoutTypeId: 1,
-      dateDone: DateTime.now().subtract(const Duration(days: 1)),
-      duration: 600, // 10 mins total
-      workingTime: 300, // 5 mins of hanging
-      notes: 'Skin was thin, but got through the sets.',
-      graphData: emptyBlob,
-      sets: [
-        SetLog(
-          repetitions: List.generate(4, (index) => RepetitionLog(
-            peakLoadLeft: 15.0, peakLoadRight: 15.0, 
-            averageLoadLeft: 12.0, averageLoadRight: 13.0
-          )),
-        ),
-        SetLog(
-          repetitions: List.generate(2, (index) => RepetitionLog(
-            peakLoadLeft: 14.5, 
-            peakLoadRight: 14.0, 
-            averageLoadLeft: 11.5, 
-            averageLoadRight: 11.0))
-        ),
-      ],
-    );
-
-    // 3. A custom workout from today: a ramping warm-up, then max hangs
-    RepetitionLog hang(double left, double right) => RepetitionLog(
-          peakLoadLeft: left,
-          peakLoadRight: right,
-          averageLoadLeft: left * 0.9,
-          averageLoadRight: right * 0.9,
-        );
-
-    final customDummy = WorkoutLog(
-      id: 0,
-      workoutTypeId: 3,
-      dateDone: DateTime.now(),
-      duration: 1500, // 25 mins total
-      workingTime: 160,
-      notes: 'Warm-up felt good, last max hang was a fight.',
-      graphData: emptyBlob,
-      templateName: 'Max Hangs',
-      sets: [
-        for (final kg in [10.0, 14.0, 17.5])
-          SetLog(
-            repetitions: [hang(kg, kg + 0.5), hang(kg, kg)],
-            isWarmup: true,
-            blockName: 'Warm-up',
-            blockIndex: 0,
-          ),
-        for (final kg in [23.0, 23.5, 22.5, 22.0, 21.0])
-          SetLog(
-            repetitions: [hang(kg, kg + 1)],
-            blockName: 'Max hangs',
-            blockIndex: 1,
-          ),
-      ],
-    );
-
-    // Run them through your exact same save logic so foreign keys,
-    // PR checks, and transactions are all tested!
-    await saveWorkout(peakLoadDummy);
-    await saveWorkout(repeaterDummy);
-    await saveWorkout(customDummy);
-
-    debugPrint("✅ Dummy data seeded!");
+    debugPrint("✅ Seeded ${workouts.length} dummy workouts!");
   }
 }

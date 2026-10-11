@@ -154,6 +154,7 @@ class CustomWorkoutRules implements WorkoutRules<CustomWorkoutState> {
       isWarmup: step.isWarmup,
       blockName: step.block.name,
       blockIndex: step.blockIndex,
+      grip: step.block.grip,
     );
   }
 }

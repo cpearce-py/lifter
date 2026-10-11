@@ -5,7 +5,7 @@ extension AppColorsExt on BuildContext {
 
   // ─── Base Colors ───
   Color get background => isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF2F2F7);
-  Color get success => isDark ? const Color(0xFF81FF7F) : const Color(0xFF81FF7F); // Deep Green
+  Color get success => isDark ? const Color(0xFF5EE38A) : const Color(0xFF15803D); // Mint / Forest Green
   Color get danger => isDark ? const Color(0xFFFF7F7F) : const Color(0xFFD32F2F); // Deep Red
   
   // ─── Cards and Inputs ───
@@ -21,13 +21,15 @@ extension AppColorsExt on BuildContext {
   Color get textMutedInv => isDark ? Colors.black54 : Colors.white54;
 
   // ─── Accents ───
-  Color get repeaterAccent => isDark ? Color(0xFFE8FF47) : Color.fromARGB(255, 36, 229, 55);
+  // Each pairs a bright dark-mode tone with a deeper light-mode tone of the
+  // same hue, picked to stay readable (~4.5:1 or better) on white cards.
+  Color get repeaterAccent => isDark ? const Color(0xFFE8FF47) : const Color(0xFF5A7F00); // Lime / Olive
   Color get peakLoadAccent => isDark ? Color(0xFFFF6B6B) : Color(0xFFE04343);
   Color get streakAccent => isDark ? const Color(0xFF47C8FF) : const Color(0xFF0077AB); // Deep Blue
   Color get setRestAccent => isDark ? const Color(0xFFB47FFF) : const Color(0xFF6B24D6); // Deep Purple
-  Color get swapHandAccent => isDark ? Colors.purpleAccent.shade100 : Colors.purpleAccent.shade100;
-  Color get customAccent => isDark ? const Color(0xFF4FE3C1) : const Color(0xFF0F9D7A); // Teal
-  Color get warmupAccent => isDark ? const Color(0xFFFFB347) : const Color(0xFFD97706); // Amber
+  Color get swapHandAccent => isDark ? const Color(0xFFEA80FC) : const Color(0xFFA21CAF); // Orchid / Fuchsia
+  Color get customAccent => isDark ? const Color(0xFF4FE3C1) : const Color(0xFF0D7F66); // Teal
+  Color get warmupAccent => isDark ? const Color(0xFFFFB347) : const Color(0xFFB45309); // Amber
 
   // Hands 
   Color get rightHandAccent => isDark ? Color(0xFF4FACFE) : Color(0xFF0077B6);
@@ -76,10 +78,10 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFFF2F2F7),
       
       colorScheme: const ColorScheme.light(
-        primary: Color(0xFFE8FF47), 
-        secondary: Color(0xFFFF6B6B), 
+        primary: Color(0xFF5A7F00), // repeaterAccent
+        secondary: Color(0xFFE04343), // peakLoadAccent
         surface: Colors.white, 
-        error: Color(0xFFFF6B6B),
+        error: Color(0xFFD32F2F),
       ),
 
       textSelectionTheme: TextSelectionThemeData(

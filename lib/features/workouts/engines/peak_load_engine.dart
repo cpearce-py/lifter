@@ -68,7 +68,7 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
       workingTime: actualWorkingTime,
       sets: state.completedSets,
       graphData: graphBlob,
-    );
+    ).withGrip(state.grip);
   }
 
   @override

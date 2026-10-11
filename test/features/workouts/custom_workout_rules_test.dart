@@ -4,6 +4,7 @@ import 'package:lifter/features/workouts/models/actions.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/custom/custom_workout_state.dart';
 import 'package:lifter/features/workouts/models/custom/workout_template.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 import 'package:lifter/features/workouts/models/intensity.dart';
 import 'package:lifter/features/workouts/rules/custom_workout_rules.dart';
 
@@ -118,6 +119,24 @@ void main() {
       expect(state.completedSets.last.blockName, "Max hangs");
       expect(state.completedSets.last.repetitions.length, 2);
       expect(state.totalWorkSeconds, greaterThan(0));
+    });
+
+    test('tags each set with its block\'s grip', () {
+      const crimp = GripSetup(grip: GripType.halfCrimp, edgeMm: 20);
+      final gripped = template.copyWith(
+        blocks: [warmup, working.copyWith(grip: crimp)],
+      );
+      final steps = compileTemplate(gripped, settings);
+      var state = CustomWorkoutState(
+        templateName: gripped.name,
+        steps: steps,
+        inner: steps.first.seed,
+      );
+      state = send(state, UserEventAction(Event.start));
+      state = runUntil(state, (_) => false);
+
+      expect(state.completedSets.map((s) => s.grip),
+          [GripSetup.none, GripSetup.none, GripSetup.none, crimp, crimp]);
     });
 
     test('rests between steps, then goes straight into work', () {

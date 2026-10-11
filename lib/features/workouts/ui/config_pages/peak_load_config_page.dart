@@ -11,6 +11,7 @@ import 'package:lifter/features/workouts/providers/peak_load_config_provider.dar
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/workouts/sessions/peak_load_page.dart';
 import 'package:lifter/features/workouts/ui/wave_animator.dart';
+import 'package:lifter/features/workouts/ui/widgets/grip_setup_card.dart';
 
 class PeakLoadSetupPage extends ConsumerWidget {
   const PeakLoadSetupPage({super.key});
@@ -129,6 +130,15 @@ class PeakLoadSetupPage extends ConsumerWidget {
                           accentColor: accentColor,
                           onChanged: notifier.updateStartingHand,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    waveItem(
+                      GripSetupCard(
+                        grip: config.grip,
+                        accentColor: accentColor,
+                        onChanged: notifier.updateGrip,
                       ),
                     ),
                   ]),

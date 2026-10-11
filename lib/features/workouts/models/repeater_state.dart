@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 
 
 @immutable
@@ -22,6 +23,9 @@ class RepeaterState {
 
   final Hand startingHand;
   final Hand currentHand;
+
+  /// Tagged onto every logged set.
+  final GripSetup grip;
 
   // history
   final double currentPullMax;
@@ -49,6 +53,7 @@ class RepeaterState {
     this.currentPhaseDuration = 0,
     this.startingHand = Hand.left,
     this.currentHand = Hand.left,
+    this.grip = GripSetup.none,
     this.currentPullMax = 0.0,
     this.savedFirstHandMax = 0.0,
     this.accumulatedWorkSeconds = 0,
@@ -112,6 +117,7 @@ class RepeaterState {
       targetIntensity: targetIntensity ?? this.targetIntensity,
       startingHand: startingHand ?? this.startingHand,
       currentHand: currentHand ?? this.currentHand,
+      grip: grip,
       currentPullMax: currentPullMax ?? this.currentPullMax,
       savedFirstHandMax: savedFirstHandMax ?? this.savedFirstHandMax,
       accumulatedWorkSeconds: accumulatedWorkSeconds ?? this.accumulatedWorkSeconds,

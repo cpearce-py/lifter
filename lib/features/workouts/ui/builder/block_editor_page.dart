@@ -8,6 +8,7 @@ import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/features/workouts/models/custom/workout_template.dart';
 import 'package:lifter/features/workouts/models/intensity.dart';
 import 'package:lifter/features/workouts/ui/builder/builder_widgets.dart';
+import 'package:lifter/features/workouts/ui/widgets/grip_setup_card.dart';
 
 /// Edits a single block. Pops with the updated [WorkoutBlock], or null if
 /// the user backs out.
@@ -111,6 +112,11 @@ class _BlockEditorPageState extends State<BlockEditorPage> {
             accentColor: accentColor,
             onChanged: (i) => _update(_block.copyWith(kind: BlockKind.values[i])),
           ),
+        ),
+        GripSetupCard(
+          grip: _block.grip,
+          accentColor: accentColor,
+          onChanged: (g) => _update(_block.copyWith(grip: g)),
         ),
         stepper('Sets', _block.sets, 1, 20, 1, '',
             (v) => _block.copyWith(sets: v)),

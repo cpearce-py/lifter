@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 
 @immutable
 class RepeaterConfig {
@@ -13,6 +14,7 @@ class RepeaterConfig {
   final int relativeTo; 
   final int targetPercentage;
   final double customWeight;
+  final GripSetup grip;
 
   const RepeaterConfig({
     this.sets = 3,
@@ -24,6 +26,7 @@ class RepeaterConfig {
     this.relativeTo = 0,
     this.targetPercentage = 50,
     this.customWeight = 0,
+    this.grip = GripSetup.none,
 
   });
 
@@ -37,6 +40,7 @@ class RepeaterConfig {
     int? relativeTo,
     int? targetPercentage,
     double? customWeight,
+    GripSetup? grip,
   }) {
     return RepeaterConfig(
       sets: sets ?? this.sets,
@@ -48,6 +52,7 @@ class RepeaterConfig {
       relativeTo: relativeTo ?? this.relativeTo,
       targetPercentage: targetPercentage ?? this.targetPercentage,
       customWeight: customWeight ?? this.customWeight,
+      grip: grip ?? this.grip,
     );
   }
 }

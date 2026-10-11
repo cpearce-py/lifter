@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
@@ -19,8 +20,8 @@ class HistoryPage extends ConsumerWidget {
         // We only show the main loading spinner on the VERY FIRST load
         skipLoadingOnReload: true, 
         skipLoadingOnRefresh: true,
-        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFE8FF47))),
-        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent))),
+        loading: () => Center(child: CircularProgressIndicator(color: context.repeaterAccent)),
+        error: (err, stack) => Center(child: Text('Error: $err', style: TextStyle(color: context.danger))),
         data: (paginationState) {
           final workouts = paginationState.workouts;
 
@@ -29,7 +30,7 @@ class HistoryPage extends ConsumerWidget {
               child: Text(
                 'No workouts yet.\n',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+                style: TextStyle(color: context.textMuted, fontSize: 16),
               ),
             );
           }
@@ -49,16 +50,16 @@ class HistoryPage extends ConsumerWidget {
                   child: Center(
                     child: historyAsync.isRefreshing 
                       // Show a tiny spinner inside the button area while the next 20 fetch
-                      ? const CircularProgressIndicator(color: Color(0xFFE8FF47))
+                      ? CircularProgressIndicator(color: context.repeaterAccent)
                       : OutlinedButton(
                           onPressed: () {
                             ref.read(workoutHistoryProvider.notifier).loadMore();
                           },
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                            side: BorderSide(color: context.cardBorder),
                             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                           ),
-                          child: const Text('Load Older Workouts', style: TextStyle(color: Colors.white)),
+                          child: Text('Load Older Workouts', style: TextStyle(color: context.textPrimary)),
                         ),
                   ),
                 );

@@ -29,6 +29,12 @@ class WorkoutCard extends StatelessWidget {
     final title = workout.uiTitle;
     final icon = workout.uiIcon;
     final durationStr = '${(workout.duration / 60).floor()} min';
+    final grips = workout.grips;
+    final gripStr = switch (grips.length) {
+      0 => null,
+      1 => grips.single.label,
+      _ => '${grips.first.label} +${grips.length - 1}',
+    };
     final daysAgoStr = _getDaysAgo(workout.dateDone);
 
     return InkWell(
@@ -73,7 +79,9 @@ class WorkoutCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    durationStr,
+                    [durationStr, ?gripStr].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: context.body.copyWith(
                       fontSize: 12,
                       color: context.textMuted,

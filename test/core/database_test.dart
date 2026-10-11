@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,9 +13,12 @@ import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:lifter/features/user/repositories/user_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/history/repositories/dummy_workouts.dart';
 import 'package:lifter/features/history/repositories/local_workout_repository.dart';
+import 'package:lifter/features/history/models/workout_query_filter.dart';
 import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/workouts/models/custom/workout_template.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 import 'package:lifter/features/workouts/repositories/local_template_repository.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -25,6 +29,19 @@ RepetitionLog rep(double kg) => RepetitionLog(
       averageLoadLeft: kg - 2,
       averageLoadRight: kg - 2,
     );
+
+/// The best Peak Load pulls in the dummy seed, per hand.
+({double left, double right}) seededPeakLoadBest() {
+  final reps = [
+    for (final w in dummyWorkouts(DateTime.now()))
+      if (w.workoutTypeId == WorkoutId.peakLoad)
+        for (final s in w.sets) ...s.repetitions,
+  ];
+  return (
+    left: reps.map((r) => r.peakLoadLeft).reduce(max),
+    right: reps.map((r) => r.peakLoadRight).reduce(max),
+  );
+}
 
 /// The schema as a V2 install has it: the original tables plus the V2
 /// upgrade columns.
@@ -129,6 +146,45 @@ void main() {
     }
   });
 
+  test('sets round-trip their grip and edge', () async {
+    final db = await DatabaseService.instance.database;
+    final repo = LocalWorkoutRepository(db);
+    const crimp20 = GripSetup(grip: GripType.halfCrimp, edgeMm: 20);
+    const pinch = GripSetup(grip: GripType.pinch);
+
+    await repo.saveWorkout(WorkoutLog(
+      workoutTypeId: WorkoutId.custom,
+      dateDone: DateTime.now(),
+      duration: 600,
+      workingTime: 200,
+      graphData: Uint8List(0),
+      sets: [
+        SetLog(repetitions: [rep(10)], grip: crimp20),
+        SetLog(repetitions: [rep(20)], grip: pinch),
+        SetLog(repetitions: [rep(30)]),
+      ],
+    ));
+
+    final listed = (await repo.getWorkouts()).single;
+    final loaded = (await repo.getWorkoutById(listed.id!))!;
+    for (final w in [listed, loaded]) {
+      expect(w.sets.map((s) => s.grip), [crimp20, pinch, GripSetup.none]);
+    }
+  });
+
+  test('template blocks round-trip their grip', () async {
+    final db = await DatabaseService.instance.database;
+    final repo = LocalTemplateRepository(db);
+    const open10 = GripSetup(grip: GripType.openHand, edgeMm: 10);
+
+    final id = await repo.saveTemplate(const WorkoutTemplate(
+      name: 'Grips',
+      blocks: [WorkoutBlock.warmup(), WorkoutBlock(name: 'Open', grip: open10)],
+    ));
+    final saved = (await repo.getTemplateById(id))!;
+    expect(saved.blocks.map((b) => b.grip), [GripSetup.none, open10]);
+  });
+
   test('template save updates, reorders and deletes blocks', () async {
     final db = await DatabaseService.instance.database;
     final repo = LocalTemplateRepository(db);
@@ -159,9 +215,10 @@ void main() {
     await createV2Database(path);
 
     final db = await DatabaseService.instance.database;
-    expect(await db.getVersion(), 4);
+    expect(await db.getVersion(), 5);
 
     final old = (await LocalWorkoutRepository(db).getWorkouts()).single;
+    expect(old.sets.single.grip, GripSetup.none);
     expect(old.notes, 'old');
     expect(old.templateName, isNull);
     expect(old.sets.single.isWarmup, isFalse);
@@ -188,8 +245,9 @@ void main() {
     final repo = LocalWorkoutRepository(db);
     await repo.seedDummyData();
 
-    final workouts = await repo.getWorkouts();
-    expect(workouts.length, 3);
+    final workouts =
+        await repo.getWorkouts(filter: WorkoutQueryFilter(limit: 1000));
+    expect(workouts.length, dummyWorkouts(DateTime.now()).length);
     final custom = workouts.firstWhere((w) => w.workoutTypeId == WorkoutId.custom);
     expect(custom.templateName, 'Max Hangs');
     expect(custom.sets.where((s) => s.isWarmup).length, 3);
@@ -208,7 +266,8 @@ void main() {
 
     repo = await container.read(workoutRepositoryProvider.future);
     await repo.seedDummyData();
-    expect((await repo.getWorkouts()).length, 3);
+    final all = await repo.getWorkouts(filter: WorkoutQueryFilter(limit: 1000));
+    expect(all.length, dummyWorkouts(DateTime.now()).length);
   });
 
   test('a new Peak Load best reaches the settings copy', () async {
@@ -224,17 +283,17 @@ void main() {
     await LocalUserRepository(db).saveUser(UserProfile(id: 1, username: 'climber'));
     expect(container.read(userSettingsProvider).maxPullLeft, 0);
 
-    // The seed includes a Peak Load of 25 / 26 kg.
     await LocalWorkoutRepository(db).seedDummyData();
     await container.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
 
+    final best = seededPeakLoadBest();
     final settings = container.read(userSettingsProvider);
-    expect(settings.maxPullLeft, 25.0);
-    expect(settings.maxPullRight, 26.0);
+    expect(settings.maxPullLeft, best.left);
+    expect(settings.maxPullRight, best.right);
 
     // And it's persisted, not just in memory.
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getDouble('maxPullRight'), 26.0);
+    expect(prefs.getDouble('maxPullRight'), best.right);
   });
 
   test('changing the username keeps the max pulls', () async {
@@ -247,8 +306,9 @@ void main() {
 
     expect((await users.getUser(1))!.username, 'renamed');
     final pulls = await users.getMaxPulls(1);
-    expect(pulls.left, 25.0);
-    expect(pulls.right, 26.0);
+    final best = seededPeakLoadBest();
+    expect(pulls.left, best.left);
+    expect(pulls.right, best.right);
   });
 
   test('after a wipe, recent workouts and the calendar both read the new database', () async {

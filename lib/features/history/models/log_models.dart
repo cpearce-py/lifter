@@ -1,5 +1,6 @@
 
 import 'package:flutter/services.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 
 class RepetitionLog {
   final int? id; 
@@ -31,11 +32,15 @@ class SetLog {
   final String? blockName;
   final int? blockIndex;
 
+  /// What the set was pulled on.
+  final GripSetup grip;
+
   SetLog({
     required this.repetitions,
     this.isWarmup = false,
     this.blockName,
     this.blockIndex,
+    this.grip = GripSetup.none,
   });
 
   SetLog copyWith({
@@ -43,12 +48,14 @@ class SetLog {
     bool? isWarmup,
     String? blockName,
     int? blockIndex,
+    GripSetup? grip,
   }) {
     return SetLog(
       repetitions: repetitions ?? this.repetitions,
       isWarmup: isWarmup ?? this.isWarmup,
       blockName: blockName ?? this.blockName,
       blockIndex: blockIndex ?? this.blockIndex,
+      grip: grip ?? this.grip,
     );
   }
 }
@@ -105,5 +112,19 @@ class WorkoutLog {
       templateId: templateId ?? this.templateId,
       templateName: templateName ?? this.templateName,
     );
+  }
+
+  /// Each grip the workout's sets were pulled on, in the order first used.
+  List<GripSetup> get grips => [
+        ...{
+          for (final s in sets)
+            if (s.grip.isSet) s.grip,
+        },
+      ];
+
+  /// Tags every set with [grip], for workouts done on a single grip.
+  WorkoutLog withGrip(GripSetup grip) {
+    if (!grip.isSet) return this;
+    return copyWith(sets: [for (final s in sets) s.copyWith(grip: grip)]);
   }
 }

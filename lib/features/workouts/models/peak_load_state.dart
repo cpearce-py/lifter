@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
+import 'package:lifter/features/workouts/models/grip.dart';
 
 @immutable
 class PeakLoadState {
@@ -11,6 +12,9 @@ class PeakLoadState {
   final double bodyWeight;
   final int restSeconds;
   final Hand startingHand;
+
+  /// Tagged onto every logged set.
+  final GripSetup grip;
   
   // --- Endless Loop Progress ---
   final Hand currentHand;
@@ -41,6 +45,7 @@ class PeakLoadState {
     this.bodyWeight = 70.0, // Default to a sensible weight, but overridden by the config UI
     this.restSeconds = 120, // e.g., 2 minutes rest between rounds
     this.startingHand = Hand.left,
+    this.grip = GripSetup.none,
     this.currentHand = Hand.left,
     this.repCount = 0,
     this.currentTarget = 0.0,
@@ -95,6 +100,7 @@ class PeakLoadState {
       bodyWeight: bodyWeight ?? this.bodyWeight,
       restSeconds: restSeconds ?? this.restSeconds,
       startingHand: startingHand ?? this.startingHand,
+      grip: grip,
       currentHand: currentHand ?? this.currentHand,
       repCount: repCount ?? this.repCount,
       currentTarget: currentTarget ?? this.currentTarget,

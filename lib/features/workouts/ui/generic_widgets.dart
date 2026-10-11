@@ -59,14 +59,20 @@ import 'package:lifter/core/ui/themes/app_theme.dart';
   };
 }
 
-Color accentColorForPhase(Phase phase, BuildContext context) => switch (phase) {
-  Phase.working => context.repeaterAccent,
+/// The colour for [phase]. Pulling (and getting ready to) uses [working],
+/// the workout's own accent, so each workout type keeps its colour.
+Color accentColorForPhase(
+  Phase phase,
+  BuildContext context, {
+  Color? working,
+}) => switch (phase) {
+  Phase.working => working ?? context.repeaterAccent,
   Phase.resting => context.streakAccent,
   Phase.setResting => context.setRestAccent,
   Phase.paused => context.danger,
   Phase.done => context.success,
   Phase.switching => context.swapHandAccent,
-  _ => context.repeaterAccent,
+  _ => working ?? context.repeaterAccent,
 };
 
 
@@ -74,11 +80,20 @@ class GenericGraphArea extends ConsumerWidget {
   final Phase phase;
   final Widget? overlay; // Specific overlay in topright of graph
 
-  const GenericGraphArea({super.key, required this.phase, this.overlay});
+  /// The workout's accent, used while pulling. See [accentColorForPhase].
+  final Color? workingAccent;
+
+  const GenericGraphArea({
+    super.key,
+    required this.phase,
+    this.overlay,
+    this.workingAccent,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accentColor = accentColorForPhase(phase, context);
+    final accentColor =
+        accentColorForPhase(phase, context, working: workingAccent);
 
     final isGraphActive =
         phase != Phase.idle &&

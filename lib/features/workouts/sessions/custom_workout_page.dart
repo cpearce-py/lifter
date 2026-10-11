@@ -30,7 +30,10 @@ class CustomWorkoutPage extends ConsumerWidget {
     final state = ref.watch(customWorkoutEngineProvider);
     final inner = state.inner;
     final step = state.currentStep;
-    final accentColor = accentColorForPhase(state.phase, context);
+    final workingAccent =
+        step.isWarmup ? context.warmupAccent : context.customAccent;
+    final accentColor =
+        accentColorForPhase(state.phase, context, working: workingAccent);
 
     // Between blocks the next block is already loaded and resting.
     final isBlockTransition = state.phase == Phase.setResting &&
@@ -126,6 +129,7 @@ class CustomWorkoutPage extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: hPad),
                   child: GenericGraphArea(
                     phase: state.phase,
+                    workingAccent: workingAccent,
                     overlay: Text(
                       isBlockTransition
                           ? 'UP NEXT'

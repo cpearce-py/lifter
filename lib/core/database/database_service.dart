@@ -26,7 +26,7 @@ class DatabaseService {
     debugPrint("DB Path: $path");
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onConfigure: _onConfigure,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
@@ -111,6 +111,9 @@ class DatabaseService {
     await db.insert('workout_type', {'workout_type_id': 2, 'workout_name': 'Peak Load'});
 
     await _createCustomWorkoutTables(db);
+    await _addGripColumns(db);
+    // Seeded last, once the block table has all of its columns.
+    await LocalTemplateRepository.seedStarterTemplates(db);
 
     debugPrint('Database tables created successfully!');
   }
@@ -143,6 +146,24 @@ class DatabaseService {
       await _addColumnIfMissing(db, 'workout', 'graph_data', 'BLOB');
       await _addColumnIfMissing(db, 'repetition', 'average_load_left', 'REAL DEFAULT 0.0');
       await _addColumnIfMissing(db, 'repetition', 'average_load_right', 'REAL DEFAULT 0.0');
+    }
+
+    if (oldVersion < 5) {
+      await _addGripColumns(db);
+    }
+
+    // Seeded last, once the block table has all of its columns.
+    if (oldVersion < 3) {
+      await LocalTemplateRepository.seedStarterTemplates(db);
+    }
+  }
+
+  // V5: the grip and edge a set was pulled on, and the default for a block.
+  // Null means not recorded, which is what all earlier history reads as.
+  Future<void> _addGripColumns(Database db) async {
+    for (final table in ['set', 'template_block']) {
+      await _addColumnIfMissing(db, table, 'grip', 'TEXT');
+      await _addColumnIfMissing(db, table, 'edge_mm', 'INTEGER');
     }
   }
 
@@ -204,8 +225,6 @@ class DatabaseService {
     await db.execute('ALTER TABLE "set" ADD COLUMN is_warmup INTEGER DEFAULT 0;');
     await db.execute('ALTER TABLE "set" ADD COLUMN block_name TEXT;');
     await db.execute('ALTER TABLE "set" ADD COLUMN block_index INTEGER;');
-
-    await LocalTemplateRepository.seedStarterTemplates(db);
   }
 
   Future<void> wipeDatabase() async {

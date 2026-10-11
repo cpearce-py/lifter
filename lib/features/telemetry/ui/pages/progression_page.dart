@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/ui/charts/max_pull.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/telemetry/ui/charts/workouts_per_month.dart';
 import 'package:lifter/features/telemetry/ui/widgets/chart_card.dart';
+import 'package:lifter/features/telemetry/ui/widgets/grip_filter_bar.dart';
 
 class ProgressionPage extends StatelessWidget {
   const ProgressionPage({super.key});
@@ -28,10 +30,22 @@ class ProgressionPage extends StatelessWidget {
               child: WorkoutsProgressionChart(),
             ),
 
+            const GripFilterBar(),
+
             ChartCard(
               title: 'Peak Load History',
               subtitle: 'Max weight pulled per hand over time',
               child: MaxPullProgressionChart(),
+            ),
+
+            ChartCard(
+              title: 'Hang Load History',
+              subtitle: 'Best average load per hand in Repeater and custom working sets',
+              child: MaxPullProgressionChart(
+                workoutTypeIds: {WorkoutId.repeater, WorkoutId.custom},
+                useAverage: true,
+                emptyMessage: 'Complete a Repeater or custom workout to see progress',
+              ),
             ),
 
             // Add more ChartCards here in the future effortlessly!

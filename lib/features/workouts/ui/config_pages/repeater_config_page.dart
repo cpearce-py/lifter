@@ -11,6 +11,7 @@ import 'package:lifter/features/workouts/providers/repeater_config_provider.dart
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/workouts/sessions/repeater_workout_page.dart';
 import 'package:lifter/features/workouts/ui/wave_animator.dart';
+import 'package:lifter/features/workouts/ui/widgets/grip_setup_card.dart';
 
 class RepeaterSetupPage extends ConsumerWidget {
   const RepeaterSetupPage({super.key});
@@ -181,6 +182,15 @@ class RepeaterSetupPage extends ConsumerWidget {
                           onChanged: (idx) =>
                               notifier.updateStartingHand(Hand.values[idx]),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    waveItem(
+                      GripSetupCard(
+                        grip: config.grip,
+                        accentColor: accentColor,
+                        onChanged: notifier.updateGrip,
                       ),
                     ),
                     const SizedBox(

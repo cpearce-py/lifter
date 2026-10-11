@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:lifter/features/bluetooth/ble_manager.dart';
 
@@ -15,7 +16,7 @@ class ConnectBluetoothButton extends StatelessWidget {
       builder: (context, snapshot) {
         final isScanning = snapshot.data ?? false;
 
-        final color = isScanning ? const Color(0xFFFF6B6B) : const Color(0xFF47C8FF);
+        final color = isScanning ? context.danger : context.streakAccent;
         final label = isScanning ? 'Stop Reading' : 'Start Reading';
         final icon = isScanning ? Icons.sensors_off_rounded : Icons.sensors_rounded;
 
@@ -75,7 +76,7 @@ class BleStatusDot extends StatelessWidget {
       builder: (context, snapshot) {
         final isScanning = snapshot.data ?? false;
 
-        final color = isScanning ? const Color(0xFF47C8FF) : Colors.white.withOpacity(0.15);
+        final color = isScanning ? context.streakAccent : context.textSubtle;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
