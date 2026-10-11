@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lifter/core/measurements/unit_converter.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/stats_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
@@ -8,7 +9,28 @@ import 'package:lifter/core/ui/main_shell.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/core/ui/widgets/weekly_calendar.dart';
+import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
+import 'package:lifter/features/workouts/providers/weekly_provider.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+// One set of numbers for the whole page, so every section lines up.
+
+/// Side margin for cards (calendar, workouts, stats). Matches the calendar.
+const double _cardInset = 0;
+
+/// Side margin for text outside cards (greeting, section labels, empty states).
+const double _textInset = 24;
+
+/// Space above each section label, separating it from the section before.
+const double _sectionGap = 28;
+
+/// Space between a section label and its content.
+const double _labelGap = 12;
+
+/// Space between cards within a section.
+const double _cardGap = 10;
 
 // ─── Data models ──────────────────────────────────────────────────────────────
 
@@ -64,11 +86,15 @@ class _HomePageState extends State<HomePage>
         physics: const BouncingScrollPhysics(),
         slivers: [
           HomeHeaderSliver(animation: _controller),
-          SliverToBoxAdapter(child: const WeeklyCalendar()),
+          const SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: _cardInset),
+            sliver: SliverToBoxAdapter(child: WeeklyCalendar()),
+          ),
+          // Workouts sit straight under the calendar so tapping a day
+          // visibly changes what's below it.
+          RecentWorkoutsSliver(animation: _controller),
           SectionLabelSliver(text: '$month at a glance'),
           StatsGridSliver(animation: _controller),
-          const SectionLabelSliver(text: 'Recent workouts'),
-          RecentWorkoutsSliver(animation: _controller),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
@@ -100,10 +126,10 @@ class HomeHeaderSliver extends ConsumerWidget {
         intervalEnd: 0.5,
         child: Container(
           padding: EdgeInsets.fromLTRB(
-            24,
+            _textInset,
             MediaQuery.of(context).padding.top + 32,
-            24,
-            28,
+            _textInset,
+            _sectionGap,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,65 +191,179 @@ class SectionLabelSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-        child: Text(
-          text.toUpperCase(),
-          style: context.overline.copyWith(letterSpacing: 2.5),
-        ),
+    return SliverToBoxAdapter(child: SectionLabel(text: text));
+  }
+}
+
+class SectionLabel extends StatelessWidget {
+  final String text;
+  final Widget? trailing;
+  const SectionLabel({super.key, required this.text, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        _textInset,
+        _sectionGap,
+        _textInset,
+        _labelGap,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              text.toUpperCase(),
+              style: context.overline.copyWith(letterSpacing: 2.5),
+            ),
+          ),
+          ?trailing,
+        ],
       ),
     );
   }
 }
 
-class RecentWorkoutsSliver extends ConsumerWidget {
+/// Recent workouts, or the workouts from the day picked on the calendar.
+class RecentWorkoutsSliver extends ConsumerStatefulWidget {
   final AnimationController animation;
   const RecentWorkoutsSliver({super.key, required this.animation});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(workoutHistoryProvider);
+  ConsumerState<RecentWorkoutsSliver> createState() =>
+      _RecentWorkoutsSliverState();
+}
 
-    return historyAsync.when(
-      loading: () => const SliverToBoxAdapter(
+class _RecentWorkoutsSliverState extends ConsumerState<RecentWorkoutsSliver> {
+  // What's currently on screen. While the next day loads we keep showing
+  // this instead of a spinner, so the section (and everything under it)
+  // doesn't collapse and jump back.
+  List<WorkoutLog>? _shownWorkouts;
+  DateTime? _shownDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedDay = ref.watch(selectedDayProvider);
+
+    final AsyncValue<List<WorkoutLog>> workoutsAsync = selectedDay == null
+        ? ref
+            .watch(workoutHistoryProvider)
+            .whenData((page) => page.workouts.take(3).toList())
+        : ref.watch(dayWorkoutsProvider(selectedDay));
+
+    // Only record data that has finished loading. While reloading, or after
+    // a failed reload, Riverpod still hands back the *previous* data, which
+    // may come from a database that no longer exists (e.g. after a nuke).
+    // Fields rather than setState: this only records what this build shows.
+    final isFresh = workoutsAsync.hasValue &&
+        !workoutsAsync.isLoading &&
+        !workoutsAsync.hasError;
+    if (isFresh) {
+      _shownWorkouts = workoutsAsync.value;
+      _shownDay = selectedDay;
+    }
+
+    if (workoutsAsync.hasError) {
+      return SliverToBoxAdapter(
+        child: Center(child: Text('Error: ${workoutsAsync.error}')),
+      );
+    }
+
+    final workouts = _shownWorkouts;
+    if (workouts == null) {
+      // First load, nothing to keep on screen yet.
+      return const SliverToBoxAdapter(
         child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) =>
-          SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
-      data: (pagination) {
-        final recentWorkouts = pagination.workouts.take(3).toList();
+      );
+    }
 
-        if (recentWorkouts.isEmpty) {
-          return SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Text(
-                "No workouts yet.",
-                style: TextStyle(color: context.textMuted),
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Heading follows the cards, so the two always change together.
+          _heading(_shownDay),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.topCenter,
+                children: [...previous, ?current],
+              ),
+              child: KeyedSubtree(
+                key: ValueKey(_shownDay),
+                child: _workoutList(workouts, _shownDay),
               ),
             ),
-          );
-        }
-
-        return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              return FadeSlide(
-                animation: animation,
-                intervalStart: 0.35 + index * 0.08,
-                intervalEnd: 0.75 + index * 0.08,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: WorkoutCard(workout: recentWorkouts[index]),
-                ),
-              );
-            }, childCount: recentWorkouts.length),
           ),
-        );
-      },
+        ],
+      ),
     );
+  }
+
+  Widget _heading(DateTime? day) {
+    if (day == null) return const SectionLabel(text: 'Recent workouts');
+
+    return SectionLabel(
+      text: _dayLabel(day),
+      trailing: GestureDetector(
+        onTap: () => ref.read(selectedDayProvider.notifier).clear(),
+        child: Row(
+          children: [
+            Text(
+              'SHOW RECENT',
+              style: context.overline.copyWith(letterSpacing: 1.5),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.close_rounded, size: 14, color: context.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _workoutList(List<WorkoutLog> workouts, DateTime? day) {
+    if (workouts.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: _textInset, vertical: 4),
+        child: Text(
+          day == null ? "No workouts yet." : "Rest day. No workouts logged.",
+          style: TextStyle(color: context.textMuted),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _cardInset),
+      child: Column(
+        children: [
+          for (final (index, workout) in workouts.indexed)
+            FadeSlide(
+              animation: widget.animation,
+              intervalStart: 0.1 + index * 0.08,
+              intervalEnd: 0.5 + index * 0.08,
+              child: Padding(
+                // Gap between cards only, so the next section's spacing
+                // isn't padded out by the last card.
+                padding: EdgeInsets.only(top: index == 0 ? 0 : _cardGap),
+                child: WorkoutCard(workout: workout),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// "Today", "Yesterday", or e.g. "Tue 7 Oct".
+  String _dayLabel(DateTime day) {
+    final today = dateOnly(DateTime.now());
+    final difference = today.difference(day).inDays;
+    if (difference == 0) return 'Today';
+    if (difference == 1) return 'Yesterday';
+    return DateFormat('EEE d MMM').format(day);
   }
 }
 
@@ -234,6 +374,9 @@ class StatsGridSliver extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(userStatsProvider);
+    final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
+    String weight(double kg) =>
+        (useLbs ? kgToLbs(kg) : kg).toStringAsFixed(1);
 
     return statsAsync.when(
       loading: () => const SliverToBoxAdapter(
@@ -262,29 +405,30 @@ class StatsGridSliver extends ConsumerWidget {
             accentColor: context.repeaterAccent,
           ),
           _StatData(
-            value: stats.currentStreak.toString(),
-            unit: 'day streak',
-            label: 'Current\nstreak',
+            value: stats.weekStreak.toString(),
+            unit: stats.weekStreak == 1 ? 'week' : 'weeks',
+            label: 'Streak of\n$streakSessionsPerWeek+ sessions/week',
             icon: Icons.local_fire_department_rounded,
             accentColor: context.streakAccent,
           ),
+          _maxPullStat(context, stats, weight, useLbs ? 'lbs' : 'kg'),
         ];
 
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: _cardInset),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate((context, index) {
               return FadeSlide(
                 animation: animation,
-                intervalStart: 0.1 + index * 0.08,
-                intervalEnd: 0.5 + index * 0.08,
+                intervalStart: 0.35 + index * 0.08,
+                intervalEnd: 0.75 + index * 0.08,
                 child: _StatCard(data: statCardsData[index]),
               );
             }, childCount: statCardsData.length),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+              crossAxisSpacing: _cardGap,
+              mainAxisSpacing: _cardGap,
               childAspectRatio: 1.05,
             ),
           ),
@@ -292,6 +436,28 @@ class StatsGridSliver extends ConsumerWidget {
       },
     );
   }
+}
+
+/// Best single pull, with each hand's best underneath.
+_StatData _maxPullStat(
+  BuildContext context,
+  UserStats stats,
+  String Function(double kg) weight,
+  String unit,
+) {
+  final best = stats.maxPullLeft > stats.maxPullRight
+      ? stats.maxPullLeft
+      : stats.maxPullRight;
+
+  return _StatData(
+    value: best > 0 ? weight(best) : '–',
+    unit: best > 0 ? unit : '',
+    label: best > 0
+        ? 'Max pull\nL ${weight(stats.maxPullLeft)} · R ${weight(stats.maxPullRight)}'
+        : 'Max pull\nDo a Peak Load test',
+    icon: Icons.arrow_upward_rounded,
+    accentColor: context.setRestAccent,
+  );
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────

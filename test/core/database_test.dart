@@ -3,7 +3,14 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lifter/core/database/database_service.dart';
+import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
+import 'package:lifter/features/workouts/providers/weekly_provider.dart';
+import 'package:lifter/core/providers/shared_preferences_provider.dart';
+import 'package:lifter/features/user/models/user_profile.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
+import 'package:lifter/features/user/repositories/user_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/repositories/local_workout_repository.dart';
 import 'package:lifter/features/history/ui/workout_theme_extension.dart';
@@ -202,5 +209,71 @@ void main() {
     repo = await container.read(workoutRepositoryProvider.future);
     await repo.seedDummyData();
     expect((await repo.getWorkouts()).length, 3);
+  });
+
+  test('a new Peak Load best reaches the settings copy', () async {
+    SharedPreferences.setMockInitialValues({});
+    final container = ProviderContainer(overrides: [
+      sharedPreferencesProvider.overrideWithValue(
+        await SharedPreferences.getInstance(),
+      ),
+    ]);
+    addTearDown(container.dispose);
+
+    final db = await container.read(databaseProvider.future);
+    await LocalUserRepository(db).saveUser(UserProfile(id: 1, username: 'climber'));
+    expect(container.read(userSettingsProvider).maxPullLeft, 0);
+
+    // The seed includes a Peak Load of 25 / 26 kg.
+    await LocalWorkoutRepository(db).seedDummyData();
+    await container.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
+
+    final settings = container.read(userSettingsProvider);
+    expect(settings.maxPullLeft, 25.0);
+    expect(settings.maxPullRight, 26.0);
+
+    // And it's persisted, not just in memory.
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getDouble('maxPullRight'), 26.0);
+  });
+
+  test('changing the username keeps the max pulls', () async {
+    final db = await DatabaseService.instance.database;
+    final users = LocalUserRepository(db);
+    await users.saveUser(UserProfile(id: 1, username: 'climber'));
+    await LocalWorkoutRepository(db).seedDummyData();
+
+    await users.saveUser(UserProfile(id: 1, username: 'renamed'));
+
+    expect((await users.getUser(1))!.username, 'renamed');
+    final pulls = await users.getMaxPulls(1);
+    expect(pulls.left, 25.0);
+    expect(pulls.right, 26.0);
+  });
+
+  test('after a wipe, recent workouts and the calendar both read the new database', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    // Home is open, listening to both.
+    final history = container.listen(workoutHistoryProvider, (_, _) {});
+    final week = container.listen(weekWorkoutsProvider(0), (_, _) {});
+    await container.read(workoutHistoryProvider.notifier).injectDummyData();
+    expect((await container.read(workoutHistoryProvider.future)).workouts, isNotEmpty);
+
+    // What Nuke Database does. Note: recent workouts is not invalidated by
+    // hand; it has to follow the database like everything else.
+    await DatabaseService.instance.wipeDatabase();
+    container.invalidate(databaseProvider);
+
+    // Home goes away during onboarding, then comes back.
+    history.close();
+    week.close();
+    await Future<void>.delayed(Duration.zero);
+    container.listen(workoutHistoryProvider, (_, _) {});
+    container.listen(weekWorkoutsProvider(0), (_, _) {});
+
+    expect((await container.read(workoutHistoryProvider.future)).workouts, isEmpty);
+    expect(await container.read(weekWorkoutsProvider(0).future), isEmpty);
   });
 }

@@ -212,12 +212,13 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, dbName);
 
-    if (_database != null) {
-      await _database!.close();
-    }
+    // Clear the cached connection *before* closing it, so nothing that asks
+    // for the database mid-wipe is handed one that's already closed.
+    final old = _database;
+    _database = null;
+    await old?.close();
 
     await deleteDatabase(path);
-    _database = null;
     debugPrint("Database wiped clean!");
   }
 }

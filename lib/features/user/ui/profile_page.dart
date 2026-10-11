@@ -6,6 +6,7 @@ import 'package:lifter/core/measurements/widgets/weight_input.dart';
 import 'package:lifter/core/measurements/widgets/weight_text.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
+import 'package:lifter/features/workouts/providers/weekly_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/app_card.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
@@ -53,10 +54,14 @@ Future<void> _confirmNukeDatabase(BuildContext context, WidgetRef ref) async {
     await DatabaseService.instance.wipeDatabase();
 
     // The cached connection is now closed. Rebuilding the database provider
-    // reopens (and recreates) it, and everything that watches it follows.
+    // reopens (and recreates) it, and every list, stat and calendar watches
+    // it, so they all reload from the new, empty database.
     ref.invalidate(databaseProvider);
     ref.read(workoutDatabaseSignalProvider.notifier).notifyChange();
-    ref.invalidate(workoutHistoryProvider);
+    // A day picked before the wipe would point at workouts that are gone.
+    ref.read(selectedDayProvider.notifier).clear();
+    // The wiped database has no bests, so clear the copy in settings too.
+    await ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
     
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

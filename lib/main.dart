@@ -38,6 +38,14 @@ class FitApp extends ConsumerStatefulWidget {
 class _FitAppState extends ConsumerState<FitApp> {
 
   @override
+  void initState() {
+    super.initState();
+    // Bring the settings copy of the max pulls in line with the database.
+    // Before this sync existed it was never written, so it may read zero.
+    ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
+  }
+
+  @override
   void dispose() {
     super.dispose();
   }

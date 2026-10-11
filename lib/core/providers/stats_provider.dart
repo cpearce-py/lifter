@@ -2,17 +2,55 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
+import 'package:lifter/features/workouts/providers/weekly_provider.dart';
+
+/// Sessions needed in a week for it to count towards the streak.
+const streakSessionsPerWeek = 2;
 
 class UserStats {
   final double hoursThisMonth;
   final int totalWorkouts;
-  final int currentStreak;
+
+  /// Consecutive weeks with at least [streakSessionsPerWeek] sessions.
+  final int weekStreak;
+
+  /// Best pulls from Peak Load sessions.
+  final double maxPullLeft;
+  final double maxPullRight;
 
   UserStats({
     required this.hoursThisMonth,
     required this.totalWorkouts,
-    required this.currentStreak,
+    required this.weekStreak,
+    required this.maxPullLeft,
+    required this.maxPullRight,
   });
+}
+
+/// Counts back through Monday-start weeks while each has at least
+/// [minSessions] workouts. The current week only adds to the streak once it
+/// reaches the target; until then it doesn't break it either, so the streak
+/// doesn't reset every Monday.
+int weeklyStreak(
+  Iterable<DateTime> workoutDates,
+  DateTime now, {
+  int minSessions = streakSessionsPerWeek,
+}) {
+  final sessionsPerWeek = <DateTime, int>{};
+  for (final date in workoutDates) {
+    final day = dateOnly(date);
+    final monday = DateTime(day.year, day.month, day.day - (day.weekday - 1));
+    sessionsPerWeek[monday] = (sessionsPerWeek[monday] ?? 0) + 1;
+  }
+
+  int sessionsInWeek(int weekOffset) =>
+      sessionsPerWeek[mondayForWeekOffset(weekOffset, now: now)] ?? 0;
+
+  var streak = sessionsInWeek(0) >= minSessions ? 1 : 0;
+  for (var offset = -1; sessionsInWeek(offset) >= minSessions; offset--) {
+    streak++;
+  }
+  return streak;
 }
 
 final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
@@ -45,40 +83,26 @@ final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
   final totalSecondsThisMonth = Sqflite.firstIntValue(sumResult) ?? 0;
   final hoursThisMonth = totalSecondsThisMonth / 3600.0;
 
-  // We grab just the unique dates (ignoring time of day) sorted newest to oldest
-  final datesResult = await db.rawQuery('''
-    SELECT DISTINCT date(date_done) as date_string
-    FROM workout
-    ORDER BY date_string DESC
-  ''');
+  final datesResult = await db.rawQuery('SELECT date_done FROM workout');
+  final streak = weeklyStreak(
+    datesResult.map((row) => DateTime.parse(row['date_done'] as String)),
+    now,
+  );
 
-  int streak = 0;
-  DateTime dateChecker = DateTime(now.year, now.month, now.day); // Start checking from today (midnight)
-
-  for (var row in datesResult) {
-    final dbDateStr = row['date_string'] as String;
-    final dbDate = DateTime.parse(dbDateStr);
-    final differenceInDays = dateChecker.difference(dbDate).inDays;
-
-    if (differenceInDays == 0) {
-      // Worked out on the day we are checking! 
-      if (streak == 0) streak = 1; // Start the streak if it's today
-    } else if (differenceInDays == 1) {
-      // Worked out exactly one day prior to our checker. The streak continues!
-      streak++;
-      dateChecker = dbDate; // Shift our checker back a day
-    } else if (differenceInDays > 1 && streak > 0) {
-      // They missed a day, and we were already counting a streak. Stop here!
-      break; 
-    } else if (differenceInDays > 1 && streak == 0) {
-      // They haven't worked out today OR yesterday. Streak is dead.
-      break;
-    }
-  }
+  // Peak Load sessions update these when a new best is set.
+  final userRows = await db.query(
+    'user',
+    columns: ['max_pull_left', 'max_pull_right'],
+    where: 'user_id = ?',
+    whereArgs: [1], // TODO: Assuming a single local user for now
+  );
+  final userRow = userRows.isEmpty ? null : userRows.first;
 
   return UserStats(
     hoursThisMonth: hoursThisMonth,
     totalWorkouts: totalWorkouts,
-    currentStreak: streak,
+    weekStreak: streak,
+    maxPullLeft: (userRow?['max_pull_left'] as num?)?.toDouble() ?? 0.0,
+    maxPullRight: (userRow?['max_pull_right'] as num?)?.toDouble() ?? 0.0,
   );
 });

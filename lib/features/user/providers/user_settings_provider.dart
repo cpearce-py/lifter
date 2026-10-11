@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/shared_preferences_provider.dart';
+import 'package:lifter/core/providers/user_provider.dart';
 import 'package:lifter/features/user/models/user_profile.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,6 +48,25 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
     state = state.copyWith(maxPullLeft: left, maxPullRight: right);
     _prefs.setDouble('maxPullLeft', left);
     _prefs.setDouble('maxPullRight', right);
+  }
+
+  /// The database is the source of truth for max pulls (Peak Load records
+  /// new bests there). The copy kept here is so screens and workout setup
+  /// can read it synchronously; call this after anything that changes it.
+  ///
+  /// Failures are logged rather than thrown: this only refreshes a copy, and
+  /// shouldn't make the save that triggered it look like it failed.
+  Future<void> syncMaxPullsFromDatabase() async {
+    try {
+      final repo = await ref.read(userRepositoryProvider.future);
+      final pulls = await repo.getMaxPulls(1); // TODO: Assuming a single local user for now
+
+      if (pulls.left != state.maxPullLeft || pulls.right != state.maxPullRight) {
+        updateMaxPulls(pulls.left, pulls.right);
+      }
+    } catch (e, st) {
+      log("Failed to sync max pulls", error: e, stackTrace: st, name: "UserSettingsNotifier");
+    }
   }
 
   void toggleMetric(bool useLbs) {

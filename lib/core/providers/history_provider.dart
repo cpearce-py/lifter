@@ -1,9 +1,12 @@
 import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/cache_for.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
+import 'package:lifter/features/history/repositories/workout_repository.dart';
+import 'package:lifter/features/user/providers/user_settings_provider.dart';
 
 class WorkoutDatabaseSignal extends Notifier<int> {
   @override 
@@ -39,12 +42,19 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
 
   @override
   Future<HistoryPaginationState> build() async {
+    // Watch the same things the calendar and stats do, so a new database
+    // (e.g. after a nuke) or any change to it reloads this list too.
+    ref.watch(workoutDatabaseSignalProvider);
+    final repo = await ref.watch(workoutRepositoryProvider.future);
+
+    // The home page stops listening while a calendar day is selected, so
+    // keep the list around for a bit rather than reloading on the way back.
+    ref.cacheFor(const Duration(seconds: 30));
     _currentOffset = 0;
-    return _fetchPage();
+    return _fetchPage(repo);
   }
 
-  Future<HistoryPaginationState> _fetchPage() async {
-    final repo = await ref.read(workoutRepositoryProvider.future);
+  Future<HistoryPaginationState> _fetchPage(WorkoutRepository repo) async {
 
     // Fetch the specific chunk
     final newWorkouts = await repo.getWorkouts(
@@ -88,7 +98,8 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
       // 2. Increment the offset for the SQL query
       _currentOffset += _limit;
       // 3. Fetch and update the state
-      final newState = await _fetchPage();
+      final repo = await ref.read(workoutRepositoryProvider.future);
+      final newState = await _fetchPage(repo);
       state = AsyncData(newState);
 
     } catch (e, st) {
@@ -111,6 +122,8 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
   Future<void> saveWorkout(WorkoutLog newWorkout) async {
     final repo = await ref.read(workoutRepositoryProvider.future);
     await repo.saveWorkout(newWorkout);
+    // A Peak Load session may have set a new best.
+    await ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
     _invalidateProviders();
     ref.invalidateSelf();
   }
@@ -179,6 +192,7 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
     try {
       final repo = await ref.read(workoutRepositoryProvider.future);
       await repo.seedDummyData();
+      await ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
       
       _invalidateProviders();
       ref.invalidateSelf();
