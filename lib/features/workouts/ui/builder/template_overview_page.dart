@@ -42,14 +42,24 @@ class TemplateOverviewPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final templates = ref.watch(templatesProvider).value ?? const [];
-    final template = templates.where((t) => t.id == templateId).firstOrNull;
+    final templatesAsync = ref.watch(templatesProvider);
+    final template = templatesAsync.value
+        ?.where((t) => t.id == templateId)
+        .firstOrNull;
     final accentColor = context.customAccent;
 
     if (template == null) {
+      // Loading, or deleted from somewhere else while this page was open.
       return Scaffold(
         backgroundColor: context.background,
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: templatesAsync.isLoading
+              ? const CircularProgressIndicator()
+              : Text(
+                  'This workout no longer exists.',
+                  style: TextStyle(color: context.textMuted),
+                ),
+        ),
       );
     }
 
@@ -65,11 +75,15 @@ class TemplateOverviewPage extends ConsumerWidget {
       ].join('\n'),
       accentColor: accentColor,
       trailing: GestureDetector(
-        onTap: () => Navigator.of(context).push(
-          CupertinoPageRoute(
-            builder: (_) => TemplateEditorPage(template: template),
-          ),
-        ),
+        onTap: () async {
+          final deleted = await Navigator.of(context).push<bool>(
+            CupertinoPageRoute(
+              builder: (_) => TemplateEditorPage(template: template),
+            ),
+          );
+          // Nothing left to show here once the workout is gone.
+          if (deleted == true && context.mounted) Navigator.of(context).pop();
+        },
         child: Text(
           'Edit',
           style: context.cardTitle.copyWith(

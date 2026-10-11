@@ -13,6 +13,9 @@ import 'package:lifter/features/workouts/ui/builder/block_editor_page.dart';
 import 'package:lifter/features/workouts/ui/builder/builder_widgets.dart';
 
 /// Creates a new template, or edits [template] when one is given.
+///
+/// Pops with `true` if the template was deleted, so the page underneath can
+/// close too rather than show a workout that no longer exists.
 class TemplateEditorPage extends ConsumerStatefulWidget {
   const TemplateEditorPage({super.key, this.template});
 
@@ -97,6 +100,15 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
     final toSave = _template.copyWith(name: _nameController.text.trim());
     await ref.read(templatesProvider.notifier).saveTemplate(toSave);
     if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _delete() async {
+    final template = widget.template!;
+    if (!await confirmDeleteTemplate(context, template)) return;
+
+    setState(() => _saving = true); // lets PopScope through
+    await ref.read(templatesProvider.notifier).deleteTemplate(template.id!);
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   Future<bool> _confirmDiscard() async {
@@ -205,6 +217,21 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
               ),
             ],
           ),
+          if (!_isNew)
+            Center(
+              child: TextButton.icon(
+                onPressed: _saving ? null : _delete,
+                icon: Icon(Icons.delete_outline_rounded, color: context.danger),
+                label: Text(
+                  'Delete workout',
+                  style: context.body.copyWith(
+                    color: context.danger,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

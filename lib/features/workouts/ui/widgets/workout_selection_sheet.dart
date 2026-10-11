@@ -138,7 +138,7 @@ class _WorkoutSelectionSheetState extends ConsumerState<WorkoutSelectionSheet>
               ),
               onTap: () async {
                 Navigator.pop(sheetContext);
-                final confirmed = await _confirmDelete(context, template);
+                final confirmed = await confirmDeleteTemplate(context, template);
                 if (confirmed) notifier.deleteTemplate(template.id!);
               },
             ),
@@ -146,31 +146,6 @@ class _WorkoutSelectionSheetState extends ConsumerState<WorkoutSelectionSheet>
         ),
       ),
     );
-  }
-
-  Future<bool> _confirmDelete(BuildContext context, WorkoutTemplate template) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.cardBackground,
-        title: Text('Delete "${template.name}"?', style: context.body),
-        content: Text(
-          'Workouts you have already logged with it are kept.',
-          style: TextStyle(color: context.textMuted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: context.textPrimary)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: context.danger)),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
   }
 
   @override
