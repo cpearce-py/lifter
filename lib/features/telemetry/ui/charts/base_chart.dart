@@ -58,7 +58,7 @@ class BaseProgressionChart extends StatelessWidget {
       ),
       belowBarData: BarAreaData(
         show: true,
-        color: color.withOpacity(areaOpacity),
+        color: color.withValues(alpha: areaOpacity),
       ),
     );
   }
@@ -73,7 +73,7 @@ class BaseProgressionChart extends StatelessWidget {
     return spotIndexes.map((index) {
       return TouchedSpotIndicatorData(
         FlLine(
-          color: indicatorLineColor.withOpacity(0.4),
+          color: indicatorLineColor.withValues(alpha: 0.4),
           strokeWidth: 2,
           dashArray: [4, 4],
         ),
@@ -98,7 +98,6 @@ class BaseProgressionChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 220,
-      width: MediaQuery.of(context).size.width - 72,
       child: LineChart(
         LineChartData(
           minX: 0,
@@ -117,8 +116,8 @@ class BaseProgressionChart extends StatelessWidget {
               return FlLine(
                 // Note: Make sure your context extensions are imported here!
                 color: isTopOrBottom
-                    ? context.textPrimary.withOpacity(0.5)
-                    : context.textPrimary.withOpacity(0.15),
+                    ? context.textPrimary.withValues(alpha: 0.5)
+                    : context.textPrimary.withValues(alpha: 0.15),
                 strokeWidth: isTopOrBottom ? 2 : 1,
                 dashArray: isTopOrBottom ? null : [4, 4],
               );
@@ -131,7 +130,7 @@ class BaseProgressionChart extends StatelessWidget {
             verticalLines: verticalDividers.map((x) {
               return VerticalLine(
                 x: x,
-                color: context.textPrimary.withOpacity(0.2), // Super subtle
+                color: context.textPrimary.withValues(alpha: 0.2), // Super subtle
                 strokeWidth: 2,
                 dashArray: [4, 4], // Dotted line effect
               );
@@ -159,7 +158,7 @@ class BaseProgressionChart extends StatelessWidget {
               fitInsideHorizontally: true,
               tooltipMargin: -16,
               tooltipPadding: EdgeInsets.all(6),
-              getTooltipColor: (spot) => context.textPrimary.withOpacity(0.85),
+              getTooltipColor: (spot) => context.textPrimary.withValues(alpha: 0.85),
               getTooltipItems: tooltipBuilder, // INJECTS CUSTOM TEXT!
             ),
           ),

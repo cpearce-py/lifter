@@ -153,7 +153,7 @@ class _SmartWeightInputState extends ConsumerState<WeightInput> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: widget.accentColor.withOpacity(0.15),
+                                color: widget.accentColor.withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

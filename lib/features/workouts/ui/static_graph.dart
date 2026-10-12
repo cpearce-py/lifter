@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -72,7 +71,7 @@ class _HistoricalGraphState extends ConsumerState<HistoricalGraph> {
         decoration: BoxDecoration(
           color: context.inputBackground,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: widget.accentColor.withOpacity(0.1), width: 1),
+          border: Border.all(color: widget.accentColor.withValues(alpha: 0.1), width: 1),
         ),
         child: Center(
           child: Text("No graph data available", style: TextStyle(color: context.textMuted)),
@@ -96,7 +95,7 @@ class _HistoricalGraphState extends ConsumerState<HistoricalGraph> {
       decoration: BoxDecoration(
         color: context.inputBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: widget.accentColor.withOpacity(0.1), width: 1),
+        border: Border.all(color: widget.accentColor.withValues(alpha: 0.1), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -269,7 +268,7 @@ class _HistoricalGraphPainter extends CustomPainter {
 
     // Paint the small hash marks
     final axisPaint = Paint()
-      ..color = textColor.withOpacity(0.3)
+      ..color = textColor.withValues(alpha: 0.3)
       ..strokeWidth = 1;
 
     for (int tSec = 0; tSec <= totalMs / 1000.0; tSec++) {
@@ -345,8 +344,8 @@ class _HistoricalGraphPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            accentColor.withOpacity(0.25),
-            accentColor.withOpacity(0.0),
+            accentColor.withValues(alpha: 0.25),
+            accentColor.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromLTWH(hPad, vPadTop, chartW, chartH))
         ..style = PaintingStyle.fill,

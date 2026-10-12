@@ -42,17 +42,6 @@ class GripFilterBar extends ConsumerWidget {
                   style: context.h1.copyWith(fontSize: 20),
                 ),
               ),
-              if (!filter.isAll)
-                TextButton(
-                  onPressed: () {
-                    notifier.setGrip(null);
-                    notifier.setEdge(null);
-                  },
-                  child: Text(
-                    'Clear',
-                    style: context.body.copyWith(color: context.textMuted),
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: 4),

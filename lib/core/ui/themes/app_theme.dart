@@ -58,7 +58,7 @@ class AppTheme {
 
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: const Color(0xFFF0F0F0), // Matches your Dark textPrimary
-        selectionColor: const Color(0xFFF0F0F0).withOpacity(0.3), // Highlighted text color
+        selectionColor: const Color(0xFFF0F0F0).withValues(alpha: 0.3), // Highlighted text color
         selectionHandleColor: const Color(0xFFF0F0F0), // The little teardrop selection handles
       ),
       
@@ -86,7 +86,7 @@ class AppTheme {
 
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: const Color(0xFF1C1C1E), // Matches your Light textPrimary
-        selectionColor: const Color(0xFF1C1C1E).withOpacity(0.2), 
+        selectionColor: const Color(0xFF1C1C1E).withValues(alpha: 0.2), 
         selectionHandleColor: const Color(0xFF1C1C1E),
       ),
       

@@ -9,9 +9,9 @@ import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
 import 'package:lifter/features/telemetry/providers/grip_filter_provider.dart';
 import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';
+import 'package:lifter/features/telemetry/ui/widgets/range_selector.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import '../helpers.dart';
-
 
 /// Best load per hand over time, from the working sets of [workoutTypeIds]
 /// that match the Progression page's grip filter.
@@ -36,55 +36,7 @@ class MaxPullProgressionChart extends ConsumerStatefulWidget {
 
 class _MaxPullProgressionChartState
     extends ConsumerState<MaxPullProgressionChart> {
-  String _selectedRange = '1Y';
-
-  String _getBottomLabel(double value, String range) {
-    final int index = value.toInt();
-    if (range == '1W' && index >= 0 && index < fullDays.length) {
-      return fullDays[index][0];
-    } else if (range == '1M') {
-      return 'W${index + 1}';
-    } else if (range == 'YTD') {
-      final currentMonth = DateTime.now().month;
-      if (index >= 0 && index < currentMonth) {
-        if (currentMonth > 6) {
-          return fullMonths[index][0];
-        } else {
-          return fullMonths[index].substring(0, 3);
-        }
-      }
-    } else if (range == '3M' || range == '6M' || range == '1Y') {
-      int maxIdx = range == '3M' ? 2 : (range == '6M' ? 5 : 11);
-      int monthsAgo = maxIdx - index;
-      int targetMonth = DateTime.now().month - monthsAgo;
-      while (targetMonth <= 0) {
-        targetMonth += 12;
-      }
-      return fullMonths[targetMonth - 1][0];
-    }
-    return '';
-  }
-
-  String _getTooltipLabel(double value, String range) {
-    final int index = value.toInt();
-    if (range == '1W' && index >= 0 && index < fullDays.length) {
-      return fullDays[index];
-    } else if (range == '1M') {
-      return 'W${index + 1}';
-    } else if (range == 'YTD') {
-      final currentMonth = DateTime.now().month;
-      if (index >= 0 && index < currentMonth) return fullMonths[index];
-    } else if (range == '3M' || range == '6M' || range == '1Y') {
-      int maxIdx = range == '3M' ? 2 : (range == '6M' ? 5 : 11);
-      int monthsAgo = maxIdx - index;
-      int targetMonth = DateTime.now().month - monthsAgo;
-      while (targetMonth <= 0) {
-        targetMonth += 12;
-      }
-      return fullMonths[targetMonth - 1];
-    }
-    return '';
-  }
+  TimeRange _selectedRange = TimeRange.year;
 
   @override
   Widget build(BuildContext context) {
@@ -107,45 +59,35 @@ class _MaxPullProgressionChartState
               SizedBox(height: 220, child: Center(child: Text('Error: $err'))),
           data: (allWorkouts) {
             final now = DateTime.now();
+            final range = _selectedRange;
 
-            final timeframeWorkouts = allWorkouts.where((w) {
-              if (_selectedRange == '1W') {
-                final start = now.subtract(Duration(days: now.weekday - 1));
-                return w.dateDone.isAfter(start) ||
-                    w.dateDone.isAtSameMomentAs(start);
-              } else if (_selectedRange == '1M') {
-                return w.dateDone.year == now.year &&
-                    w.dateDone.month == now.month;
-              } else if (_selectedRange == '3M') {
-                final start = DateTime(now.year, now.month - 2, 1);
-                return w.dateDone.isAfter(start) ||
-                    w.dateDone.isAtSameMomentAs(start);
-              } else if (_selectedRange == '6M') {
-                final start = DateTime(now.year, now.month - 5, 1);
-                return w.dateDone.isAfter(start) ||
-                    w.dateDone.isAtSameMomentAs(start);
-              } else if (_selectedRange == 'YTD') {
-                return w.dateDone.year == now.year;
-              } else {
-                // 1Y
-                final start = DateTime(now.year - 1, now.month, now.day);
-                return w.dateDone.isAfter(start) ||
-                    w.dateDone.isAtSameMomentAs(start);
+            // Best load per hand in each bucket, already in the display unit
+            // so the y-axis snaps to round kg or lbs values.
+            final maxLeftPerBucket = <int, double>{};
+            final maxRightPerBucket = <int, double>{};
+
+            for (final w in allWorkouts) {
+              if (!widget.workoutTypeIds.contains(w.workoutTypeId)) continue;
+              final index = range.bucketOf(w.dateDone, now);
+              if (index == null) continue;
+              final best = bestLoadOnGrip(
+                w,
+                gripFilter,
+                useAverage: widget.useAverage,
+              );
+              if (best == null) continue;
+
+              final left = displayWeight(best.left, useLbs);
+              final right = displayWeight(best.right, useLbs);
+              if (left > (maxLeftPerBucket[index] ?? 0)) {
+                maxLeftPerBucket[index] = left;
               }
-            }).toList();
+              if (right > (maxRightPerBucket[index] ?? 0)) {
+                maxRightPerBucket[index] = right;
+              }
+            }
 
-            final sessionBests = [
-              for (final w in timeframeWorkouts)
-                if (widget.workoutTypeIds.contains(w.workoutTypeId))
-                  if (bestLoadOnGrip(
-                    w,
-                    gripFilter,
-                    useAverage: widget.useAverage,
-                  ) case final best?)
-                    (date: w.dateDone, left: best.left, right: best.right),
-            ];
-
-            if (sessionBests.isEmpty) {
+            if (maxLeftPerBucket.isEmpty && maxRightPerBucket.isEmpty) {
               return SizedBox(
                 height: 220,
                 child: Center(
@@ -160,96 +102,23 @@ class _MaxPullProgressionChartState
               );
             }
 
-            // ZOOM BOUNDARIES
-            double maxX = 1.0;
-            if (_selectedRange == '1W') {
-              maxX = 6.0;
-            } else if (_selectedRange == '1M') {
-              maxX = 3.0;
-            } else if (_selectedRange == '3M') {
-              maxX = 2.0;
-            } else if (_selectedRange == '6M') {
-              maxX = 5.0;
-            } else if (_selectedRange == 'YTD') {
-              maxX = (now.month > 1 ? now.month - 1 : 1).toDouble();
-            } else {
-              maxX = 11.0;
-            }
+            List<FlSpot> toSpots(Map<int, double> buckets) => [
+              for (final index in buckets.keys.toList()..sort())
+                FlSpot(index.toDouble(), buckets[index]!),
+            ];
+            final leftSpots = toSpots(maxLeftPerBucket);
+            final rightSpots = toSpots(maxRightPerBucket);
 
-            // AGGREGATE MAX PULLS
-            Map<int, double> maxLeftPerBucket = {};
-            Map<int, double> maxRightPerBucket = {};
+            final maxWeight = niceMax(
+              [...maxLeftPerBucket.values, ...maxRightPerBucket.values]
+                  .reduce(max),
+              4,
+            );
 
-            for (final session in sessionBests) {
-              final date = session.date;
-              int xIndex = 0;
-              if (_selectedRange == '1W') {
-                xIndex = date.weekday - 1;
-              } else if (_selectedRange == '1M') {
-                xIndex = (date.day - 1) ~/ 7;
-                if (xIndex > 3) xIndex = 3;
-              } else if (_selectedRange == 'YTD') {
-                xIndex = date.month - 1;
-              } else {
-                int monthsAgo =
-                    (now.year - date.year) * 12 + now.month - date.month;
-                if (_selectedRange == '3M') {
-                  xIndex = 2 - monthsAgo;
-                } else if (_selectedRange == '6M') {
-                  xIndex = 5 - monthsAgo;
-                } else {
-                  xIndex = 11 - monthsAgo;
-                }
-              }
-
-              if (xIndex < 0) continue;
-
-              final sessionMaxLeft = session.left;
-              final sessionMaxRight = session.right;
-
-              if (sessionMaxLeft > (maxLeftPerBucket[xIndex] ?? 0)) {
-                maxLeftPerBucket[xIndex] = sessionMaxLeft;
-              }
-              if (sessionMaxRight > (maxRightPerBucket[xIndex] ?? 0)) {
-                maxRightPerBucket[xIndex] = sessionMaxRight;
-              }
-            }
-
-            List<FlSpot> leftSpots = [];
-            List<FlSpot> rightSpots = [];
-            for (int i = 0; i <= maxX.toInt(); i++) {
-              if (maxLeftPerBucket.containsKey(i)) {
-                leftSpots.add(FlSpot(i.toDouble(), maxLeftPerBucket[i]!));
-              }
-              if (maxRightPerBucket.containsKey(i)) {
-                rightSpots.add(FlSpot(i.toDouble(), maxRightPerBucket[i]!));
-              }
-            }
-
-            // Y-AXIS MATH
-            double absoluteMax = 10.0;
-            if (leftSpots.isNotEmpty || rightSpots.isNotEmpty) {
-              double maxL = leftSpots.isEmpty
-                  ? 0
-                  : leftSpots.map((e) => e.y).reduce(max);
-              double maxR = rightSpots.isEmpty
-                  ? 0
-                  : rightSpots.map((e) => e.y).reduce(max);
-              absoluteMax = max(maxL, maxR);
-            }
-
-            double maxWeight = 4.0;
-            if (absoluteMax > 0) {
-              double target = absoluteMax + (absoluteMax * 0.15);
-              maxWeight = (target / 4).ceil() * 4.0;
-            }
-            double yInterval = maxWeight / 4;
-
-            // DELEGATE TO BASE CHART!
             return BaseProgressionChart(
-              maxX: maxX,
+              maxX: range.maxX(now),
               maxY: maxWeight,
-              yInterval: yInterval,
+              yInterval: maxWeight / 4,
 
               lineBarsData: [
                 BaseProgressionChart.createStandardLine(
@@ -264,14 +133,13 @@ class _MaxPullProgressionChartState
                 ),
               ],
 
-              // Custom Labels
               bottomLabelBuilder: (value) => Text(
-                _getBottomLabel(value, _selectedRange),
+                range.axisLabel(value.toInt(), now),
                 style: context.overline.copyWith(color: context.textMuted),
               ),
 
               leftLabelBuilder: (value) => Text(
-                displayWeight(value, useLbs).toInt().toString(),
+                value.toInt().toString(),
                 style: context.overline.copyWith(
                   color: context.textMuted,
                   fontWeight: FontWeight.normal,
@@ -279,24 +147,21 @@ class _MaxPullProgressionChartState
                 textAlign: TextAlign.right,
               ),
 
-              // Dynamic Tooltips
               tooltipBuilder: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   final isLeft = spot.barIndex == 0;
                   final lineColor = isLeft ? leftColor : rightColor;
-                  final label = _getTooltipLabel(spot.x, _selectedRange);
-                  // Change to lbs if we need.
-                  final displayVal = displayWeight(spot.y, useLbs);
 
                   return LineTooltipItem(
-                    '${displayVal.toStringAsFixed(1)} ${weightUnit(useLbs)} ${isLeft ? "L" : "R"}',
+                    '${spot.y.toStringAsFixed(1)} ${weightUnit(useLbs)} ${isLeft ? "L" : "R"}',
                     TextStyle(color: lineColor, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.left,
                     children: [
                       // Only show the date under the last touched spot to prevent duplicates
                       if (spot == touchedSpots.last)
                         TextSpan(
-                          text: '\n$label',
+                          text:
+                              '\n${range.tooltipLabel(spot.x.toInt(), now)}',
                           style: TextStyle(
                             color: context.textPrimaryInv.withValues(
                               alpha: 0.8,
@@ -314,36 +179,9 @@ class _MaxPullProgressionChartState
 
         const SizedBox(height: 24),
 
-        // Range Selector State
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: ranges.map((range) {
-            final isSelected = _selectedRange == range;
-            return GestureDetector(
-              onTap: () => setState(() => _selectedRange = range),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? context.textPrimary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  range,
-                  style: context.body.copyWith(
-                    color: isSelected ? context.textPrimary : context.textMuted,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+        RangeSelector(
+          selected: _selectedRange,
+          onChanged: (range) => setState(() => _selectedRange = range),
         ),
       ],
     );

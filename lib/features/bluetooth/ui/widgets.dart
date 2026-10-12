@@ -32,9 +32,9 @@ class ConnectBluetoothButton extends StatelessWidget {
             duration: const Duration(milliseconds: 250),
             height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -88,7 +88,7 @@ class BleStatusDot extends StatelessWidget {
             boxShadow: isScanning
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.5),
+                      color: color.withValues(alpha: 0.5),
                       blurRadius: 8,
                       spreadRadius: 2,
                     )

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
-import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/telemetry/models.dart';
@@ -271,7 +270,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                 ),
                 child: Center(
                   child: CircularProgressIndicator(
-                    color: workout.uiAccentColor(context).withOpacity(0.5),
+                    color: workout.uiAccentColor(context).withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -305,7 +304,7 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
                       RepProgressionChart(stats: stats),
 
                       // A subtle divider to separate the bar from the line chart
-                      Divider(color: context.textPrimary.withOpacity(0.1)),
+                      Divider(color: context.textPrimary.withValues(alpha: 0.1)),
                       const SizedBox(height: 24),
 
                       AsymmetryBalanceBar(stats: stats),

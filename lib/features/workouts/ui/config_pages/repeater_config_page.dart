@@ -49,14 +49,14 @@ class RepeaterSetupPage extends ConsumerWidget {
                             Icon(
                               Icons.arrow_back_ios_rounded,
                               size: 14,
-                              color: accentColor.withOpacity(0.8),
+                              color: accentColor.withValues(alpha: 0.8),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Workouts',
                               style: context.cardTitle.copyWith(
                                 fontSize: 13,
-                                color: accentColor.withOpacity(0.8),
+                                color: accentColor.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -327,7 +327,7 @@ class RepeaterSetupPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: accentColor.withOpacity(0.3),
+                            color: accentColor.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),

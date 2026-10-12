@@ -258,7 +258,7 @@ class _ActionTabWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(0.3),
+                  color: accent.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -348,7 +348,7 @@ class _StandardTabWidgetState extends State<_StandardTabWidget>
                     width: widget.isActive ? 48 : 0,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: widget.accent.withOpacity(0.12),
+                      color: widget.accent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),

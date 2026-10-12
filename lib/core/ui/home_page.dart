@@ -155,9 +155,9 @@ class HomeHeaderSliver extends ConsumerWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.repeaterAccent.withOpacity(0.12),
+                  color: context.repeaterAccent.withValues(alpha: 0.12),
                   border: Border.all(
-                    color: context.repeaterAccent.withOpacity(0.3),
+                    color: context.repeaterAccent.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -473,7 +473,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: data.accentColor.withOpacity(0.15), width: 1),
+        border: Border.all(color: data.accentColor.withValues(alpha: 0.15), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,7 +484,7 @@ class _StatCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: data.accentColor.withOpacity(0.1),
+              color: data.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(data.icon, color: data.accentColor, size: 20),

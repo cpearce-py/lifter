@@ -38,6 +38,8 @@ class GraphOptimizer {
     return optimized;
   }
 
+  // Disabled in [compress] for now; kept so it can be switched back on.
+  // ignore: unused_element
   static List<(int, double)> _rdp(List<(int, double)> points, double epsilon) {
     if (points.length <= 2) return points;
 

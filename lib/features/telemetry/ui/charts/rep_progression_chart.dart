@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:math';
 
 import 'package:lifter/features/telemetry/models.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
@@ -33,13 +32,19 @@ class RepProgressionChart extends ConsumerWidget {
       );
     }
 
-    // 2. Generate the spots (X = Rep Number, Y = Peak Load)
+    // 2. Generate the spots (X = Rep Number, Y = Peak Load in the display
+    // unit, so the y-axis snaps to round kg or lbs values)
     List<FlSpot> leftSpots = [];
     List<FlSpot> rightSpots = [];
 
     for (int i = 0; i < stats.flatReps.length; i++) {
-      leftSpots.add(FlSpot(i.toDouble(), stats.flatReps[i].peakLoadLeft));
-      rightSpots.add(FlSpot(i.toDouble(), stats.flatReps[i].peakLoadRight));
+      final rep = stats.flatReps[i];
+      leftSpots.add(
+        FlSpot(i.toDouble(), displayWeight(rep.peakLoadLeft, useLbs)),
+      );
+      rightSpots.add(
+        FlSpot(i.toDouble(), displayWeight(rep.peakLoadRight, useLbs)),
+      );
     }
 
     // 3. X-Axis Math: Limit the chart to exactly the number of reps
@@ -49,17 +54,18 @@ class RepProgressionChart extends ConsumerWidget {
     double xInterval = 1.0;
     if (stats.flatReps.length > 10) {
       // Divides the total reps by 5 and rounds up to the nearest clean integer
-      xInterval = (stats.flatReps.length / 5).ceil().toDouble(); 
+      xInterval = (stats.flatReps.length / 5).ceil().toDouble();
     }
 
     // 4. Y-Axis Math: Add 15% headroom above the absolute max, snap to multiples of 4
-    double absoluteMax = max(stats.maxLeft, stats.maxRight);
-    double maxWeight = 4.0;
-    if (absoluteMax > 0) {
-      double target = absoluteMax + (absoluteMax * 0.15);
-      maxWeight = (target / 4).ceil() * 4.0;
-    }
-    double yInterval = maxWeight / 4;
+    final maxWeight = niceMax(
+      displayWeight(
+        stats.maxLeft > stats.maxRight ? stats.maxLeft : stats.maxRight,
+        useLbs,
+      ),
+      4,
+    );
+    final yInterval = maxWeight / 4;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,14 +102,13 @@ class RepProgressionChart extends ConsumerWidget {
 
           // X-Axis Labels: Simple Rep Numbers (1, 2, 3...)
           bottomLabelBuilder: (value) => Text(
-            (value.toInt() + 1)
-                .toString(),
+            (value.toInt() + 1).toString(),
             style: context.overline.copyWith(color: context.textMuted),
           ),
 
           // Y-Axis Labels: Weight
           leftLabelBuilder: (value) => Text(
-            displayWeight(value, useLbs).toInt().toString(),
+            value.toInt().toString(),
             style: context.overline.copyWith(
               color: context.textMuted,
               fontWeight: FontWeight.normal,
@@ -116,10 +121,7 @@ class RepProgressionChart extends ConsumerWidget {
             return touchedSpots.map((spot) {
               final isLeft = spot.barIndex == 0;
               final lineColor = isLeft ? leftColor : rightColor;
-              final displayValue = displayWeight(
-                spot.y,
-                useLbs,
-              ).toStringAsFixed(1);
+              final displayValue = spot.y.toStringAsFixed(1);
               final leftOrRight = isLeft ? "L" : "R";
 
               return LineTooltipItem(
@@ -132,7 +134,7 @@ class RepProgressionChart extends ConsumerWidget {
                     TextSpan(
                       text: '\nRep ${spot.x.toInt() + 1}',
                       style: context.overline.copyWith(
-                        color: context.background.withOpacity(0.8),
+                        color: context.background.withValues(alpha: 0.8),
                         fontSize: 10,
                       ),
                     ),

@@ -189,7 +189,7 @@ class _LiveGraphState extends ConsumerState<LiveGraph>
         decoration: BoxDecoration(
           color: context.inputBackground,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: widget.accentColor.withOpacity(0.1), width: 1),
+          border: Border.all(color: widget.accentColor.withValues(alpha: 0.1), width: 1),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -333,7 +333,7 @@ class _GraphPainter extends CustomPainter {
       canvas.drawPath(
         dashPath,
         Paint()
-          ..color = colorAbove.withOpacity(0.4)
+          ..color = colorAbove.withValues(alpha: 0.4)
           ..strokeWidth = 1
           ..style = PaintingStyle.stroke,
       );
@@ -380,8 +380,8 @@ class _GraphPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            accentColor.withOpacity(0.25),
-            accentColor.withOpacity(0.0),
+            accentColor.withValues(alpha: 0.25),
+            accentColor.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromLTWH(hPad, vPad, chartW, chartH))
         ..style = PaintingStyle.fill,
@@ -428,7 +428,7 @@ class _GraphPainter extends CustomPainter {
       else {currentDotColor = colorBelow;}
     }
 
-    canvas.drawCircle(Offset(dotX, lastY), 7, Paint()..color = currentDotColor.withOpacity(0.25));
+    canvas.drawCircle(Offset(dotX, lastY), 7, Paint()..color = currentDotColor.withValues(alpha: 0.25));
     canvas.drawCircle(Offset(dotX, lastY), 4, Paint()..color = currentDotColor);
   }
 

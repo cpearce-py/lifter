@@ -223,7 +223,7 @@ class _WorkoutButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: backgroundColor.withOpacity(0.25),
+              color: backgroundColor.withValues(alpha: 0.25),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),

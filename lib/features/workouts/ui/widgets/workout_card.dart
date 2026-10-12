@@ -59,10 +59,10 @@ class WorkoutCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.08),
+                color: color.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: color.withOpacity(0.7), size: 20),
+              child: Icon(icon, color: color.withValues(alpha: 0.7), size: 20),
             ),
             const SizedBox(width: 14),
             

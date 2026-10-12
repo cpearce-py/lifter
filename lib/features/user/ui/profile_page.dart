@@ -107,7 +107,7 @@ class ProfilePage extends ConsumerWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 4,
-                      color: accent.withOpacity(0.7),
+                      color: accent.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -229,7 +229,7 @@ class ProfilePage extends ConsumerWidget {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: context.danger,
-                        side: BorderSide(color: context.danger.withOpacity(0.5)),
+                        side: BorderSide(color: context.danger.withValues(alpha: 0.5)),
                       ),
                       onPressed: () {
                         _confirmNukeDatabase(context, ref);
@@ -249,7 +249,7 @@ class ProfilePage extends ConsumerWidget {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: context.success,
-                        side: BorderSide(color: context.success.withOpacity(0.5)),
+                        side: BorderSide(color: context.success.withValues(alpha: 0.5)),
                       ),
                       onPressed: () async {
                         HapticFeedback.mediumImpact();

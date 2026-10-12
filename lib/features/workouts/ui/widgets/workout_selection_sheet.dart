@@ -287,7 +287,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
             color: context.cardBackground,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: w.accentColor.withOpacity(0.15),
+              color: w.accentColor.withValues(alpha: 0.15),
               width: 1,
             ),
           ),
@@ -297,7 +297,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: w.accentColor.withOpacity(0.1),
+                  color: w.accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(w.icon, color: w.accentColor, size: 26),
@@ -322,7 +322,7 @@ class _WorkoutCardState extends State<_WorkoutCard>
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 13,
-                color: w.accentColor.withOpacity(0.4),
+                color: w.accentColor.withValues(alpha: 0.4),
               ),
             ],
           ),
