@@ -165,6 +165,8 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
         hasMore: currentState.hasMore,
       ));
     }
+
+    _invalidateProviders();
   }
   
   Future<WorkoutLog?> getWorkoutById(int workoutId) async {
