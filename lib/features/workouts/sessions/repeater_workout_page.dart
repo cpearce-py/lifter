@@ -24,7 +24,6 @@ String getPhaseLabel(Phase phase, BuildContext context) {
   };
 }
 
-
 class RepeaterWorkoutPage extends ConsumerWidget {
   const RepeaterWorkoutPage({super.key});
 
@@ -43,123 +42,138 @@ class RepeaterWorkoutPage extends ConsumerWidget {
     final state = ref.watch(repeaterEngineProvider);
     final accentColor = accentColorForPhase(state.phase, context);
 
+    void finish() => ref
+        .read(repeaterEngineProvider.notifier)
+        .dispatch(UserEventAction(Event.finish));
+
     const double hPad = 15.0;
     const double sectionSpacing = 18.0;
 
-    return Scaffold(
-      backgroundColor: context.background,
-      body: SafeArea(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: context.background,
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              stops: const [0.75, 1],
-              colors: [
-                accentColor.withValues(alpha: 0.04), // Subtle glow at the top
-                accentColor.withValues(alpha: 0),
-              ],
+    return WorkoutExitGuard(
+      phase: state.phase,
+      onFinish: finish,
+      child: Scaffold(
+        backgroundColor: context.background,
+        body: SafeArea(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              color: context.background,
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                stops: const [0.75, 1],
+                colors: [
+                  accentColor.withValues(alpha: 0.04), // Subtle glow at the top
+                  accentColor.withValues(alpha: 0),
+                ],
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              WorkoutTopBar(
-                onClose: () => Navigator.of(context).pop(),
-                title: Text(
-                  "Repeater",
-                  style: context.h1.copyWith(
-                    fontSize: 18,
-                    color: context.textPrimary,
+            child: Column(
+              children: [
+                WorkoutTopBar(
+                  onClose: () => WorkoutExitGuard.close(
+                    context,
+                    phase: state.phase,
+                    onFinish: finish,
+                  ),
+                  title: Text(
+                    "Repeater",
+                    style: context.h1.copyWith(
+                      fontSize: 18,
+                      color: context.textPrimary,
+                    ),
                   ),
                 ),
-              ),
 
-              LinearProgressIndicator(
-                value: state.secondsRemaining / state.currentPhaseDuration, // Will animate from 1.0 to 0.0
-                backgroundColor: context.textPrimary.withValues(alpha: 0.05),
-                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                minHeight: 4, // Keep it thin and elegant
-              ),
-
-              const SizedBox(height: sectionSpacing),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SetsAndRepsIndicator(
-                      currentSet: state.currentSet,
-                      totalSets: state.sets,
-                      currentRep: state.currentRep,
-                      totalReps: state.reps,
-                      accentColor: accentColor,
-                    ),
-                    PhaseLabel(phase: state.phase, accentColor: accentColor)
-                  ],
+                LinearProgressIndicator(
+                  value:
+                      state.secondsRemaining /
+                      state
+                          .currentPhaseDuration, // Will animate from 1.0 to 0.0
+                  backgroundColor: context.textPrimary.withValues(alpha: 0.05),
+                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                  minHeight: 4, // Keep it thin and elegant
                 ),
-              ),
 
-              const SizedBox(height: sectionSpacing),
+                const SizedBox(height: sectionSpacing),
 
-              StatInfoBar(
-                timeProvider: repeaterEngineProvider.select(
-                  (s) => s.secondsRemaining,
-                ),
-              ),
-
-              const SizedBox(height: sectionSpacing),
-
-              Expanded(
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: hPad),
-                  child: GenericGraphArea(
-                    phase: state.phase,
-                    overlay: Text(
-                      '${state.currentHand.name.toUpperCase()} HAND',
-                      style: context.body.copyWith(
-                        color: context.textMuted,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SetsAndRepsIndicator(
+                        currentSet: state.currentSet,
+                        totalSets: state.sets,
+                        currentRep: state.currentRep,
+                        totalReps: state.reps,
+                        accentColor: accentColor,
+                      ),
+                      PhaseLabel(phase: state.phase, accentColor: accentColor),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: sectionSpacing),
+
+                StatInfoBar(
+                  timeProvider: repeaterEngineProvider.select(
+                    (s) => s.secondsRemaining,
+                  ),
+                ),
+
+                const SizedBox(height: sectionSpacing),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: hPad),
+                    child: GenericGraphArea(
+                      phase: state.phase,
+                      overlay: Text(
+                        '${state.currentHand.name.toUpperCase()} HAND',
+                        style: context.body.copyWith(
+                          color: context.textMuted,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: sectionSpacing),
+                const SizedBox(height: sectionSpacing),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: GenericWorkoutControls(
-                  phase: state.phase,
-                  onReset: () {
-                    HapticFeedback.lightImpact();
-                    ref
-                        .read(repeaterEngineProvider.notifier)
-                        .dispatch(UserEventAction(Event.reset));
-                  },
-                  onPrimaryAction: () {
-                    final event = primaryButtonEvent(state.phase);
-                    if (event != null) {
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: hPad),
+                  child: GenericWorkoutControls(
+                    phase: state.phase,
+                    onReset: () {
+                      HapticFeedback.lightImpact();
+                      ref
+                          .read(repeaterEngineProvider.notifier)
+                          .dispatch(UserEventAction(Event.reset));
+                    },
+                    onPrimaryAction: () {
+                      final event = primaryButtonEvent(state.phase);
+                      if (event != null) {
+                        HapticFeedback.mediumImpact();
+                        ref
+                            .read(repeaterEngineProvider.notifier)
+                            .dispatch(UserEventAction(event));
+                      }
+                    },
+                    onSecondaryAction: () {
                       HapticFeedback.mediumImpact();
                       ref
                           .read(repeaterEngineProvider.notifier)
-                          .dispatch(UserEventAction(event));
-                    }
-                  },
-                  onSecondaryAction: () {
-                    HapticFeedback.mediumImpact();
-                    ref
-                        .read(repeaterEngineProvider.notifier)
-                        .dispatch(UserEventAction(Event.finish));
-                  },
+                          .dispatch(UserEventAction(Event.finish));
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

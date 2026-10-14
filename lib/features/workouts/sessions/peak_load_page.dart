@@ -27,115 +27,130 @@ class PeakLoadSessionPage extends ConsumerWidget {
     final state = ref.watch(peakLoadEngineProvider);
     final phase = state.phase;
     final workingAccent = context.peakLoadAccent;
-    final accentColor =
-        accentColorForPhase(phase, context, working: workingAccent);
+    final accentColor = accentColorForPhase(
+      phase,
+      context,
+      working: workingAccent,
+    );
+
+    void finish() => ref
+        .read(peakLoadEngineProvider.notifier)
+        .dispatch(UserEventAction(Event.finish));
 
     const double hPad = 15.0;
     const double sectionSpacing = 18.0;
 
-    return Scaffold(
-      backgroundColor: context.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            WorkoutTopBar(
-              onClose: () => Navigator.of(context).pop(),
-              title: Text(
-                "Peak Load",
-                style: context.h1.copyWith(
-                  fontSize: 18,
-                  color: context.textPrimary,
-                ),
-              ),
-            ),
-
-            LinearProgressIndicator(
-              value:
-                  state.secondsRemaining /
-                  state.currentPhaseDuration, // Will animate from 1.0 to 0.0
-              backgroundColor: context.textPrimary.withValues(alpha: 0.05),
-              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-              minHeight: 4, // Keep it thin and elegant
-            ),
-
-            const SizedBox(height: sectionSpacing),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: hPad),
-              child: Row(
-                mainAxisAlignment:  MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'SET ${state.repCount}',
-                    style: context.overline.copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  PhaseLabel(phase: phase, accentColor: accentColor),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: sectionSpacing),
-
-            StatInfoBar(
-              timeProvider: peakLoadEngineProvider.select(
-                (s) => s.secondsRemaining,
-              ),
-            ),
-
-            const SizedBox(height: sectionSpacing),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: GenericGraphArea(
+    return WorkoutExitGuard(
+      phase: phase,
+      onFinish: finish,
+      child: Scaffold(
+        backgroundColor: context.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              WorkoutTopBar(
+                onClose: () => WorkoutExitGuard.close(
+                  context,
                   phase: phase,
-                  workingAccent: workingAccent,
-                  overlay: Text(
-                    'HAND: ${state.currentHand.name.toUpperCase()}',
-                    style: context.body.copyWith(
-                      color: context.textMuted,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
+                  onFinish: finish,
+                ),
+                title: Text(
+                  "Peak Load",
+                  style: context.h1.copyWith(
+                    fontSize: 18,
+                    color: context.textPrimary,
+                  ),
+                ),
+              ),
+
+              LinearProgressIndicator(
+                value:
+                    state.secondsRemaining /
+                    state.currentPhaseDuration, // Will animate from 1.0 to 0.0
+                backgroundColor: context.textPrimary.withValues(alpha: 0.05),
+                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                minHeight: 4, // Keep it thin and elegant
+              ),
+
+              const SizedBox(height: sectionSpacing),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: hPad),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'SET ${state.repCount}',
+                      style: context.overline.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: context.textPrimary,
+                      ),
+                    ),
+                    PhaseLabel(phase: phase, accentColor: accentColor),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: sectionSpacing),
+
+              StatInfoBar(
+                timeProvider: peakLoadEngineProvider.select(
+                  (s) => s.secondsRemaining,
+                ),
+              ),
+
+              const SizedBox(height: sectionSpacing),
+
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: hPad),
+                  child: GenericGraphArea(
+                    phase: phase,
+                    workingAccent: workingAccent,
+                    overlay: Text(
+                      'HAND: ${state.currentHand.name.toUpperCase()}',
+                      style: context.body.copyWith(
+                        color: context.textMuted,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: sectionSpacing),
+              const SizedBox(height: sectionSpacing),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: hPad),
-              child: phase == Phase.resting
-                  ? _PeakLoadRestControls(state: state)
-                  : GenericWorkoutControls(
-                      phase: phase,
-                      onReset: () => ref
-                          .read(peakLoadEngineProvider.notifier)
-                          .dispatch(UserEventAction(Event.reset)),
-                      onPrimaryAction: () {
-                        final event = primaryButtonEvent(phase);
-                        if (event != null) {
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: hPad),
+                child: phase == Phase.resting
+                    ? _PeakLoadRestControls(state: state)
+                    : GenericWorkoutControls(
+                        phase: phase,
+                        onReset: () => ref
+                            .read(peakLoadEngineProvider.notifier)
+                            .dispatch(UserEventAction(Event.reset)),
+                        onPrimaryAction: () {
+                          final event = primaryButtonEvent(phase);
+                          if (event != null) {
+                            HapticFeedback.mediumImpact();
+                            ref
+                                .read(peakLoadEngineProvider.notifier)
+                                .dispatch(UserEventAction(event));
+                          }
+                        },
+                        onSecondaryAction: () {
                           HapticFeedback.mediumImpact();
                           ref
                               .read(peakLoadEngineProvider.notifier)
-                              .dispatch(UserEventAction(event));
-                        }
-                      },
-                      onSecondaryAction: () {
-                        HapticFeedback.mediumImpact();
-                        ref
-                            .read(peakLoadEngineProvider.notifier)
-                            .dispatch(UserEventAction(Event.finish));
-                      },
-                    ),
-            ),
-          ],
+                              .dispatch(UserEventAction(Event.finish));
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

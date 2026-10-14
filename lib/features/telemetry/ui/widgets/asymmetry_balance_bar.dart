@@ -29,8 +29,8 @@ class AsymmetryBalanceBar extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     'L: $leftPct%',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.textPrimaryInv,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -47,8 +47,8 @@ class AsymmetryBalanceBar extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     'R: $rightPct%',
-                    style: const TextStyle(
-                      color: Colors.white, 
+                    style: TextStyle(
+                      color: context.textPrimaryInv,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),

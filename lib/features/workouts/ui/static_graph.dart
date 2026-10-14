@@ -151,17 +151,17 @@ class _HistoricalGraphState extends ConsumerState<HistoricalGraph> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.black45,
+                      color: context.textPrimary.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.pinch, color: Colors.white, size: 16),
+                        Icon(Icons.pinch, color: context.textPrimaryInv, size: 16),
                         const SizedBox(width: 6),
                         Text(
                           "Swipe to pan / Zoom", 
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: context.textPrimaryInv, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),

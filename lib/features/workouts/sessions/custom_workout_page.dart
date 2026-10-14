@@ -30,13 +30,18 @@ class CustomWorkoutPage extends ConsumerWidget {
     final state = ref.watch(customWorkoutEngineProvider);
     final inner = state.inner;
     final step = state.currentStep;
-    final workingAccent =
-        step.isWarmup ? context.warmupAccent : context.customAccent;
-    final accentColor =
-        accentColorForPhase(state.phase, context, working: workingAccent);
+    final workingAccent = step.isWarmup
+        ? context.warmupAccent
+        : context.customAccent;
+    final accentColor = accentColorForPhase(
+      state.phase,
+      context,
+      working: workingAccent,
+    );
 
     // Between blocks the next block is already loaded and resting.
-    final isBlockTransition = state.phase == Phase.setResting &&
+    final isBlockTransition =
+        state.phase == Phase.setResting &&
         step.isFirstOfBlock &&
         state.stepIndex > 0;
 
@@ -47,128 +52,136 @@ class CustomWorkoutPage extends ConsumerWidget {
         .read(customWorkoutEngineProvider.notifier)
         .dispatch(UserEventAction(event));
 
-    return Scaffold(
-      backgroundColor: context.background,
-      body: SafeArea(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: context.background,
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              stops: const [0.75, 1],
-              colors: [
-                accentColor.withValues(alpha: 0.04),
-                accentColor.withValues(alpha: 0),
-              ],
+    return WorkoutExitGuard(
+      phase: state.phase,
+      onFinish: () => send(Event.finish),
+      child: Scaffold(
+        backgroundColor: context.background,
+        body: SafeArea(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              color: context.background,
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                stops: const [0.75, 1],
+                colors: [
+                  accentColor.withValues(alpha: 0.04),
+                  accentColor.withValues(alpha: 0),
+                ],
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              WorkoutTopBar(
-                onClose: () => Navigator.of(context).pop(),
-                title: Text(
-                  state.templateName,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.h1.copyWith(
-                    fontSize: 18,
-                    color: context.textPrimary,
+            child: Column(
+              children: [
+                WorkoutTopBar(
+                  onClose: () => WorkoutExitGuard.close(
+                    context,
+                    phase: state.phase,
+                    onFinish: () => send(Event.finish),
+                  ),
+                  title: Text(
+                    state.templateName,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.h1.copyWith(
+                      fontSize: 18,
+                      color: context.textPrimary,
+                    ),
                   ),
                 ),
-              ),
 
-              LinearProgressIndicator(
-                value: inner.currentPhaseDuration == 0
-                    ? 0
-                    : inner.secondsRemaining / inner.currentPhaseDuration,
-                backgroundColor: context.textPrimary.withValues(alpha: 0.05),
-                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                minHeight: 4,
-              ),
-
-              const SizedBox(height: sectionSpacing),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: BlockHeader(state: state, isUpNext: isBlockTransition),
-              ),
-
-              const SizedBox(height: sectionSpacing),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SetsAndRepsIndicator(
-                      currentSet: state.blockSet,
-                      totalSets: step.block.sets,
-                      currentRep: inner.currentRep,
-                      totalReps: inner.reps,
-                      accentColor: accentColor,
-                    ),
-                    PhaseLabel(phase: state.phase, accentColor: accentColor),
-                  ],
+                LinearProgressIndicator(
+                  value: inner.currentPhaseDuration == 0
+                      ? 0
+                      : inner.secondsRemaining / inner.currentPhaseDuration,
+                  backgroundColor: context.textPrimary.withValues(alpha: 0.05),
+                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                  minHeight: 4,
                 ),
-              ),
 
-              const SizedBox(height: sectionSpacing),
+                const SizedBox(height: sectionSpacing),
 
-              StatInfoBar(
-                timeProvider: customWorkoutEngineProvider.select(
-                  (s) => s.inner.secondsRemaining,
-                ),
-              ),
-
-              const SizedBox(height: sectionSpacing),
-
-              Expanded(
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: hPad),
-                  child: GenericGraphArea(
-                    phase: state.phase,
-                    workingAccent: workingAccent,
-                    overlay: Text(
-                      isBlockTransition
-                          ? 'UP NEXT'
-                          : '${inner.currentHand.name.toUpperCase()} HAND',
-                      style: context.body.copyWith(
-                        color: context.textMuted,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
+                  child: BlockHeader(state: state, isUpNext: isBlockTransition),
+                ),
+
+                const SizedBox(height: sectionSpacing),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: hPad),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SetsAndRepsIndicator(
+                        currentSet: state.blockSet,
+                        totalSets: step.block.sets,
+                        currentRep: inner.currentRep,
+                        totalReps: inner.reps,
+                        accentColor: accentColor,
+                      ),
+                      PhaseLabel(phase: state.phase, accentColor: accentColor),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: sectionSpacing),
+
+                StatInfoBar(
+                  timeProvider: customWorkoutEngineProvider.select(
+                    (s) => s.inner.secondsRemaining,
+                  ),
+                ),
+
+                const SizedBox(height: sectionSpacing),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: hPad),
+                    child: GenericGraphArea(
+                      phase: state.phase,
+                      workingAccent: workingAccent,
+                      overlay: Text(
+                        isBlockTransition
+                            ? 'UP NEXT'
+                            : '${inner.currentHand.name.toUpperCase()} HAND',
+                        style: context.body.copyWith(
+                          color: context.textMuted,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: sectionSpacing),
+                const SizedBox(height: sectionSpacing),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: GenericWorkoutControls(
-                  phase: state.phase,
-                  // Restarts the current block, not the whole workout.
-                  onReset: () {
-                    HapticFeedback.lightImpact();
-                    send(Event.reset);
-                  },
-                  onPrimaryAction: () {
-                    final event = primaryButtonEvent(state.phase);
-                    if (event != null) {
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: hPad),
+                  child: GenericWorkoutControls(
+                    phase: state.phase,
+                    // Restarts the current block, not the whole workout.
+                    onReset: () {
+                      HapticFeedback.lightImpact();
+                      send(Event.reset);
+                    },
+                    onPrimaryAction: () {
+                      final event = primaryButtonEvent(state.phase);
+                      if (event != null) {
+                        HapticFeedback.mediumImpact();
+                        send(event);
+                      }
+                    },
+                    onSecondaryAction: () {
                       HapticFeedback.mediumImpact();
-                      send(event);
-                    }
-                  },
-                  onSecondaryAction: () {
-                    HapticFeedback.mediumImpact();
-                    send(Event.finish);
-                  },
+                      send(Event.finish);
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -186,8 +199,9 @@ class BlockHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final step = state.currentStep;
-    final kindColor =
-        step.isWarmup ? context.warmupAccent : context.customAccent;
+    final kindColor = step.isWarmup
+        ? context.warmupAccent
+        : context.customAccent;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
