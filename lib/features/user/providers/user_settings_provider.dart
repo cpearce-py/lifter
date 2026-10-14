@@ -50,8 +50,8 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
     _prefs.setDouble('maxPullRight', right);
   }
 
-  /// The database is the source of truth for max pulls (Peak Load records
-  /// new bests there). The copy kept here is so screens and workout setup
+  /// The database is the source of truth for max pulls (they're the best
+  /// Peak Load reps in history). The copy kept here is so screens and workout setup
   /// can read it synchronously; call this after anything that changes it.
   ///
   /// Failures are logged rather than thrown: this only refreshes a copy, and
@@ -59,7 +59,7 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
   Future<void> syncMaxPullsFromDatabase() async {
     try {
       final repo = await ref.read(userRepositoryProvider.future);
-      final pulls = await repo.getMaxPulls(1); // TODO: Assuming a single local user for now
+      final pulls = await repo.getMaxPulls(localUserId);
 
       if (pulls.left != state.maxPullLeft || pulls.right != state.maxPullRight) {
         updateMaxPulls(pulls.left, pulls.right);

@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/graph_controller_provider.dart';
 import 'package:lifter/features/history/models/log_models.dart';
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/graph_encoder.dart';
 import 'package:lifter/features/workouts/engines/base_engine.dart';
 import 'package:lifter/features/workouts/models/actions.dart';

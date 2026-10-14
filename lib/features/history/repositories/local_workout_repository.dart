@@ -1,11 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
-import 'package:lifter/features/history/repositories/dummy_workouts.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:lifter/features/history/repositories/workout_repository.dart';
+import 'package:lifter/features/user/models/user_profile.dart';
 import 'package:lifter/features/workouts/models/grip.dart';
 
 class LocalWorkoutRepository implements WorkoutRepository {
@@ -20,7 +19,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
         'workout', // Table name from your friend's ERD
         {
           'workout_type_id': log.workoutTypeId,
-          'user_id': 1, // TODO: Assuming a single local user for now
+          'user_id': localUserId,
           'date_done': log.dateDone
               .toIso8601String(), // SQLite stores dates as ISO strings
           'duration': log.duration,
@@ -33,92 +32,70 @@ class LocalWorkoutRepository implements WorkoutRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      // 2. Loop through and insert every Set
-      for (var s = 0; s < log.sets.length; s++) {
-        final setLog = log.sets[s];
+      await _insertSets(txn, workoutId, log.sets);
+    });
+  }
 
-        final setId = await txn.insert(
-          'set', // Table name from ERD
+  Future<void> _insertSets(
+    Transaction txn,
+    int workoutId,
+    List<SetLog> sets,
+  ) async {
+    // 2. Loop through and insert every Set
+    for (var s = 0; s < sets.length; s++) {
+      final setLog = sets[s];
+
+      final setId = await txn.insert(
+        'set', // Table name from ERD
+        {
+          'workout_id': workoutId, // Link back to the parent workout
+          // ERD Note: If Arnaud adds a 'set_number' column, we pass `s + 1` here!
+          'is_warmup': setLog.isWarmup ? 1 : 0,
+          'block_name': setLog.blockName,
+          'block_index': setLog.blockIndex,
+          ...setLog.grip.toMap(),
+        },
+      );
+
+      // 3. Loop through and insert every Repetition inside this Set
+      for (var r = 0; r < setLog.repetitions.length; r++) {
+        final repLog = setLog.repetitions[r];
+
+        await txn.insert(
+          'repetition', // Table name from ERD
           {
-            'workout_id': workoutId, // Link back to the parent workout
-            // ERD Note: If Arnaud adds a 'set_number' column, we pass `s + 1` here!
-            'is_warmup': setLog.isWarmup ? 1 : 0,
-            'block_name': setLog.blockName,
-            'block_index': setLog.blockIndex,
-            ...setLog.grip.toMap(),
+            'set_id': setId, // Link back to the parent set
+            'peak_load_left': repLog.peakLoadLeft,
+            'peak_load_right': repLog.peakLoadRight,
+            'average_load_left': repLog.averageLoadLeft,
+            'average_load_right': repLog.averageLoadRight,
           },
         );
-
-        // 3. Loop through and insert every Repetition inside this Set
-        for (var r = 0; r < setLog.repetitions.length; r++) {
-          final repLog = setLog.repetitions[r];
-
-          await txn.insert(
-            'repetition', // Table name from ERD
-            {
-              'set_id': setId, // Link back to the parent set
-              'peak_load_left': repLog.peakLoadLeft,
-              'peak_load_right': repLog.peakLoadRight,
-              'average_load_left': repLog.averageLoadLeft,
-              'average_load_right': repLog.averageLoadRight,
-            },
-          );
-        }
       }
+    }
+  }
 
-      // If a repeater workout check if we PR.
-      if (log.workoutTypeId == 2 && log.sets.isNotEmpty) {
-        double workoutMaxLeft = 0.0;
-        double workoutMaxRight = 0.0;
-        for (final setLog in log.sets) {
-          for (final rep in setLog.repetitions) {
-            if (rep.peakLoadLeft > workoutMaxLeft) {
-              workoutMaxLeft = rep.peakLoadLeft;
-            }
-            if (rep.peakLoadRight > workoutMaxRight) {
-              workoutMaxRight = rep.peakLoadRight;
-            }
-          }
-        }
-        final userRow = await txn.query(
-          'user',
-          where: 'user_id = ?',
-          whereArgs: [1],
-        );
+  @override
+  Future<void> updateWorkout(WorkoutLog log) async {
+    await db.transaction((txn) async {
+      await txn.update(
+        'workout',
+        {
+          'workout_type_id': log.workoutTypeId,
+          'date_done': log.dateDone.toIso8601String(),
+          'duration': log.duration,
+          'working_time': log.workingTime,
+          'notes': log.notes,
+          'template_name': log.templateName,
+        },
+        where: 'workout_id = ?',
+        whereArgs: [log.id],
+      );
 
-        if (userRow.isNotEmpty) {
-          final currentDbMaxLeft =
-              (userRow.first['max_pull_left'] as num?)?.toDouble() ?? 0.0;
-          final currentDbMaxRight =
-              (userRow.first['max_pull_right'] as num?)?.toDouble() ?? 0.0;
-
-          // 3. Check if they broke a record!
-          bool isNewPr = false;
-          final Map<String, dynamic> userUpdates = {};
-
-          if (workoutMaxLeft > currentDbMaxLeft) {
-            userUpdates['max_pull_left'] = workoutMaxLeft;
-            isNewPr = true;
-          }
-          if (workoutMaxRight > currentDbMaxRight) {
-            userUpdates['max_pull_right'] = workoutMaxRight;
-            isNewPr = true;
-          }
-
-          // 4. Update the user table if a new record was set
-          if (isNewPr) {
-            debugPrint(
-              "NEW PR ACHIEVED! L: $workoutMaxLeft, R: $workoutMaxRight",
-            );
-            await txn.update(
-              'user',
-              userUpdates,
-              where: 'user_id = ?',
-              whereArgs: [1],
-            );
-          }
-        }
-      }
+      // Sets have no ids of their own, so replace them all. Their reps go
+      // with them through the cascade.
+      await txn.delete('set', where: 'workout_id = ?', whereArgs: [log.id]);
+      await _insertSets(txn, log.id!, log.sets);
     });
   }
 
@@ -315,20 +292,5 @@ class LocalWorkoutRepository implements WorkoutRepository {
       where: 'workout_id = ?',
       whereArgs: [workoutId],
     );
-  }
-
-  //TODO: delete after testing.
-  @override
-  Future<void> seedDummyData() async {
-    debugPrint("🌱 Seeding dummy workouts...");
-
-    // Run them through the same save logic so foreign keys, PR checks and
-    // transactions are all exercised.
-    final workouts = dummyWorkouts(DateTime.now());
-    for (final workout in workouts) {
-      await saveWorkout(workout);
-    }
-
-    debugPrint("✅ Seeded ${workouts.length} dummy workouts!");
   }
 }

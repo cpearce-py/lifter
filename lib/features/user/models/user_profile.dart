@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 
+/// The app has a single local user for now. Everything that's stored per
+/// user uses this id, so supporting accounts later means changing it here.
+const localUserId = 1;
+
 class UserProfile {
   final int id;
   final String username;

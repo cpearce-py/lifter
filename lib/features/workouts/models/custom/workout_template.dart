@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lifter/features/user/models/user_profile.dart';
 import 'package:lifter/features/workouts/models/base_models.dart';
 import 'package:lifter/features/workouts/models/grip.dart';
 import 'package:lifter/features/workouts/models/intensity.dart';
@@ -212,7 +213,7 @@ class WorkoutTemplate {
 
   Map<String, dynamic> toMap() {
     return {
-      'user_id': 1, // TODO: Assuming a single local user for now
+      'user_id': localUserId,
       'name': name,
       'notes': notes,
       'starting_hand': startingHand.name,

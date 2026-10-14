@@ -5,6 +5,7 @@ import 'package:lifter/core/providers/cache_for.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
+import 'package:lifter/features/history/repositories/dummy_workouts.dart';
 import 'package:lifter/features/history/repositories/workout_repository.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 
@@ -128,9 +129,20 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
     ref.invalidateSelf();
   }
 
+  Future<void> updateWorkout(WorkoutLog workout) async {
+    final repo = await ref.read(workoutRepositoryProvider.future);
+    await repo.updateWorkout(workout);
+    // The edit may have raised or lowered a best.
+    await ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
+    _invalidateProviders();
+    ref.invalidateSelf();
+  }
+
   Future<void> deleteWorkout(int workoutId) async {
     final repo = await ref.read(workoutRepositoryProvider.future);
     await repo.deleteWorkout(workoutId);
+    // If it held a best, the max pull drops back to the next best.
+    await ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
     // Optimistic UI update.
     final currentState = state.value;
     if (currentState != null) {
@@ -193,7 +205,7 @@ class WorkoutHistoryNotifier extends AsyncNotifier<HistoryPaginationState> {
   Future<bool> injectDummyData() async {
     try {
       final repo = await ref.read(workoutRepositoryProvider.future);
-      await repo.seedDummyData();
+      await seedDummyWorkouts(repo);
       await ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
       
       _invalidateProviders();

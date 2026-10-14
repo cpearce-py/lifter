@@ -40,6 +40,9 @@ class PeakLoadState {
   final int secondsRemaining;
   final int currentPhaseDuration;
 
+  /// Seconds spent in [Phase.working], for the saved working time.
+  final int accumulatedWorkSeconds;
+
   const PeakLoadState({
     this.phase = Phase.idle,
     this.bodyWeight = 70.0, // Default to a sensible weight, but overridden by the config UI
@@ -56,6 +59,7 @@ class PeakLoadState {
     this.isRightStopped = false,
     this.secondsRemaining = 0,
     this.currentPhaseDuration = 0,
+    this.accumulatedWorkSeconds = 0,
     this.completedSets = const [],
     this.currentRepSum = 0,
     this.currentRepCount = 0,
@@ -89,6 +93,7 @@ class PeakLoadState {
     bool? isRightStopped,
     int? secondsRemaining,
     int? currentPhaseDuration,
+    int? accumulatedWorkSeconds,
     List<SetLog>? completedSets,
     double? currentRepSum,
     int? currentRepCount,
@@ -111,6 +116,7 @@ class PeakLoadState {
       isRightStopped: isRightStopped ?? this.isRightStopped,
       secondsRemaining: secondsRemaining ?? this.secondsRemaining,
       currentPhaseDuration: currentPhaseDuration ?? this.currentPhaseDuration,
+      accumulatedWorkSeconds: accumulatedWorkSeconds ?? this.accumulatedWorkSeconds,
       completedSets: completedSets ?? this.completedSets,
       currentRepSum: currentRepSum ?? this.currentRepSum,
       currentRepCount: currentRepCount ?? this.currentRepCount,

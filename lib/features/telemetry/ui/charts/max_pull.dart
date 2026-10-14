@@ -1,3 +1,4 @@
+import 'package:lifter/features/history/models/log_models.dart';
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/providers/chart_workout_provider.dart';
 import 'package:lifter/features/telemetry/providers/grip_filter_provider.dart';
 import 'package:lifter/features/telemetry/ui/charts/base_chart.dart';

@@ -13,13 +13,10 @@ final userProfileProvider = AsyncNotifierProvider<UserProfileNotifier, UserProfi
 });
 
 class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
-  // We assume a single local user with ID 1
-  static const int _localUserId = 1;
-
   @override
   Future<UserProfile?> build() async {
     final repo = await ref.watch(userRepositoryProvider.future);
-    return await repo.getUser(_localUserId);
+    return await repo.getUser(localUserId);
   }
 
   Future<void> setUsername(String username) async {
@@ -29,7 +26,7 @@ class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
     if (currentUser != null) {
       currentUser = currentUser.copyWith(username: username);
     } else {
-      currentUser = UserProfile(id: _localUserId, username: username);
+      currentUser = UserProfile(id: localUserId, username: username);
     }
 
     await repo.saveUser(currentUser);

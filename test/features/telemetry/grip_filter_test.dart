@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/repositories/dummy_workouts.dart';
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/providers/grip_filter_provider.dart';
 import 'package:lifter/features/workouts/models/grip.dart';
 

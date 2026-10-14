@@ -16,7 +16,6 @@ import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/features/history/repositories/dummy_workouts.dart';
 import 'package:lifter/features/history/repositories/local_workout_repository.dart';
 import 'package:lifter/features/history/models/workout_query_filter.dart';
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/workouts/models/custom/workout_template.dart';
 import 'package:lifter/features/workouts/models/grip.dart';
 import 'package:lifter/features/workouts/repositories/local_template_repository.dart';
@@ -243,7 +242,7 @@ void main() {
 
     final db = await DatabaseService.instance.database;
     final repo = LocalWorkoutRepository(db);
-    await repo.seedDummyData();
+    await seedDummyWorkouts(repo);
 
     final workouts =
         await repo.getWorkouts(filter: WorkoutQueryFilter(limit: 1000));
@@ -258,14 +257,14 @@ void main() {
     addTearDown(container.dispose);
 
     var repo = await container.read(workoutRepositoryProvider.future);
-    await repo.seedDummyData();
+    await seedDummyWorkouts(repo);
 
     // What the Nuke Database button does.
     await DatabaseService.instance.wipeDatabase();
     container.invalidate(databaseProvider);
 
     repo = await container.read(workoutRepositoryProvider.future);
-    await repo.seedDummyData();
+    await seedDummyWorkouts(repo);
     final all = await repo.getWorkouts(filter: WorkoutQueryFilter(limit: 1000));
     expect(all.length, dummyWorkouts(DateTime.now()).length);
   });
@@ -283,7 +282,7 @@ void main() {
     await LocalUserRepository(db).saveUser(UserProfile(id: 1, username: 'climber'));
     expect(container.read(userSettingsProvider).maxPullLeft, 0);
 
-    await LocalWorkoutRepository(db).seedDummyData();
+    await seedDummyWorkouts(LocalWorkoutRepository(db));
     await container.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
 
     final best = seededPeakLoadBest();
@@ -300,7 +299,7 @@ void main() {
     final db = await DatabaseService.instance.database;
     final users = LocalUserRepository(db);
     await users.saveUser(UserProfile(id: 1, username: 'climber'));
-    await LocalWorkoutRepository(db).seedDummyData();
+    await seedDummyWorkouts(LocalWorkoutRepository(db));
 
     await users.saveUser(UserProfile(id: 1, username: 'renamed'));
 
@@ -335,5 +334,107 @@ void main() {
 
     expect((await container.read(workoutHistoryProvider.future)).workouts, isEmpty);
     expect(await container.read(weekWorkoutsProvider(0).future), isEmpty);
+  });
+
+  WorkoutLog peakLoad(double left, double right, {String notes = ''}) => WorkoutLog(
+        workoutTypeId: WorkoutId.peakLoad,
+        dateDone: DateTime(2026, 10, 1),
+        duration: 300,
+        workingTime: 14,
+        graphData: null,
+        notes: notes,
+        sets: [
+          SetLog(repetitions: [
+            RepetitionLog(
+              peakLoadLeft: left,
+              peakLoadRight: right,
+              averageLoadLeft: left - 5,
+              averageLoadRight: right - 5,
+            ),
+          ]),
+        ],
+      );
+
+  test('max pull falls back to the next best when the best is deleted', () async {
+    final db = await DatabaseService.instance.database;
+    final workouts = LocalWorkoutRepository(db);
+    final users = LocalUserRepository(db);
+
+    await workouts.saveWorkout(peakLoad(40, 42));
+    await workouts.saveWorkout(peakLoad(400, 41, notes: 'typo'));
+    expect((await users.getMaxPulls(localUserId)).left, 400);
+
+    final typo = (await workouts.getWorkouts()).firstWhere((w) => w.notes == 'typo');
+    await workouts.deleteWorkout(typo.id!);
+
+    final pulls = await users.getMaxPulls(localUserId);
+    expect(pulls.left, 40);
+    expect(pulls.right, 42);
+  });
+
+  test('only Peak Load workouts count towards max pull', () async {
+    final db = await DatabaseService.instance.database;
+    await LocalWorkoutRepository(db).saveWorkout(
+      peakLoad(30, 30).copyWith(workoutTypeId: WorkoutId.repeater),
+    );
+
+    final pulls = await LocalUserRepository(db).getMaxPulls(localUserId);
+    expect(pulls.left, 0);
+    expect(pulls.right, 0);
+  });
+
+  test('updating a workout replaces its details and sets', () async {
+    final db = await DatabaseService.instance.database;
+    final repo = LocalWorkoutRepository(db);
+    await repo.saveWorkout(peakLoad(40, 42).copyWith(graphData: Uint8List.fromList([1, 2, 3])));
+    final saved = (await repo.getWorkouts()).single;
+
+    await repo.updateWorkout(saved.copyWith(
+      dateDone: DateTime(2026, 9, 1, 7),
+      duration: 900,
+      notes: 'fixed',
+      sets: [
+        SetLog(repetitions: [rep(20), rep(20)], grip: const GripSetup(edgeMm: 20)),
+        SetLog(repetitions: [rep(25)]),
+      ],
+    ));
+
+    final loaded = (await repo.getWorkoutById(saved.id!))!;
+    expect(loaded.dateDone, DateTime(2026, 9, 1, 7));
+    expect(loaded.duration, 900);
+    expect(loaded.notes, 'fixed');
+    expect(loaded.sets.map((s) => s.repetitions.length), [2, 1]);
+    expect(loaded.sets.first.grip.edgeMm, 20);
+    // The graph isn't part of an edit, so it's kept.
+    expect(loaded.graphData, [1, 2, 3]);
+    // And the old reps went with their sets.
+    final reps = (await db.rawQuery('SELECT COUNT(*) AS n FROM repetition')).single['n'];
+    expect(reps, 3);
+    expect((await LocalUserRepository(db).getMaxPulls(localUserId)).left, 25);
+  });
+
+  test('deleting a best through the provider lowers the settings copy', () async {
+    SharedPreferences.setMockInitialValues({});
+    final container = ProviderContainer(overrides: [
+      sharedPreferencesProvider.overrideWithValue(
+        await SharedPreferences.getInstance(),
+      ),
+    ]);
+    addTearDown(container.dispose);
+    final history = container.listen(workoutHistoryProvider, (_, _) {});
+    addTearDown(history.close);
+
+    final notifier = container.read(workoutHistoryProvider.notifier);
+    await notifier.saveWorkout(peakLoad(35, 36));
+    await notifier.saveWorkout(peakLoad(50, 51, notes: 'best'));
+    expect(container.read(userSettingsProvider).maxPullLeft, 50);
+
+    final best = (await container.read(workoutHistoryProvider.future))
+        .workouts
+        .firstWhere((w) => w.notes == 'best');
+    await notifier.deleteWorkout(best.id!);
+
+    expect(container.read(userSettingsProvider).maxPullLeft, 35);
+    expect(container.read(userSettingsProvider).maxPullRight, 36);
   });
 }

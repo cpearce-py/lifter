@@ -63,7 +63,7 @@ class RepeaterEngine extends BaseEngine<RepeaterState> {
     final Uint8List graphBlob = encode(optimizedHistory);
 
     return WorkoutLog(
-      workoutTypeId: 1, 
+      workoutTypeId: WorkoutId.repeater,
       dateDone: DateTime.now(), 
       duration: totalTime, 
       workingTime: state.accumulatedWorkSeconds, 

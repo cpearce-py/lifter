@@ -20,6 +20,11 @@ class PeakLoadRules implements WorkoutRules<PeakLoadState> {
   }
 
   PeakLoadState _handleTick(PeakLoadState state) {
+    if (state.phase == Phase.working) {
+      state = state.copyWith(
+        accumulatedWorkSeconds: state.accumulatedWorkSeconds + 1,
+      );
+    }
     if (state.secondsRemaining > 1) {
       return state.copyWith(secondsRemaining: state.secondsRemaining - 1);
     }

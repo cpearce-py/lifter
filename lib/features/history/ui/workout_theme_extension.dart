@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:lifter/features/history/models/log_models.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 
-class WorkoutId {
-  static const int repeater = 1;
-  static const int peakLoad = 2;
-  static const int custom = 3;
-}
-
 extension WorkoutLogTheme on WorkoutLog {
   
   // Dynamically returns the name based on the DB ID

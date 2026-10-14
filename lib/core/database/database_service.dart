@@ -52,6 +52,7 @@ class DatabaseService {
         first_name VARCHAR(45),
         last_name VARCHAR(45),
         email VARCHAR(255),
+        -- No longer used: max pulls are worked out from Peak Load history.
         max_pull_left REAL DEFAULT 0.0,
         max_pull_right REAL DEFAULT 0.0,
         create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

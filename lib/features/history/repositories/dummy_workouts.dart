@@ -1,11 +1,25 @@
 import 'dart:math';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:lifter/features/history/models/log_models.dart';
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
+import 'package:lifter/features/history/repositories/workout_repository.dart';
 import 'package:lifter/features/workouts/models/grip.dart';
 
-//TODO: delete after testing.
+// Sample history for development and tests. Only reachable from the debug
+// build's developer tools.
+
+/// Saves [dummyWorkouts] through [repo]'s normal save, so foreign keys and
+/// transactions are all exercised.
+Future<void> seedDummyWorkouts(WorkoutRepository repo) async {
+  debugPrint("🌱 Seeding dummy workouts...");
+
+  final workouts = dummyWorkouts(DateTime.now());
+  for (final workout in workouts) {
+    await repo.saveWorkout(workout);
+  }
+
+  debugPrint("✅ Seeded ${workouts.length} dummy workouts!");
+}
 
 const _crimp20 = GripSetup(grip: GripType.halfCrimp, edgeMm: 20);
 const _crimp15 = GripSetup(grip: GripType.halfCrimp, edgeMm: 15);

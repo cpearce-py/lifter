@@ -2,6 +2,13 @@
 import 'package:flutter/services.dart';
 import 'package:lifter/features/workouts/models/grip.dart';
 
+/// The rows of the workout_type table.
+class WorkoutId {
+  static const int repeater = 1;
+  static const int peakLoad = 2;
+  static const int custom = 3;
+}
+
 class RepetitionLog {
   final int? id; 
   final int? setLogId; // Foreign Key

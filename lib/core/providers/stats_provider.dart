@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:lifter/core/providers/repository_providers.dart';
+import 'package:lifter/features/user/models/user_profile.dart';
+import 'package:lifter/features/user/repositories/user_repository.dart';
 import 'package:lifter/features/workouts/providers/weekly_provider.dart';
 
 /// Sessions needed in a week for it to count towards the streak.
@@ -89,20 +91,13 @@ final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
     now,
   );
 
-  // Peak Load sessions update these when a new best is set.
-  final userRows = await db.query(
-    'user',
-    columns: ['max_pull_left', 'max_pull_right'],
-    where: 'user_id = ?',
-    whereArgs: [1], // TODO: Assuming a single local user for now
-  );
-  final userRow = userRows.isEmpty ? null : userRows.first;
+  final pulls = await LocalUserRepository(db).getMaxPulls(localUserId);
 
   return UserStats(
     hoursThisMonth: hoursThisMonth,
     totalWorkouts: totalWorkouts,
     weekStreak: streak,
-    maxPullLeft: (userRow?['max_pull_left'] as num?)?.toDouble() ?? 0.0,
-    maxPullRight: (userRow?['max_pull_right'] as num?)?.toDouble() ?? 0.0,
+    maxPullLeft: pulls.left,
+    maxPullRight: pulls.right,
   );
 });

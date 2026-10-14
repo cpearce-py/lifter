@@ -53,19 +53,11 @@ class PeakLoadEngine extends BaseEngine<PeakLoadState> {
     final duration = DateTime.now().difference(_startTime).inSeconds;
     final Uint8List graphBlob = encode(graphController.fullSessionHistory);
 
-    int actualWorkingTime = 0;
-    for (final setLog in state.completedSets) {
-      for (final rep in setLog.repetitions) {
-        if (rep.peakLoadLeft > 0) actualWorkingTime += 7;
-        if (rep.peakLoadRight > 0) actualWorkingTime += 7;
-      }
-    }
-
     return WorkoutLog(
-      workoutTypeId: 2, 
+      workoutTypeId: WorkoutId.peakLoad,
       dateDone: DateTime.now(), 
       duration: duration, 
-      workingTime: actualWorkingTime,
+      workingTime: state.accumulatedWorkSeconds,
       sets: state.completedSets,
       graphData: graphBlob,
     ).withGrip(state.grip);

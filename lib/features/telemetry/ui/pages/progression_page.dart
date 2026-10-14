@@ -1,6 +1,6 @@
+import 'package:lifter/features/history/models/log_models.dart';
 import 'package:flutter/material.dart';
 
-import 'package:lifter/features/history/ui/workout_theme_extension.dart';
 import 'package:lifter/features/telemetry/ui/charts/max_pull.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/telemetry/ui/charts/workouts_per_month.dart';
