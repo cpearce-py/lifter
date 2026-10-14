@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/providers/history_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/core/ui/widgets/confirm_dialog.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/history/ui/manual_workout_page.dart';
 import 'package:lifter/features/telemetry/models.dart';
 import 'package:lifter/features/telemetry/ui/charts/rep_progression_chart.dart';
 import 'package:lifter/features/telemetry/ui/widgets/asymmetry_balance_bar.dart';
@@ -92,42 +94,60 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E24),
-        title: const Text(
-          "Delete workout?",
-          style: TextStyle(color: Colors.white),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete workout?',
+      message:
+          'This will permanently delete this workout and all of its sets.',
+      confirmLabel: 'Delete',
+    );
+    if (!confirmed || widget.workout.id == null || !context.mounted) return;
+
+    // Grab these now: the undo can run after this page has gone.
+    final messenger = ScaffoldMessenger.of(context);
+    final container = ProviderScope.containerOf(context);
+    final deleted = _displayWorkout.copyWith(notes: _notesController.text.trim());
+    final undoColor = context.textPrimaryInv;
+
+    await ref
+        .read(workoutHistoryProvider.notifier)
+        .deleteWorkout(widget.workout.id!);
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('Workout deleted'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+        // A snackbar with an action stays until tapped unless told not to.
+        persist: false,
+        action: SnackBarAction(
+          label: 'Undo',
+          textColor: undoColor,
+          // Saved again as a new row, sets, graph and all.
+          onPressed: () =>
+              container.read(workoutHistoryProvider.notifier).saveWorkout(deleted),
         ),
-        content: const Text(
-          'This will permanently delete this workout and all of its sets. This cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-          ),
-        ],
       ),
     );
-    if (confirmed == true && widget.workout.id != null) {
-      await ref
-          .read(workoutHistoryProvider.notifier)
-          .deleteWorkout(widget.workout.id!);
-      // Pop back to the History list!
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
-    }
+  }
+
+  Future<void> _edit() async {
+    // Carry over a note that's been typed but not saved yet.
+    final current = _displayWorkout.copyWith(notes: _notesController.text.trim());
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => ManualWorkoutPage(initial: current)),
+    );
+    if (saved != true || !mounted) return;
+
+    await _fetchWorkout();
+    if (!mounted) return;
+    setState(() {
+      _notesController.text = _displayWorkout.notes;
+      _oldNote = _displayWorkout.notes;
+      _isDirty = false;
+    });
   }
 
   @override
@@ -151,187 +171,201 @@ class _WorkoutDetailPageState extends ConsumerState<WorkoutDetailPage> {
       workingSets.isEmpty ? workout : workout.copyWith(sets: workingSets),
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(workout.uiTitle, style: context.h1),
-        backgroundColor: Colors.transparent,
-        actions: [
-          IconButton(
-            onPressed: () => _confirmDelete(context),
-            icon: Icon(Icons.delete_outline, color: Colors.redAccent),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- 1. Top Level Stats ---
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatCube(label: 'Date', value: dateStr),
-                _StatCube(
-                  label: 'Duration',
-                  value:
-                      '${(workout.duration / 60).floor()}m ${workout.duration % 60}s',
-                ),
-                _StatCube(label: 'Sets', value: '${workout.sets.length}'),
-              ],
+    // A note typed but not saved is saved on the way out, not lost.
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || _isSaving) return;
+        await _saveNote();
+        if (context.mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(workout.uiTitle, style: context.h1),
+          backgroundColor: Colors.transparent,
+          actions: [
+            IconButton(
+              // Needs the full workout, to tell whether it came from the scale.
+              onPressed: _isLoadingGraph ? null : _edit,
+              icon: Icon(Icons.edit_outlined, color: context.textPrimary),
             ),
-
-            if (workout.grips.isNotEmpty) ...[
+            IconButton(
+              onPressed: () => _confirmDelete(context),
+              icon: Icon(Icons.delete_outline, color: context.danger),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- 1. Top Level Stats ---
               const SizedBox(height: 24),
-              _GripChips(workout: workout),
-            ],
-
-            const SizedBox(height: 24),
-
-            // --- Notes Section ---
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Notes',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: context.textMuted,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _StatCube(label: 'Date', value: dateStr),
+                  _StatCube(
+                    label: 'Duration',
+                    value:
+                        '${(workout.duration / 60).floor()}m ${workout.duration % 60}s',
                   ),
-                ),
-                // Save button, turn on if we're dirty.
-                SizedBox(
-                  height: 48,
-                  width: 100,
-                  child: AnimatedOpacity(
-                    opacity: _isDirty ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: IgnorePointer(
-                      ignoring: !_isDirty,
-                      child: Center(
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : TextButton(
-                                onPressed: _saveNote,
-                                child: Text(
-                                  "Save Note",
-                                  style: TextStyle(
-                                    color: context.peakLoadAccent,
-                                    fontWeight: FontWeight.bold,
+                  _StatCube(label: 'Sets', value: '${workout.sets.length}'),
+                ],
+              ),
+  
+              if (workout.grips.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                _GripChips(workout: workout),
+              ],
+  
+              const SizedBox(height: 24),
+  
+              // --- Notes Section ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Notes',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: context.textMuted,
+                    ),
+                  ),
+                  // Save button, turn on if we're dirty.
+                  SizedBox(
+                    height: 48,
+                    width: 100,
+                    child: AnimatedOpacity(
+                      opacity: _isDirty ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IgnorePointer(
+                        ignoring: !_isDirty,
+                        child: Center(
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : TextButton(
+                                  onPressed: _saveNote,
+                                  child: Text(
+                                    "Save Note",
+                                    style: TextStyle(
+                                      color: context.peakLoadAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            WorkoutNotesField(
-              controller: _notesController,
-              onChanged: (text) {
-                // If the text differs from the original DB string, show the save button
-                final isDifferent = text.trim() != _oldNote;
-                if (isDifferent && !_isDirty) {
-                  setState(() => _isDirty = true);
-                } else if (!isDifferent && _isDirty) {
-                  setState(() => _isDirty = false);
-                }
-              },
-            ),
-            const SizedBox(height: 32),
-
-            Text(
-              'Analytics',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: context.textMuted,
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-
-            if (_isLoadingGraph) ...[
-              // Show a skeleton or loading spinner that takes up the exact same height
-              Container(
-                height: 240,
-                decoration: BoxDecoration(
-                  color: context.inputBackground,
-                  borderRadius: BorderRadius.circular(20),
+              const SizedBox(height: 8),
+              WorkoutNotesField(
+                controller: _notesController,
+                onChanged: (text) {
+                  // If the text differs from the original DB string, show the save button
+                  final isDifferent = text.trim() != _oldNote;
+                  if (isDifferent && !_isDirty) {
+                    setState(() => _isDirty = true);
+                  } else if (!isDifferent && _isDirty) {
+                    setState(() => _isDirty = false);
+                  }
+                },
+              ),
+              const SizedBox(height: 32),
+  
+              Text(
+                'Analytics',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: context.textMuted,
                 ),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: workout.uiAccentColor(context).withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 16),
+  
+              if (_isLoadingGraph) ...[
+                // Show a skeleton or loading spinner that takes up the exact same height
+                Container(
+                  height: 240,
+                  decoration: BoxDecoration(
+                    color: context.inputBackground,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: workout.uiAccentColor(context).withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ] 
+              else if (workout.graphData != null && workout.graphData!.isNotEmpty) ...[
+                SizedBox(
+                  height: 240,
+                  child: HistoricalGraph(
+                    graphData: workout.graphData,
+                    accentColor: workout.uiAccentColor(context), 
+                    maxWeight: maxWeight,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+  
+              Card(
+                elevation: 0,
+                color: context.cardBackground,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (workout.workoutTypeId == WorkoutId.repeater ||
+                          workout.workoutTypeId == WorkoutId.peakLoad ||
+                          workout.workoutTypeId == WorkoutId.custom) ...[
+  
+                        RepProgressionChart(stats: stats),
+  
+                        // A subtle divider to separate the bar from the line chart
+                        Divider(color: context.textPrimary.withValues(alpha: 0.1)),
+                        const SizedBox(height: 24),
+  
+                        AsymmetryBalanceBar(stats: stats),
+                      ],
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-            ] 
-            else if (workout.graphData != null && workout.graphData!.isNotEmpty) ...[
-              SizedBox(
-                height: 240,
-                child: HistoricalGraph(
-                  graphData: workout.graphData,
-                  accentColor: workout.uiAccentColor(context), 
-                  maxWeight: maxWeight,
+  
+              const SizedBox(height: 24),
+  
+              // --- 3. The Granular Set/Rep Data ---
+              Text(
+                'Performance',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: context.textMuted,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+  
+              SetTree(
+                sets: workout.sets,
+                accentColor: workout.uiAccentColor(context),
+              ),
             ],
-
-            Card(
-              elevation: 0,
-              color: context.cardBackground,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.workout.workoutTypeId == WorkoutId.repeater ||
-                        widget.workout.workoutTypeId == WorkoutId.peakLoad ||
-                        widget.workout.workoutTypeId == WorkoutId.custom) ...[
-
-                      RepProgressionChart(stats: stats),
-
-                      // A subtle divider to separate the bar from the line chart
-                      Divider(color: context.textPrimary.withValues(alpha: 0.1)),
-                      const SizedBox(height: 24),
-
-                      AsymmetryBalanceBar(stats: stats),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // --- 3. The Granular Set/Rep Data ---
-            Text(
-              'Performance',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: context.textMuted,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            SetTree(
-              sets: workout.sets,
-              accentColor: workout.uiAccentColor(context),
-            ),
-          ],
+          ),
         ),
       ),
     );

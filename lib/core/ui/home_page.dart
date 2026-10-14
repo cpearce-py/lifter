@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
 import 'package:lifter/core/ui/widgets/weekly_calendar.dart';
 import 'package:lifter/features/history/models/log_models.dart';
+import 'package:lifter/features/history/ui/manual_workout_page.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 import 'package:lifter/features/workouts/providers/weekly_provider.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_card.dart';
@@ -329,9 +331,15 @@ class _RecentWorkoutsSliverState extends ConsumerState<RecentWorkoutsSliver> {
     if (workouts.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: _textInset, vertical: 4),
-        child: Text(
-          day == null ? "No workouts yet." : "Rest day. No workouts logged.",
-          style: TextStyle(color: context.textMuted),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              day == null ? "No workouts yet." : "Rest day. No workouts logged.",
+              style: TextStyle(color: context.textMuted),
+            ),
+            if (day != null) _logForDayButton(day),
+          ],
         ),
       );
     }
@@ -339,6 +347,7 @@ class _RecentWorkoutsSliverState extends ConsumerState<RecentWorkoutsSliver> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _cardInset),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final (index, workout) in workouts.indexed)
             FadeSlide(
@@ -352,8 +361,28 @@ class _RecentWorkoutsSliverState extends ConsumerState<RecentWorkoutsSliver> {
                 child: WorkoutCard(workout: workout),
               ),
             ),
+          if (day != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: _textInset),
+              child: _logForDayButton(day),
+            ),
         ],
       ),
+    );
+  }
+
+  /// For a workout done that day without the app.
+  Widget _logForDayButton(DateTime day) {
+    return TextButton.icon(
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        foregroundColor: context.textMuted,
+      ),
+      onPressed: () => Navigator.of(context, rootNavigator: true).push(
+        CupertinoPageRoute(builder: (_) => ManualWorkoutPage(initialDate: day)),
+      ),
+      icon: const Icon(Icons.add_rounded, size: 18),
+      label: const Text('Log a workout for this day'),
     );
   }
 

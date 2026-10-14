@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/core/models/workout_session.dart';
 import 'package:lifter/core/ui/widgets/controls.dart';
+import 'package:lifter/features/history/ui/manual_workout_page.dart';
 import 'package:lifter/features/workouts/models/custom/workout_template.dart';
 import 'package:lifter/features/workouts/providers/templates_provider.dart';
 import 'package:lifter/features/workouts/ui/builder/builder_widgets.dart';
@@ -79,6 +80,16 @@ class _WorkoutSelectionSheetState extends ConsumerState<WorkoutSelectionSheet>
       context,
       rootNavigator: true,
     ).push(CupertinoPageRoute(builder: workout.setupPageBuilder));
+  }
+
+  WorkoutType _manualCard(BuildContext context) {
+    return WorkoutType(
+      name: 'Log a workout',
+      description: 'Add one you did without the app',
+      icon: Icons.edit_calendar_rounded,
+      accentColor: context.setRestAccent,
+      setupPageBuilder: (context) => const ManualWorkoutPage(),
+    );
   }
 
   WorkoutType _templateCard(BuildContext context, WorkoutTemplate template) {
@@ -159,6 +170,10 @@ class _WorkoutSelectionSheetState extends ConsumerState<WorkoutSelectionSheet>
           workout: workout,
           onTap: () => _openWorkout(context, workout),
         ),
+      _WorkoutCard(
+        workout: _manualCard(context),
+        onTap: () => _openWorkout(context, _manualCard(context)),
+      ),
       const _SectionHeader(label: 'MY WORKOUTS'),
       for (final template in templates)
         _WorkoutCard(
