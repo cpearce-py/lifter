@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lifter/core/providers/ble_provider.dart';
 import 'package:lifter/core/providers/shared_preferences_provider.dart';
 import 'package:lifter/core/providers/user_provider.dart';
 import 'package:lifter/core/ui/screens/username_screen.dart';
@@ -43,6 +44,8 @@ class _FitAppState extends ConsumerState<FitApp> {
     // Bring the settings copy of the max pulls in line with the database.
     // Before this sync existed it was never written, so it may read zero.
     ref.read(userSettingsProvider.notifier).syncMaxPullsFromDatabase();
+    // Loads the paired scale before anything starts scanning.
+    ref.read(pairedScaleProvider);
   }
 
   @override

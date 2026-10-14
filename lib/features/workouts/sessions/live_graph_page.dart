@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lifter/core/ui/themes/app_theme.dart';
 import 'package:lifter/features/bluetooth/ble_manager.dart';
+import 'package:lifter/features/bluetooth/ui/widgets.dart';
 import 'package:lifter/features/workouts/ui/graph.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_live_stats.dart';
 import 'package:lifter/features/workouts/ui/widgets/workout_top_bar.dart';
@@ -68,6 +69,7 @@ class _LiveGraphPageState extends ConsumerState<LiveGraphPage> {
             ),
             const SizedBox(height: sectionSpacing),
             const CurrentWeight(),
+            const ScaleStatusBanner(),
             const SizedBox(height: sectionSpacing),
             Expanded(
               child: Padding(

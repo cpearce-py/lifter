@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lifter/core/measurements/unit_converter.dart';
 import 'package:lifter/core/providers/ble_provider.dart';
 import 'package:lifter/core/ui/themes/app_theme.dart';
+import 'package:lifter/features/bluetooth/ui/widgets.dart';
 import 'package:lifter/features/user/providers/user_settings_provider.dart';
 
 class WorkoutLiveStats extends StatelessWidget {
@@ -18,28 +19,30 @@ class WorkoutLiveStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return Column(
       children: [
-        CurrentWeight(),
-    
-        Container(width: 1, height: 50, color: context.cardBorder),
-    
-        Column(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Text(
-              _formatTime(secondsRemaining),
-              style: context.hero,
-            ),
-            Text(
-              'TIME LEFT',
-              style: context.overline.copyWith(
-                fontSize: 12,
-                letterSpacing: 1.5,
-              ),
+            CurrentWeight(),
+
+            Container(width: 1, height: 50, color: context.cardBorder),
+
+            Column(
+              children: [
+                Text(_formatTime(secondsRemaining), style: context.hero),
+                Text(
+                  'TIME LEFT',
+                  style: context.overline.copyWith(
+                    fontSize: 12,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+        const ScaleStatusBanner(),
       ],
     );
   }
@@ -52,24 +55,18 @@ class CurrentWeight extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final weightAsync = ref.watch(liveWeightStreamProvider);
     final rawWeightKg = weightAsync.value ?? 0.0;
-    
+
     final useLbs = ref.watch(userSettingsProvider.select((s) => s.useLbs));
-    
+
     final displayWeight = useLbs ? kgToLbs(rawWeightKg) : rawWeightKg;
     final labelText = useLbs ? 'POUNDS' : 'KILOGRAMS';
 
     return Column(
       children: [
-        Text(
-          displayWeight.toStringAsFixed(1),
-          style: context.hero,
-        ),
+        Text(displayWeight.toStringAsFixed(1), style: context.hero),
         Text(
           labelText,
-          style: context.overline.copyWith(
-            fontSize: 12,
-            letterSpacing: 1.5,
-          ),
+          style: context.overline.copyWith(fontSize: 12, letterSpacing: 1.5),
         ),
       ],
     );

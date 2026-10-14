@@ -83,8 +83,12 @@ abstract class BaseEngine<T> extends Notifier<T> {
     });
   }
 
+  // Safe to call more than once (it runs on done and again on dispose):
+  // only the first call hands back our hold on the scanner.
   void stopBle() {
-    _bleSub?.cancel();
+    if (_bleSub == null) return;
+    _bleSub!.cancel();
+    _bleSub = null;
     BleManager.instance.stopListening();
   }
 }
