@@ -210,6 +210,67 @@ class _HistoricalGraphPainter extends CustomPainter {
     return left + dx + (scaledWidth * progress);
   }
 
+  // "Nice" tick intervals in seconds; the axis picks the smallest that fits.
+  static const List<int> _tickSteps = [
+    1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200,
+  ];
+  static const double _minLabelGap = 12.0;
+
+  TextPainter _layoutLabel(String text) => TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(fontSize: 9, color: textColor, fontWeight: FontWeight.w500),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+  String _formatTime(int tSec, bool showHours) {
+    final hours = tSec ~/ 3600;
+    final minutes = (tSec % 3600) ~/ 60;
+    final seconds = (tSec % 60).toString().padLeft(2, '0');
+    if (showHours) return '$hours:${minutes.toString().padLeft(2, '0')}:$seconds';
+    return '${tSec ~/ 60}:$seconds';
+  }
+
+  // Picks a tick interval from the on-screen pixel density so labels never
+  // crowd, regardless of workout length or zoom level.
+  void _paintTimeAxis(Canvas canvas, double w, double chartW, double chartH,
+      double totalSec, double scale, double dx) {
+    final showHours = totalSec >= 3600;
+    final pxPerSec = chartW * scale / totalSec;
+
+    // The widest label is the one for the full duration.
+    final widestLabel = _layoutLabel(_formatTime(totalSec.ceil(), showHours)).width;
+    final minSpacing = widestLabel + _minLabelGap;
+    final step = _tickSteps.firstWhere(
+      (s) => s * pxPerSec >= minSpacing,
+      orElse: () => _tickSteps.last,
+    );
+
+    // Only walk the ticks that are currently visible.
+    final visibleStartSec = (-dx / pxPerSec).clamp(0.0, totalSec);
+    final visibleEndSec = ((chartW - dx) / pxPerSec).clamp(0.0, totalSec);
+    final firstTick = (visibleStartSec / step).ceil() * step;
+
+    final axisPaint = Paint()
+      ..color = textColor.withValues(alpha: 0.3)
+      ..strokeWidth = 1;
+    final baseY = vPadTop + chartH;
+    double lastLabelRight = double.negativeInfinity;
+
+    for (int tSec = firstTick; tSec <= visibleEndSec; tSec += step) {
+      final x = hPad + dx + tSec * pxPerSec;
+      canvas.drawLine(Offset(x, baseY), Offset(x, baseY + 4), axisPaint);
+
+      // Center under the tick, but keep edge labels fully inside the card.
+      final tp = _layoutLabel(_formatTime(tSec, showHours));
+      final labelX = (x - tp.width / 2).clamp(hPad - 8, w - hPad + 8 - tp.width);
+      if (labelX < lastLabelRight + _minLabelGap / 2) continue;
+      tp.paint(canvas, Offset(labelX, baseY + 8));
+      lastLabelRight = labelX + tp.width;
+    }
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
@@ -248,64 +309,13 @@ class _HistoricalGraphPainter extends CustomPainter {
       tp.paint(canvas, Offset(2, y - tp.height / 2));
     }
 
+    if (totalMs > 0) {
+      _paintTimeAxis(canvas, w, chartW, chartH, totalMs / 1000.0, scale, dx);
+    }
+
     // Save canvas, clip to chart area to avoid bleed-through
     canvas.save();
     canvas.clipRect(Rect.fromLTWH(hPad, 0, chartW, size.height));
-
-    // Calculate a stable label interval (in seconds) that changes based on zoom level
-    // 1x zoom = 60s intervals. 10x zoom = 6s intervals.
-    double baseInterval = 60.0;
-    double dynamicIntervalSeconds = (baseInterval / scale).clamp(5.0, 300.0);
-    
-    // Snapping the interval to standard time numbers looks cleaner
-    if (dynamicIntervalSeconds > 60) {
-      dynamicIntervalSeconds = (dynamicIntervalSeconds / 60).round() * 60.0;
-    } else if (dynamicIntervalSeconds > 10) {
-      dynamicIntervalSeconds = (dynamicIntervalSeconds / 10).round() * 10.0;
-    } else {
-      dynamicIntervalSeconds = (dynamicIntervalSeconds / 5).round() * 5.0;
-    }
-
-    // Paint the small hash marks
-    final axisPaint = Paint()
-      ..color = textColor.withValues(alpha: 0.3)
-      ..strokeWidth = 1;
-
-    for (int tSec = 0; tSec <= totalMs / 1000.0; tSec++) {
-      // Determine if this second mark needs a line drawn
-      final isModuloInterval = tSec % dynamicIntervalSeconds == 0;
-      
-      // If not aModulo interval, we can draw smaller hash marks every X seconds, 
-      // but only if zoomed in enough. For simplicity, just labeling here.
-      if (isModuloInterval) {
-        // Find the specific timestamp to map it to the moving X-axis
-        int targetMs = startMs + (tSec * 1000);
-        final x = _timeToX(targetMs, hPad, chartW, startMs, totalMs, scale, dx);
-
-        // Optimization: Only layout and paint if the label is actually on screen!
-        if (x > hPad - 20 && x < w - hPad + 20) {
-          
-          // Draw the vertical tick line at the base of the chart
-          canvas.drawLine(Offset(x, vPadTop + chartH), Offset(x, vPadTop + chartH + 4), axisPaint);
-
-          // Format the time as M:SS
-          final minutes = tSec ~/ 60;
-          final seconds = tSec % 60;
-          final labelText = '$minutes:${seconds.toString().padLeft(2, '0')}';
-
-          final tpTime = TextPainter(
-            text: TextSpan(
-              text: labelText,
-              style: TextStyle(fontSize: 9, color: textColor, fontWeight: FontWeight.w500,),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-          
-          // Draw the text centered under the tick line
-          tpTime.paint(canvas, Offset(x - tpTime.width / 2, vPadTop + chartH + 8));
-        }
-      }
-    }
 
     // ── Force Curve Line + fill ──────────────────────────────────────────
     final linePath = Path();
